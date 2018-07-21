@@ -8,12 +8,21 @@ namespace Graphics { namespace DX12 {
 	DX12GraphicsInterface::DX12GraphicsInterface():
 		mDevice(nullptr),
 		mCurBuffer(0),
+		mCurTexture(0),
 		mGraphicsRootSignature(nullptr),
-		mCurGraphicsPipeline(0)
+		mCurGraphicsPipeline(0),
+		mFrameHeap(nullptr)
 	{
-		memset(mBuffers, 0, sizeof(ID3D12Resource*) * MAX_BUFFERS);
-		memset(mIntermediateBuffers, 0, sizeof(ID3D12Resource*) * MAX_BUFFERS);
-		memset(mBuffersStates, -1, sizeof(D3D12_RESOURCE_STATES) * MAX_BUFFERS);
+		{
+			memset(mBuffers, 0, sizeof(ID3D12Resource*) * MAX_BUFFERS);
+			memset(mIntermediateBuffers, 0, sizeof(ID3D12Resource*) * MAX_BUFFERS);
+			memset(mBuffersStates, -1, sizeof(D3D12_RESOURCE_STATES) * MAX_BUFFERS);
+		}
+		{
+			memset(mTextures, 0, sizeof(ID3D12Resource*) * MAX_TEXTURES);
+			memset(mIntermediateTexture, 0, sizeof(ID3D12Resource*) * MAX_TEXTURES);
+			memset(mTexturesStates, 0, sizeof(D3D12_RESOURCE_STATES) * MAX_TEXTURES);
+		}
 		memset(mGraphicsPipelines, 0, sizeof(ID3D12PipelineState*) * MAX_GRAPHICS_PIPELINES);
 	}
 	
@@ -166,12 +175,60 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::InitRootSignature()
 	{
-		D3D12_ROOT_SIGNATURE_DESC rsDesc = {};
+		CD3DX12_ROOT_SIGNATURE_DESC rsDesc = {};
+		std::vector<CD3DX12_ROOT_PARAMETER> params;
+		std::vector<CD3DX12_STATIC_SAMPLER_DESC> samplers;
+
+		// param 0 (CB0)
+		{
+			CD3DX12_ROOT_PARAMETER p0;
+			p0.InitAsConstantBufferView(0);
+			params.push_back(p0);
+		}
+		// param 1 (CB0)
+		{
+			CD3DX12_ROOT_PARAMETER p1;
+			p1.InitAsConstantBufferView(1);
+			params.push_back(p1);
+		}
+		// param 2 (TEX0)
+		{
+			CD3DX12_ROOT_PARAMETER p2;
+			CD3DX12_DESCRIPTOR_RANGE range;
+			range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+			p2.InitAsDescriptorTable(1, &range);
+			params.push_back(p2);
+		}
+		// LineaWrapSampler (0)
+		{
+			CD3DX12_STATIC_SAMPLER_DESC s0;
+			s0.Init
+			(
+				0,
+				D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR
+			);
+			samplers.push_back(s0);
+		}
+		rsDesc.Init(params.size(), params.data(),samplers.size(),samplers.data());
 		rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
 		ID3D10Blob* rsBlob;
 		ID3D10Blob* rsErrorBlob;
 		D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, &rsBlob, &rsErrorBlob);
 		mDevice->CreateRootSignature(0, rsBlob->GetBufferPointer(), rsBlob->GetBufferSize(), IID_PPV_ARGS(&mGraphicsRootSignature));
+
+		// Lets init a heap
+		D3D12_DESCRIPTOR_HEAP_DESC hDesc = {};
+		hDesc.NodeMask			= 0;
+		hDesc.NumDescriptors	= 1024;
+		hDesc.Type				= D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		hDesc.Flags				= D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		mFrameHeap = new ID3D12DescriptorHeap*[NUM_BACK_BUFFERS];
+		for (int i = 0; i < NUM_BACK_BUFFERS; i++)
+		{
+			mDevice->CreateDescriptorHeap(&hDesc, IID_PPV_ARGS(&mFrameHeap[i]));
+		}
+
 	}
 
 	bool DX12GraphicsInterface::LoadShader(const ShaderDescription& desc, D3D12_SHADER_BYTECODE& outShader)
@@ -218,6 +275,7 @@ namespace Graphics { namespace DX12 {
 	{
 		switch (format)
 		{
+		case Format::RG_32_Float: return DXGI_FORMAT_R32G32_FLOAT;
 		case Format::RGB_32_Float: return DXGI_FORMAT_R32G32B32_FLOAT; 
 		case Format::RGBA_32_Float: return DXGI_FORMAT_R32G32B32A32_FLOAT;
 		case Format::Unknown:
@@ -273,6 +331,12 @@ namespace Graphics { namespace DX12 {
 		vp.MinDepth			= 0.0f;
 		vp.MaxDepth			= 1.0f;
 		context->RSSetViewports(1, &vp);
+
+		// Bind frame heap
+		ID3D12DescriptorHeap* heaps[] = { mFrameHeap[idx] };
+		context->SetDescriptorHeaps(1, heaps);
+		mCPUCurHandle = heaps[0]->GetCPUDescriptorHandleForHeapStart();
+		mGPUCurHandle = heaps[0]->GetGPUDescriptorHandleForHeapStart();
 	}
 
 	void DX12GraphicsInterface::EndFrame()
@@ -323,7 +387,7 @@ namespace Graphics { namespace DX12 {
 
 	BufferHandle DX12GraphicsInterface::CreateBuffer(BufferType type, CPUAccess cpuAccess, uint64_t size, void* data /*= nullptr*/)
 	{
-		if (type == Graphics::VertexBuffer)
+		if (type == Graphics::VertexBuffer || type == Graphics::ConstantBuffer)
 		{
 			D3D12_HEAP_PROPERTIES heapDesc = {};
 			auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
@@ -352,6 +416,61 @@ namespace Graphics { namespace DX12 {
 			return handle;
 		}
 		return InvalidBuffer;
+	}
+
+	TextureHandle DX12GraphicsInterface::CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, void* data /*= nullptr*/)
+	{
+		if ((width * height * layers * mips) == 0)
+		{
+			return InvalidTexture;
+		}
+		CD3DX12_RESOURCE_DESC texDesc;
+		texDesc = CD3DX12_RESOURCE_DESC::Tex2D
+		(
+			ToDXGIFormat(format),
+			width,
+			height,
+			layers,
+			mips,
+			1,0,
+			D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS		// We probably don´t want to do this by default
+		);
+		CD3DX12_HEAP_PROPERTIES heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+		auto& state = mTexturesStates[mCurTexture];
+		state = TEXTURE_READ;
+		mDevice->CreateCommittedResource
+		(
+			&heapP,D3D12_HEAP_FLAG_NONE,
+			&texDesc,state,
+			nullptr,
+			IID_PPV_ARGS(&mTextures[mCurTexture])
+		);
+
+		// Upload buffer
+		UINT64 rowSize;
+		UINT64 totalSize;
+		mDevice->GetCopyableFootprints(&texDesc, 0, 1, 0, nullptr, nullptr, &rowSize, &totalSize);
+		heapP.Type = D3D12_HEAP_TYPE_UPLOAD;
+		mDevice->CreateCommittedResource
+		(
+			&heapP, D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(totalSize), D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&mIntermediateTexture[mCurTexture])
+		);
+		if (data)
+		{
+			D3D12_SUBRESOURCE_DATA sdat = {};
+			sdat.pData		= data;
+			sdat.RowPitch	= rowSize;
+			sdat.SlicePitch	= rowSize * height;
+			mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(mTextures[mCurTexture], state, COPY_DST));
+			UpdateSubresources(mDefaultSurface.CmdContext, mTextures[mCurTexture], mIntermediateTexture[mCurTexture], 0, 0, 1, &sdat);
+			mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(mTextures[mCurTexture], COPY_DST,state));
+		}
+		TextureHandle handle = { mCurTexture };
+		mCurTexture++;
+		return handle;
 	}
 
 	GraphicsPipeline DX12GraphicsInterface::CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)
@@ -474,12 +593,17 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::Draw(uint32_t numvtx, uint32_t vtxOffset)
 	{
+		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mGPUCurHandle);
+		// Offset it for nex draw call
+		mGPUCurHandle.Offset(1);
+		mCPUCurHandle.Offset(1);
+
 		mDefaultSurface.CmdContext->DrawInstanced(numvtx, 1, vtxOffset, 0);
 	}
 
-	D3D12_VIEWPORT vp;
 	void DX12GraphicsInterface::SetViewport(float x, float y, float w, float h, float zmin /*=0.0f*/, float zmax/*=1.0f*/)
 	{
+		D3D12_VIEWPORT vp;
 		vp.TopLeftX = x;
 		vp.TopLeftY = y;
 		vp.Width	= w;
@@ -489,13 +613,39 @@ namespace Graphics { namespace DX12 {
 		mDefaultSurface.CmdContext->RSSetViewports(1, &vp);
 	}
 
-	D3D12_RECT s;
 	void DX12GraphicsInterface::SetScissor(float x, float y, float w, float h)
 	{
+		D3D12_RECT s;
 		s.left	= x;
 		s.top	= y;
 		s.right = w;
 		s.bottom= h;
 		mDefaultSurface.CmdContext->RSSetScissorRects(1, &s);
+	}
+
+	void DX12GraphicsInterface::SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data)
+	{
+		const auto res = mBuffers[buffer.Handle];
+		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && res != nullptr)
+		{
+			if (data)
+			{
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, mBuffersStates[buffer.Handle], COPY_DST));
+				SetBufferData(buffer, size, 0, data);
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, COPY_DST, mBuffersStates[buffer.Handle]));
+			}
+			mDefaultSurface.CmdContext->SetGraphicsRootConstantBufferView(slot, res->GetGPUVirtualAddress());
+		}
+	}
+
+	void DX12GraphicsInterface::SetTexture(const TextureHandle& texture, uint8_t slot)
+	{
+		const auto res = mTextures[texture.Handle];
+		if (texture.Handle != InvalidTexture.Handle && res != nullptr)
+		{
+			auto slotHandle = mCPUCurHandle;
+			slotHandle.Offset(slot);
+			mDevice->CreateShaderResourceView(res, nullptr, slotHandle);
+		}
 	}
 }}

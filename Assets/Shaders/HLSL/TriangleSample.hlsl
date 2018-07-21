@@ -1,6 +1,16 @@
 /*
-	Simple.hlsl
+	TriangleSample.hlsl
 */
+
+cbuffer DrawData : register(b0)
+{
+	float Time;
+}
+
+cbuffer OtherData : register(b1)
+{
+	float3 Off;
+}
 
 struct VSInput
 {

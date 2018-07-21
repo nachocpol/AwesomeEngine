@@ -60,11 +60,11 @@ void InitResources()
 	{
 		Graphics::GraphicsPipelineDescription pdesc = {};
 		pdesc.PixelShader.ShaderEntryPoint = "PSSimple";
-		pdesc.PixelShader.ShaderPath = "Simple.hlsl";
+		pdesc.PixelShader.ShaderPath = "TriangleSample.hlsl";
 		pdesc.PixelShader.Type = Graphics::Pixel;
 
 		pdesc.VertexShader.ShaderEntryPoint = "VSSimple";
-		pdesc.VertexShader.ShaderPath = "Simple.hlsl";
+		pdesc.VertexShader.ShaderPath = "TriangleSample.hlsl";
 		pdesc.VertexShader.Type = Graphics::Vertex;
 
 		Graphics::VertexInputDescription::VertexInputElement eles[2];

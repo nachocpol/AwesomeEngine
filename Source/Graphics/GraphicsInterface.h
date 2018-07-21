@@ -18,7 +18,8 @@ namespace Graphics
 	enum BufferType
 	{
 		VertexBuffer = 0,
-		IndexBuffer = 1
+		IndexBuffer = 1,
+		ConstantBuffer = 2
 	};
 	enum CPUAccess
 	{
@@ -30,8 +31,9 @@ namespace Graphics
 	enum Format
 	{
 		Unknown = 0,
-		RGB_32_Float = 1,
-		RGBA_32_Float = 2
+		RG_32_Float = 1,
+		RGB_32_Float = 2,
+		RGBA_32_Float = 3
 	};
 	enum Topology
 	{
@@ -99,6 +101,7 @@ namespace Graphics
 		virtual void EndFrame() = 0;
 		virtual void FlushAndWait() = 0;
 		virtual BufferHandle CreateBuffer(BufferType type, CPUAccess cpuAccess, uint64_t size,void* data = nullptr) = 0;
+		virtual TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips,uint32_t layers,Format format,void* data = nullptr) = 0;
 		virtual GraphicsPipeline CreateGraphicsPipeline(const GraphicsPipelineDescription& desc) = 0;
 		virtual ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc) = 0;
 		virtual void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data) = 0;
@@ -108,5 +111,7 @@ namespace Graphics
 		virtual void Draw(uint32_t numvtx,uint32_t vtxOffset) = 0;
 		virtual void SetViewport(float x, float y, float w, float h, float zmin = 0.0f, float zmax = 1.0f) = 0;
 		virtual void SetScissor(float x, float y, float w, float h) = 0;
+		virtual void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data) = 0;
+		virtual void SetTexture(const TextureHandle& texture, uint8_t slot) = 0;
 	};
 }

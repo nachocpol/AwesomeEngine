@@ -18,6 +18,45 @@ project "Graphics"
 		includedirs 
 		{
 			"Source",
+			"Depen/DX12",
+			"Depen/JSON"
+		}	
+		libdirs
+		{
+		}
+		links
+		{
+		}
+	filter "configurations:Release"
+		optimize "On"
+		includedirs 
+		{
+			"Source",
+			"Depen/DX12",
+			"Depen/JSON"
+		}
+		libdirs
+		{
+		}
+		links
+		{
+		}
+
+project "AwesomeTriangle"
+	kind "ConsoleApp"
+	language "C++"
+	location "Temp/VSFiles"
+	targetdir "Build/%{cfg.platform}/%{cfg.buildcfg}"
+	files
+	{
+		"Source/Samples/**.h",
+		"Source/Samples/TriangleSample.cpp"
+	}
+	filter "configurations:Debug"
+		symbols "On"
+		includedirs 
+		{
+			"Source",
 			"Depen/DX12"
 		}	
 		libdirs
@@ -25,6 +64,7 @@ project "Graphics"
 		}
 		links
 		{
+			"Graphics"
 		}
 	filter "configurations:Release"
 		optimize "On"
@@ -38,17 +78,18 @@ project "Graphics"
 		}
 		links
 		{
+			"Graphics"
 		}
 
-project "AwesomeTest"
+project "AwesomeAdvanced"
 	kind "ConsoleApp"
 	language "C++"
 	location "Temp/VSFiles"
 	targetdir "Build/%{cfg.platform}/%{cfg.buildcfg}"
 	files
 	{
-		"Source/Test/**.h",
-		"Source/Test/**.cpp"
+		"Source/Samples/**.h",
+		"Source/Samples/AdvancedSample.cpp"
 	}
 	filter "configurations:Debug"
 		symbols "On"
