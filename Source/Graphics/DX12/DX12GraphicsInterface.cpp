@@ -19,9 +19,7 @@ namespace Graphics { namespace DX12 {
 			memset(mBuffersStates, -1, sizeof(D3D12_RESOURCE_STATES) * MAX_BUFFERS);
 		}
 		{
-			memset(mTextures, 0, sizeof(ID3D12Resource*) * MAX_TEXTURES);
-			memset(mIntermediateTexture, 0, sizeof(ID3D12Resource*) * MAX_TEXTURES);
-			memset(mTexturesStates, 0, sizeof(D3D12_RESOURCE_STATES) * MAX_TEXTURES);
+			memset(mTextures, 0, sizeof(TextureEntry*) * MAX_TEXTURES);
 		}
 		memset(mGraphicsPipelines, 0, sizeof(ID3D12PipelineState*) * MAX_GRAPHICS_PIPELINES);
 	}
@@ -209,7 +207,7 @@ namespace Graphics { namespace DX12 {
 			);
 			samplers.push_back(s0);
 		}
-		rsDesc.Init(params.size(), params.data(),samplers.size(),samplers.data());
+		rsDesc.Init((UINT)params.size(), params.data(), (UINT)samplers.size(),samplers.data());
 		rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 		ID3D10Blob* rsBlob;
@@ -217,18 +215,19 @@ namespace Graphics { namespace DX12 {
 		D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, &rsBlob, &rsErrorBlob);
 		mDevice->CreateRootSignature(0, rsBlob->GetBufferPointer(), rsBlob->GetBufferSize(), IID_PPV_ARGS(&mGraphicsRootSignature));
 
-		// Lets init a heap
-		D3D12_DESCRIPTOR_HEAP_DESC hDesc = {};
-		hDesc.NodeMask			= 0;
-		hDesc.NumDescriptors	= 1024;
-		hDesc.Type				= D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		hDesc.Flags				= D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		mFrameHeap = new ID3D12DescriptorHeap*[NUM_BACK_BUFFERS];
+		// Lets init the shader visible heap
+		mFrameHeap = new DX12Heap*[NUM_BACK_BUFFERS];
 		for (int i = 0; i < NUM_BACK_BUFFERS; i++)
 		{
-			mDevice->CreateDescriptorHeap(&hDesc, IID_PPV_ARGS(&mFrameHeap[i]));
+			mFrameHeap[i] = new DX12Heap;
+			mFrameHeap[i]->Initialize(mDevice, 1024, true, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 
+		// And some storage heaps
+		mRenderTargetHeap = new DX12Heap;
+		mRenderTargetHeap->Initialize(mDevice, 512, false, D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		mDepthStencilHeap = new DX12Heap;
+		mDepthStencilHeap->Initialize(mDevice, 512, false, D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	}
 
 	bool DX12GraphicsInterface::LoadShader(const ShaderDescription& desc, D3D12_SHADER_BYTECODE& outShader)
@@ -278,6 +277,8 @@ namespace Graphics { namespace DX12 {
 		case Format::RG_32_Float: return DXGI_FORMAT_R32G32_FLOAT;
 		case Format::RGB_32_Float: return DXGI_FORMAT_R32G32B32_FLOAT; 
 		case Format::RGBA_32_Float: return DXGI_FORMAT_R32G32B32A32_FLOAT;
+		case Format::Depth24_Stencil8: return DXGI_FORMAT_D24_UNORM_S8_UINT;
+		case Format::RGBA_8_Unorm: return DXGI_FORMAT_R8G8B8A8_UNORM;
 		case Format::Unknown:
 		default:
 			return DXGI_FORMAT_UNKNOWN;
@@ -333,10 +334,9 @@ namespace Graphics { namespace DX12 {
 		context->RSSetViewports(1, &vp);
 
 		// Bind frame heap
-		ID3D12DescriptorHeap* heaps[] = { mFrameHeap[idx] };
+		mFrameHeap[idx]->Reset();
+		ID3D12DescriptorHeap* heaps[] = { mFrameHeap[idx]->GetHeap() };
 		context->SetDescriptorHeaps(1, heaps);
-		mCPUCurHandle = heaps[0]->GetCPUDescriptorHandleForHeapStart();
-		mGPUCurHandle = heaps[0]->GetGPUDescriptorHandleForHeapStart();
 	}
 
 	void DX12GraphicsInterface::EndFrame()
@@ -409,7 +409,7 @@ namespace Graphics { namespace DX12 {
 			if (data)
 			{
 				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mBuffers[mCurBuffer], state, COPY_DST));
-				SetBufferData(handle, size, 0, data);
+				SetBufferData(handle, (int)size, 0, data);
 				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mBuffers[mCurBuffer], COPY_DST, state));
 			}
 			mCurBuffer++;
@@ -418,11 +418,31 @@ namespace Graphics { namespace DX12 {
 		return InvalidBuffer;
 	}
 
-	TextureHandle DX12GraphicsInterface::CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, void* data /*= nullptr*/)
+	TextureHandle DX12GraphicsInterface::CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags /* = TextureFlagNone*/, void* data /*= nullptr*/)
 	{
 		if ((width * height * layers * mips) == 0)
 		{
 			return InvalidTexture;
+		}
+		if (mTextures[mCurTexture])
+		{
+			std::cout << "Something weird is happenign! \n";
+		}
+		mTextures[mCurTexture] = new TextureEntry;
+		auto* curTexEntry = mTextures[mCurTexture];
+
+		D3D12_RESOURCE_FLAGS dxflags = D3D12_RESOURCE_FLAG_NONE;
+		if ((flags & UnorderedAccess) == UnorderedAccess)
+		{
+			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		}
+		if ((flags & RenderTarget) == RenderTarget)
+		{
+			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		}
+		if ((flags & DepthStencil) == DepthStencil)
+		{
+			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 		}
 		CD3DX12_RESOURCE_DESC texDesc;
 		texDesc = CD3DX12_RESOURCE_DESC::Tex2D
@@ -433,17 +453,17 @@ namespace Graphics { namespace DX12 {
 			layers,
 			mips,
 			1,0,
-			D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS		// We probably don´t want to do this by default
+			dxflags
 		);
 		CD3DX12_HEAP_PROPERTIES heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		auto& state = mTexturesStates[mCurTexture];
+		auto& state = curTexEntry->State;
 		state = TEXTURE_READ;
 		mDevice->CreateCommittedResource
 		(
 			&heapP,D3D12_HEAP_FLAG_NONE,
 			&texDesc,state,
 			nullptr,
-			IID_PPV_ARGS(&mTextures[mCurTexture])
+			IID_PPV_ARGS(&curTexEntry->Resource)
 		);
 
 		// Upload buffer
@@ -456,7 +476,7 @@ namespace Graphics { namespace DX12 {
 			&heapP, D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(totalSize), D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
-			IID_PPV_ARGS(&mIntermediateTexture[mCurTexture])
+			IID_PPV_ARGS(&curTexEntry->UploadHeap)
 		);
 		if (data)
 		{
@@ -464,10 +484,24 @@ namespace Graphics { namespace DX12 {
 			sdat.pData		= data;
 			sdat.RowPitch	= rowSize;
 			sdat.SlicePitch	= rowSize * height;
-			mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(mTextures[mCurTexture], state, COPY_DST));
-			UpdateSubresources(mDefaultSurface.CmdContext, mTextures[mCurTexture], mIntermediateTexture[mCurTexture], 0, 0, 1, &sdat);
-			mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(mTextures[mCurTexture], COPY_DST,state));
+			mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, state, COPY_DST));
+			UpdateSubresources(mDefaultSurface.CmdContext, curTexEntry->Resource, curTexEntry->UploadHeap, 0, 0, 1, &sdat);
+			mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, COPY_DST,state));
 		}
+
+		if ((flags & RenderTarget) == RenderTarget)
+		{
+			mDevice->CreateRenderTargetView(curTexEntry->Resource, nullptr, mRenderTargetHeap->GetCPU());
+			curTexEntry->RenderTarget = mRenderTargetHeap->GetCPU();
+			mRenderTargetHeap->OffsetHandles(1);
+		}
+		if ((flags & DepthStencil) == DepthStencil)
+		{
+			mDevice->CreateDepthStencilView(curTexEntry->Resource, nullptr, mDepthStencilHeap->GetCPU());
+			curTexEntry->DepthStencil = mDepthStencilHeap->GetCPU();
+			mDepthStencilHeap->OffsetHandles(1);
+		}
+
 		TextureHandle handle = { mCurTexture };
 		mCurTexture++;
 		return handle;
@@ -593,10 +627,10 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::Draw(uint32_t numvtx, uint32_t vtxOffset)
 	{
-		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mGPUCurHandle);
+		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
+		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
 		// Offset it for nex draw call
-		mGPUCurHandle.Offset(1);
-		mCPUCurHandle.Offset(1);
+		mFrameHeap[idx]->OffsetHandles(1);
 
 		mDefaultSurface.CmdContext->DrawInstanced(numvtx, 1, vtxOffset, 0);
 	}
@@ -616,10 +650,10 @@ namespace Graphics { namespace DX12 {
 	void DX12GraphicsInterface::SetScissor(float x, float y, float w, float h)
 	{
 		D3D12_RECT s;
-		s.left	= x;
-		s.top	= y;
-		s.right = w;
-		s.bottom= h;
+		s.left	= (LONG)x;
+		s.top	= (LONG)y;
+		s.right = (LONG)w;
+		s.bottom= (LONG)h;
 		mDefaultSurface.CmdContext->RSSetScissorRects(1, &s);
 	}
 
@@ -640,12 +674,45 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetTexture(const TextureHandle& texture, uint8_t slot)
 	{
-		const auto res = mTextures[texture.Handle];
+		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
+		const auto res = mTextures[texture.Handle]->Resource;
 		if (texture.Handle != InvalidTexture.Handle && res != nullptr)
 		{
-			auto slotHandle = mCPUCurHandle;
+			auto slotHandle = mFrameHeap[idx]->GetCPU();
 			slotHandle.Offset(slot);
 			mDevice->CreateShaderResourceView(res, nullptr, slotHandle);
 		}
+	}
+
+	void DX12GraphicsInterface::SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth)
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE colHandles[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
+		for (int i = 0; i < num; i++)
+		{
+			const auto curTex = mTextures[colorTargets[i].Handle];
+			if (curTex->State != D3D12_RESOURCE_STATE_RENDER_TARGET)
+			{
+				mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTex->Resource, curTex->State, D3D12_RESOURCE_STATE_RENDER_TARGET));
+				curTex->State = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			}
+			colHandles[i] = curTex->RenderTarget;
+		}
+		D3D12_CPU_DESCRIPTOR_HANDLE* depthHandle = nullptr;
+		if (depth)
+		{
+			const auto curTex = mTextures[depth->Handle];
+			if (curTex->State != D3D12_RESOURCE_STATE_DEPTH_WRITE)
+			{
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTex->Resource, curTex->State, D3D12_RESOURCE_STATE_DEPTH_WRITE));
+				curTex->State = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+			}
+			depthHandle = &curTex->DepthStencil;
+		}
+		mDefaultSurface.CmdContext->OMSetRenderTargets(num, colHandles, false, depthHandle);
+	}
+
+	void DX12GraphicsInterface::ClearTargets(uint8_t num, TextureHandle* colorTargets, float clear[4], TextureHandle* depth, float d, uint16_t stencil)
+	{
+
 	}
 }}

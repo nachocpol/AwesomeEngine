@@ -2,6 +2,7 @@
 
 #include "Graphics/GraphicsInterface.h"
 #include "DX12Common.h"
+#include "DX12Heap.h"
 
 namespace Graphics
 {
@@ -38,6 +39,15 @@ namespace Graphics{ namespace DX12
 
 		bool Recording;
 	};
+
+	struct TextureEntry
+	{
+		ID3D12Resource* Resource;
+		ID3D12Resource* UploadHeap;
+		D3D12_RESOURCE_STATES State;
+		D3D12_CPU_DESCRIPTOR_HANDLE RenderTarget;
+		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencil;
+	};
 	
 	class DX12GraphicsInterface : public GraphicsInterface
 	{
@@ -49,7 +59,7 @@ namespace Graphics{ namespace DX12
 		void EndFrame()final override;
 		void FlushAndWait()final override;
 		BufferHandle CreateBuffer(BufferType type, CPUAccess cpuAccess, uint64_t size, void* data = nullptr)final override;
-		TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, void* data = nullptr)final override;
+		TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
 		GraphicsPipeline CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)final override;
 		ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc)final override;
 		void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)final override;
@@ -61,6 +71,8 @@ namespace Graphics{ namespace DX12
 		void SetScissor(float x, float y, float w, float h)final override;
 		void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data)final override;
 		void SetTexture(const TextureHandle& texture, uint8_t slot)final override;
+		void SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth) final override;
+		void ClearTargets(uint8_t num, TextureHandle* colorTargets, float clear[4], TextureHandle* depth, float d, uint16_t stencil)final override;
 
 	private:
 		void InitSurface(DisplaySurface* surface);
@@ -79,10 +91,8 @@ namespace Graphics{ namespace DX12
 		D3D12_RESOURCE_STATES mBuffersStates[MAX_BUFFERS];
 		uint64_t mCurBuffer;
 
-		// Texture pools
-		ID3D12Resource* mTextures[MAX_TEXTURES];
-		ID3D12Resource* mIntermediateTexture[MAX_TEXTURES];
-		D3D12_RESOURCE_STATES mTexturesStates[MAX_TEXTURES];
+		// Texture pool
+		TextureEntry* mTextures[MAX_TEXTURES];
 		uint64_t mCurTexture;
 
 		// PSO pools
@@ -90,9 +100,11 @@ namespace Graphics{ namespace DX12
 		uint64_t mCurGraphicsPipeline;
 
 		// Heaps
-		ID3D12DescriptorHeap** mFrameHeap;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE mCPUCurHandle;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE mGPUCurHandle;
+		DX12Heap** mFrameHeap;
+
+		// Storage heaps
+		DX12Heap* mRenderTargetHeap;
+		DX12Heap* mDepthStencilHeap;
 
 		ID3D12RootSignature* mGraphicsRootSignature;
 	};

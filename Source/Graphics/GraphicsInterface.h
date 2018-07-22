@@ -35,13 +35,23 @@ namespace Graphics
 		Unknown = 0,
 		RG_32_Float = 1,
 		RGB_32_Float = 2,
-		RGBA_32_Float = 3
+		RGBA_32_Float = 3,
+		Depth24_Stencil8 = 4,
+		RGBA_8_Unorm = 5
 	};
 	enum Topology
 	{
 		InvalidTopology = 0,
 		TriangleList = 1
 	};
+	typedef enum TextureFlags
+	{
+		TextureFlagNone = 0,
+		RenderTarget = 1,
+		DepthStencil = 2,
+		UnorderedAccess = 3
+	};
+
 
 	struct BufferHandle
 	{
@@ -103,7 +113,7 @@ namespace Graphics
 		virtual void EndFrame() = 0;
 		virtual void FlushAndWait() = 0;
 		virtual BufferHandle CreateBuffer(BufferType type, CPUAccess cpuAccess, uint64_t size,void* data = nullptr) = 0;
-		virtual TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips,uint32_t layers,Format format,void* data = nullptr) = 0;
+		virtual TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips,uint32_t layers,Format format,TextureFlags flags = TextureFlagNone, void* data = nullptr) = 0;
 		virtual GraphicsPipeline CreateGraphicsPipeline(const GraphicsPipelineDescription& desc) = 0;
 		virtual ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc) = 0;
 		virtual void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data) = 0;
@@ -115,5 +125,7 @@ namespace Graphics
 		virtual void SetScissor(float x, float y, float w, float h) = 0;
 		virtual void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data) = 0;
 		virtual void SetTexture(const TextureHandle& texture, uint8_t slot) = 0;
+		virtual void SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth) = 0;
+		virtual void ClearTargets(uint8_t num, TextureHandle* colorTargets,float clear[4], TextureHandle* depth,float d,uint16_t stencil) = 0;
 	};
 }

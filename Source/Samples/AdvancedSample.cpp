@@ -26,8 +26,12 @@ Graphics::BufferHandle drawDataBuffer;
 Graphics::BufferHandle otherDataBuffer;
 Graphics::TextureHandle proceduralTex;
 
+Graphics::TextureHandle mainTarget;
+Graphics::TextureHandle mainDepth;
+
 bool InitGraphics(Graphics::Platform::BaseWindow* window);
 void InitResources();
+void Resize(int widht, int height);
 
 int main()
 {
@@ -38,11 +42,12 @@ int main()
 	window->Initialize("Awesome Advanced", false, 1280, 920);
 	
 	InitGraphics(window);
-	gImporter = new Graphics::AssetImporter(gGraphicsInterface);
-	gImporter->Load("mitsuba\\mitsuba.obj");
+	//gImporter = new Graphics::AssetImporter(gGraphicsInterface);
+	//gImporter->Load("mitsuba\\mitsuba.obj");
 	InitResources();
 	
-	
+	Resize(1280, 920);
+
 	gGraphicsInterface->FlushAndWait();
 
 	bool running = true;
@@ -55,15 +60,18 @@ int main()
 
 		gGraphicsInterface->StartFrame();
 		gGraphicsInterface->SetScissor(0.0f, 0.0f, window->GetWidth(), window->GetHeight());
-		gGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
-		gGraphicsInterface->SetGraphicsPipeline(pipeline);
-		gGraphicsInterface->SetTexture(proceduralTex, 0);
-		DrawData.Time = t * 3.0f;
-		gGraphicsInterface->SetConstantBuffer(drawDataBuffer, 0, sizeof(DrawData), &DrawData);
-		OtherData.x = sin(t * 0.12f) * 0.5f;
-		gGraphicsInterface->SetConstantBuffer(otherDataBuffer, 1, sizeof(OtherData), &OtherData);
-		gGraphicsInterface->SetVertexBuffer(vertexBuffer, sizeof(Vertex) * 6, sizeof(Vertex));
-		gGraphicsInterface->Draw(6, 0);
+		gGraphicsInterface->SetTargets(1, &mainTarget, &mainDepth);
+		{
+			gGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
+			gGraphicsInterface->SetGraphicsPipeline(pipeline);
+			gGraphicsInterface->SetTexture(proceduralTex, 0);
+			DrawData.Time = t * 3.0f;
+			gGraphicsInterface->SetConstantBuffer(drawDataBuffer, 0, sizeof(DrawData), &DrawData);
+			OtherData.x = sin(t * 0.12f) * 0.5f;
+			gGraphicsInterface->SetConstantBuffer(otherDataBuffer, 1, sizeof(OtherData), &OtherData);
+			gGraphicsInterface->SetVertexBuffer(vertexBuffer, sizeof(Vertex) * 6, sizeof(Vertex));
+			gGraphicsInterface->Draw(6, 0);
+		}
 		gGraphicsInterface->EndFrame();
 
 		running = !window->IsClosed();
@@ -149,7 +157,16 @@ void InitResources()
 				texels[y * w + x] = t;
 			}
 		}
-		proceduralTex = gGraphicsInterface->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_32_Float, texels);
+		proceduralTex = gGraphicsInterface->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_32_Float,Graphics::TextureFlagNone, texels);
 	}
+}
+
+void Resize(int width, int height)
+{
+	auto colFlags = Graphics::TextureFlags::RenderTarget;
+	mainTarget = gGraphicsInterface->CreateTexture2D(width, height, 1, 1, Graphics::Format::RGBA_8_Unorm, colFlags);
+
+	auto depthFlags = Graphics::TextureFlags::DepthStencil;
+	mainDepth = gGraphicsInterface->CreateTexture2D(width, height, 1, 1, Graphics::Format::Depth24_Stencil8, depthFlags);
 }
 
