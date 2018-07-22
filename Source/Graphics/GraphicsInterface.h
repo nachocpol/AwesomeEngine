@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <iostream>
 
+#include "glm/glm.hpp"
+
 namespace Graphics
 {
 	namespace Platform

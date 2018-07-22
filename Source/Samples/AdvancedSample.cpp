@@ -39,7 +39,7 @@ int main()
 	
 	InitGraphics(window);
 	gImporter = new Graphics::AssetImporter(gGraphicsInterface);
-	gImporter->Load("vintage_radio\\scene.gltf");
+	gImporter->Load("mitsuba\\mitsuba.obj");
 	InitResources();
 	
 	

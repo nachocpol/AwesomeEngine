@@ -19,7 +19,9 @@ project "Graphics"
 		{
 			"Source",
 			"Depen/DX12",
-			"Depen/JSON"
+			"Depen/JSON",
+			"Depen/TinyObj",
+			"Depen/GLM"
 		}	
 		libdirs
 		{
@@ -33,7 +35,9 @@ project "Graphics"
 		{
 			"Source",
 			"Depen/DX12",
-			"Depen/JSON"
+			"Depen/JSON",
+			"Depen/TinyObj",
+			"Depen/GLM"
 		}
 		libdirs
 		{
@@ -57,7 +61,8 @@ project "AwesomeTriangle"
 		includedirs 
 		{
 			"Source",
-			"Depen/DX12"
+			"Depen/DX12",
+			"Depen/GLM"
 		}	
 		libdirs
 		{
@@ -71,7 +76,8 @@ project "AwesomeTriangle"
 		includedirs 
 		{
 			"Source",
-			"Depen/DX12"
+			"Depen/DX12",
+			"Depen/GLM"
 		}
 		libdirs
 		{
@@ -96,7 +102,8 @@ project "AwesomeAdvanced"
 		includedirs 
 		{
 			"Source",
-			"Depen/DX12"
+			"Depen/DX12",
+			"Depen/GLM"
 		}	
 		libdirs
 		{
@@ -110,7 +117,8 @@ project "AwesomeAdvanced"
 		includedirs 
 		{
 			"Source",
-			"Depen/DX12"
+			"Depen/DX12",
+			"Depen/GLM"
 		}
 		libdirs
 		{
