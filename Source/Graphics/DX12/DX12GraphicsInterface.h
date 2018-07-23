@@ -42,11 +42,29 @@ namespace Graphics{ namespace DX12
 
 	struct TextureEntry
 	{
+		TextureEntry() :
+			Resource(nullptr),
+			UploadHeap(nullptr),
+			State(D3D12_RESOURCE_STATE_VIDEO_DECODE_READ)
+		{
+		}
 		ID3D12Resource* Resource;
 		ID3D12Resource* UploadHeap;
 		D3D12_RESOURCE_STATES State;
 		D3D12_CPU_DESCRIPTOR_HANDLE RenderTarget;
 		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencil;
+	};
+
+	struct BufferEntry
+	{
+		BufferEntry() :
+			Buffer(nullptr),
+			UploadHeap(nullptr)
+		{
+		}
+		ID3D12Resource* Buffer;
+		ID3D12Resource* UploadHeap;
+		D3D12_RESOURCE_STATES State;
 	};
 	
 	class DX12GraphicsInterface : public GraphicsInterface
@@ -73,6 +91,7 @@ namespace Graphics{ namespace DX12
 		void SetTexture(const TextureHandle& texture, uint8_t slot)final override;
 		void SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth) final override;
 		void ClearTargets(uint8_t num, TextureHandle* colorTargets, float clear[4], TextureHandle* depth, float d, uint16_t stencil)final override;
+		void DisableAllTargets()final override;
 
 	private:
 		void InitSurface(DisplaySurface* surface);
@@ -80,15 +99,14 @@ namespace Graphics{ namespace DX12
 		bool LoadShader(const ShaderDescription& desc, D3D12_SHADER_BYTECODE& outShader);
 		static DXGI_FORMAT ToDXGIFormat(const Graphics::Format& format);
 		static D3D12_PRIMITIVE_TOPOLOGY ToDXGITopology(const Graphics::Topology& topology);
+		static D3D12_COMPARISON_FUNC ToDX12DepthFunc(const DepthFunc& func);
 
 		DisplaySurface mDefaultSurface;
 		ID3D12Device* mDevice;
 		DXGI_FORMAT mOutputFormat;
 
 		// Buffer pools
-		ID3D12Resource* mBuffers[MAX_BUFFERS];
-		ID3D12Resource* mIntermediateBuffers[MAX_BUFFERS];
-		D3D12_RESOURCE_STATES mBuffersStates[MAX_BUFFERS];
+		BufferEntry* mBuffers[MAX_BUFFERS];
 		uint64_t mCurBuffer;
 
 		// Texture pool

@@ -1,30 +1,36 @@
+#define NOMINMAX
 #include "Graphics/DX12/DX12GraphicsInterface.h"
 #include "Graphics/Platform/Windows/WWindow.h"
 #include "Graphics/AssetImporter.h"
 #include <stdio.h>
+#include "glm/ext.hpp"
 
 Graphics::GraphicsInterface* gGraphicsInterface = nullptr;
 Graphics::AssetImporter* gImporter = nullptr;
 
-struct Vertex
+struct VertexCube
 {
 	float x, y, z;
-	float r, g, b;
-	float u, v;
 };
-struct DrawData
+
+struct VertexScreen
 {
-	float Time;
-}DrawData;
-struct OtherData
+	float x, y, z;
+};
+
+struct AppData
 {
-	float x,y,z;
-}OtherData;
+	glm::mat4 Model;
+	glm::mat4 View;
+	glm::mat4 Projection;
+}AppData;
+
 Graphics::BufferHandle vertexBuffer;
 Graphics::GraphicsPipeline pipeline;
-Graphics::BufferHandle drawDataBuffer;
-Graphics::BufferHandle otherDataBuffer;
+Graphics::GraphicsPipeline fullScreenPipeline;
+Graphics::BufferHandle appDataBuffer;
 Graphics::TextureHandle proceduralTex;
+Graphics::BufferHandle fullScreenBuffer;
 
 Graphics::TextureHandle mainTarget;
 Graphics::TextureHandle mainDepth;
@@ -60,18 +66,42 @@ int main()
 
 		gGraphicsInterface->StartFrame();
 		gGraphicsInterface->SetScissor(0.0f, 0.0f, window->GetWidth(), window->GetHeight());
+
+		// Render to screen buffer
 		gGraphicsInterface->SetTargets(1, &mainTarget, &mainDepth);
+		float clear[4] = { 0.0f,0.0f,0.0f,1.0f };
+		gGraphicsInterface->ClearTargets(1, &mainTarget, clear, &mainDepth, 1.0f, 0);
 		{
 			gGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
 			gGraphicsInterface->SetGraphicsPipeline(pipeline);
-			gGraphicsInterface->SetTexture(proceduralTex, 0);
-			DrawData.Time = t * 3.0f;
-			gGraphicsInterface->SetConstantBuffer(drawDataBuffer, 0, sizeof(DrawData), &DrawData);
-			OtherData.x = sin(t * 0.12f) * 0.5f;
-			gGraphicsInterface->SetConstantBuffer(otherDataBuffer, 1, sizeof(OtherData), &OtherData);
-			gGraphicsInterface->SetVertexBuffer(vertexBuffer, sizeof(Vertex) * 6, sizeof(Vertex));
-			gGraphicsInterface->Draw(6, 0);
+			{
+				AppData.View = glm::lookAtRH(glm::vec3(0.0f, 3.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+				AppData.Projection = glm::perspective(glm::radians(75.0f), 1280.0f / 920.0f, 0.0f, 100.0f);
+
+				AppData.Model = glm::mat4(1.0f);
+				AppData.Model = glm::translate(AppData.Model, glm::vec3(0.0f, 0.0f, 0.0f));
+				//AppData.Model = glm::rotate(AppData.Model, 0.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+				//AppData.Model = glm::rotate(AppData.Model, t * 0.2f, glm::vec3(0.0f, 1.0f, 0.0f));
+				//AppData.Model = glm::rotate(AppData.Model, t * 0.2f, glm::vec3(0.0f, 0.0f, 1.0f));
+				AppData.Model = glm::scale(AppData.Model, glm::vec3(1.0f, 1.0f, 1.0f));
+			}
+			gGraphicsInterface->SetConstantBuffer(appDataBuffer, 0, sizeof(AppData), &AppData);
+			gGraphicsInterface->SetVertexBuffer(vertexBuffer, sizeof(VertexCube) * 36, sizeof(VertexCube));
+			gGraphicsInterface->Draw(36, 0);
+			{
+				AppData.Model = glm::mat4(1.0f);
+				AppData.Model = glm::translate(AppData.Model, glm::vec3(1.5f, 0.0f, -1.0f));
+			}
+			gGraphicsInterface->SetConstantBuffer(appDataBuffer, 0, sizeof(AppData), &AppData);
+			gGraphicsInterface->Draw(36, 0);
 		}
+		gGraphicsInterface->DisableAllTargets();
+
+		// Output to the screen
+		gGraphicsInterface->SetGraphicsPipeline(fullScreenPipeline);
+		gGraphicsInterface->SetVertexBuffer(fullScreenBuffer, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
+		gGraphicsInterface->SetTexture(mainTarget, 0);
+		gGraphicsInterface->Draw(6, 0);
 		gGraphicsInterface->EndFrame();
 
 		running = !window->IsClosed();
@@ -88,50 +118,94 @@ bool InitGraphics(Graphics::Platform::BaseWindow* window)
 
 void InitResources()
 {
-	Vertex arr[6] =
+	VertexCube arr[36] =
 	{
-		-0.5f, 0.5f,0.0f, 0.0f,0.0f,0.0f, 0.0f,0.0f,
-		 0.5f, 0.5f,0.0f, 0.0f,0.0f,0.0f, 1.0f,0.0f,
-		 0.5f,-0.5f,0.0f, 0.0f,0.0f,0.0f, 1.0f,1.0f,
+		-1.0f, 1.0f, 1.0f,  1.0f, 1.0f, 1.0f,  1.0f,-1.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f,  1.0f,-1.0f, 1.0f, -1.0f,-1.0f, 1.0f,
 
-		-0.5f, 0.5f,0.0f, 0.0f,0.0f,0.0f, 0.0f,0.0f,
-		 0.5f,-0.5f,0.0f, 0.0f,0.0f,0.0f, 1.0f,1.0f,
-		-0.5f,-0.5f,0.0f, 0.0f,0.0f,0.0f, 0.0f,1.0f,
+		-1.0f, 1.0f, 1.0f, -1.0f, 1.0f,-1.0f, 1.0f, 1.0f, -1.0f,
+		-1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f,  1.0f,
+
+		-1.0f,-1.0f,1.0f, 1.0f,-1.0f,1.0f, -1.0f,-1.0f,-1.0f,
+		1.0f,-1.0f,1.0f,  1.0f,-1.0f,-1.0f,  -1.0f,-1.0f,-1.0f,
+
+		1.0f, 1.0f,-1.0f, -1.0f, 1.0f,-1.0f, -1.0f,-1.0f,-1.0f,
+		1.0f, 1.0f,-1.0f, 1.0f,-1.0f, -1.0f, -1.0f,-1.0f,-1.0f,
+
+		1.0f, 1.0f, 1.0f, 1.0f, 1.0f,-1.0f, 1.0f,-1.0f,-1.0f,
+		1.0f, 1.0f, 1.0f, 1.0f,-1.0f,-1.0f, 1.0f,-1.0f, 1.0f,
+
+		-1.0f, 1.0f,-1.0f, -1.0f, 1.0f,1.0f,-1.0f,-1.0f,1.0f,
+		-1.0f, 1.0f,-1.0f, -1.0f,-1.0f,1.0f, -1.0f,-1.0f,-1.0f
 	};
-	vertexBuffer = gGraphicsInterface->CreateBuffer(Graphics::VertexBuffer, Graphics::CPUAccess::None, sizeof(Vertex) * 6, &arr[0]);
+	vertexBuffer = gGraphicsInterface->CreateBuffer(Graphics::VertexBuffer, Graphics::CPUAccess::None, sizeof(arr), &arr[0]);
 	{
 		Graphics::GraphicsPipelineDescription pdesc = {};
-		pdesc.PixelShader.ShaderEntryPoint = "PSSimple";
-		pdesc.PixelShader.ShaderPath = "AdvancedSample.hlsl";
+		pdesc.PixelShader.ShaderEntryPoint = "PSFordwardSimple";
+		pdesc.PixelShader.ShaderPath = "Fordward.hlsl";
 		pdesc.PixelShader.Type = Graphics::Pixel;
 
-		pdesc.VertexShader.ShaderEntryPoint = "VSSimple";
-		pdesc.VertexShader.ShaderPath = "AdvancedSample.hlsl";
+		pdesc.VertexShader.ShaderEntryPoint = "VSFordwardSimple";
+		pdesc.VertexShader.ShaderPath = "Fordward.hlsl";
 		pdesc.VertexShader.Type = Graphics::Vertex;
 
-		Graphics::VertexInputDescription::VertexInputElement eles[3];
+		Graphics::VertexInputDescription::VertexInputElement eles[1];
 		eles[0].Semantic = "POSITION";
 		eles[0].Idx = 0;
 		eles[0].EleFormat = Graphics::Format::RGB_32_Float;
 		eles[0].Offset = 0;
 
-		eles[1].Semantic = "COLOR";
-		eles[1].Idx = 0;
-		eles[1].EleFormat = Graphics::Format::RGB_32_Float;
-		eles[1].Offset = sizeof(float) * 3;
-
-		eles[2].Semantic = "UV";
-		eles[2].Idx = 0;
-		eles[2].EleFormat = Graphics::Format::RG_32_Float;
-		eles[2].Offset = sizeof(float) * 3 * 2;
+		// eles[1].Semantic = "COLOR";
+		// eles[1].Idx = 0;
+		// eles[1].EleFormat = Graphics::Format::RGB_32_Float;
+		// eles[1].Offset = sizeof(float) * 3;
+		// 
+		// eles[2].Semantic = "UV";
+		// eles[2].Idx = 0;
+		// eles[2].EleFormat = Graphics::Format::RG_32_Float;
+		// eles[2].Offset = sizeof(float) * 3 * 2;
 
 		pdesc.VertexDescription.NumElements = sizeof(eles) / sizeof(Graphics::VertexInputDescription::VertexInputElement);
 		pdesc.VertexDescription.Elements = eles;
-
+		pdesc.DepthEnabled = true;
+		pdesc.DepthFunction = Graphics::LessEqual;
+		pdesc.DepthFormat = Graphics::Depth24_Stencil8;
 		pipeline = gGraphicsInterface->CreateGraphicsPipeline(pdesc);
 	}
-	drawDataBuffer = gGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(DrawData));
-	otherDataBuffer = gGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(OtherData));
+	{
+		Graphics::GraphicsPipelineDescription desc;
+		desc.DepthEnabled = false;
+		desc.DepthFunction = Graphics::Always;
+		desc.VertexShader.ShaderEntryPoint = "VSFullScreen";
+		desc.VertexShader.ShaderPath = "Common.hlsl";
+		desc.VertexShader.Type = Graphics::Vertex;
+		desc.PixelShader.ShaderEntryPoint = "PSFullScreen";
+		desc.PixelShader.ShaderPath = "Common.hlsl";
+		desc.PixelShader.Type = Graphics::Pixel;
+
+		Graphics::VertexInputDescription::VertexInputElement eles[1] =
+		{
+			"POSITION",0, Graphics::Format::RGB_32_Float,0
+		};
+		desc.VertexDescription.NumElements = 1;
+		desc.VertexDescription.Elements = eles;
+
+		fullScreenPipeline = gGraphicsInterface->CreateGraphicsPipeline(desc);
+
+		VertexScreen vtxData[6] =
+		{
+			-1.0f, 1.0f,0.0f,
+			 1.0f, 1.0f,0.0f,
+			 1.0f,-1.0f,0.0f,
+
+			-1.0f, 1.0f,0.0f,
+			 1.0f,-1.0f,0.0f,
+			-1.0f,-1.0f,0.0f,
+		};
+		fullScreenBuffer = gGraphicsInterface->CreateBuffer(Graphics::VertexBuffer, Graphics::None, sizeof(VertexScreen) * 6, &vtxData);
+	}
+	appDataBuffer = gGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AppData));
+
 	{
 		struct Texel
 		{

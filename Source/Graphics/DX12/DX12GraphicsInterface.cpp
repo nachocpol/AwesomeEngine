@@ -13,14 +13,10 @@ namespace Graphics { namespace DX12 {
 		mCurGraphicsPipeline(0),
 		mFrameHeap(nullptr)
 	{
-		{
-			memset(mBuffers, 0, sizeof(ID3D12Resource*) * MAX_BUFFERS);
-			memset(mIntermediateBuffers, 0, sizeof(ID3D12Resource*) * MAX_BUFFERS);
-			memset(mBuffersStates, -1, sizeof(D3D12_RESOURCE_STATES) * MAX_BUFFERS);
-		}
-		{
-			memset(mTextures, 0, sizeof(TextureEntry*) * MAX_TEXTURES);
-		}
+		memset(mBuffers, 0, sizeof(BufferEntry*) * MAX_BUFFERS);
+
+		memset(mTextures, 0, sizeof(TextureEntry*) * MAX_TEXTURES);
+
 		memset(mGraphicsPipelines, 0, sizeof(ID3D12PipelineState*) * MAX_GRAPHICS_PIPELINES);
 	}
 	
@@ -274,14 +270,13 @@ namespace Graphics { namespace DX12 {
 	{
 		switch (format)
 		{
-		case Format::RG_32_Float: return DXGI_FORMAT_R32G32_FLOAT;
-		case Format::RGB_32_Float: return DXGI_FORMAT_R32G32B32_FLOAT; 
-		case Format::RGBA_32_Float: return DXGI_FORMAT_R32G32B32A32_FLOAT;
-		case Format::Depth24_Stencil8: return DXGI_FORMAT_D24_UNORM_S8_UINT;
-		case Format::RGBA_8_Unorm: return DXGI_FORMAT_R8G8B8A8_UNORM;
+		case Format::RG_32_Float:		return DXGI_FORMAT_R32G32_FLOAT;
+		case Format::RGB_32_Float:		return DXGI_FORMAT_R32G32B32_FLOAT; 
+		case Format::RGBA_32_Float:		return DXGI_FORMAT_R32G32B32A32_FLOAT;
+		case Format::Depth24_Stencil8:	return DXGI_FORMAT_D24_UNORM_S8_UINT;
+		case Format::RGBA_8_Unorm:		return DXGI_FORMAT_R8G8B8A8_UNORM;
 		case Format::Unknown:
-		default:
-			return DXGI_FORMAT_UNKNOWN;
+		default:						return DXGI_FORMAT_UNKNOWN;
 		}
 	}
 
@@ -291,8 +286,20 @@ namespace Graphics { namespace DX12 {
 		{
 		case Topology::TriangleList: return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		case Topology::InvalidTopology:
-		default:
-			return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
+		default: return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
+		}
+	}
+
+	D3D12_COMPARISON_FUNC DX12GraphicsInterface::ToDX12DepthFunc(const DepthFunc & func)
+	{
+		switch (func)
+		{
+		case DepthFunc::Always:		return D3D12_COMPARISON_FUNC_ALWAYS;
+		case DepthFunc::Equal:		return D3D12_COMPARISON_FUNC_EQUAL;
+		case DepthFunc::GreatEqual: return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+		case DepthFunc::LessEqual:	return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+		case DepthFunc::Never:		return D3D12_COMPARISON_FUNC_NEVER;
+		default:					return D3D12_COMPARISON_FUNC_ALWAYS;
 		}
 	}
 
@@ -389,6 +396,9 @@ namespace Graphics { namespace DX12 {
 	{
 		if (type == Graphics::VertexBuffer || type == Graphics::ConstantBuffer)
 		{
+			mBuffers[mCurBuffer] = new BufferEntry;
+			auto bufferEntry = mBuffers[mCurBuffer];
+
 			D3D12_HEAP_PROPERTIES heapDesc = {};
 			auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 			auto desc = CD3DX12_RESOURCE_DESC::Buffer(size);
@@ -399,18 +409,13 @@ namespace Graphics { namespace DX12 {
 				&desc, 
 				VERTEX_CB_READ,
 				nullptr, 
-				IID_PPV_ARGS(&mBuffers[mCurBuffer])
+				IID_PPV_ARGS(&bufferEntry->Buffer)
 			);
 			BufferHandle handle = { mCurBuffer };
-
-			D3D12_RESOURCE_STATES& state = mBuffersStates[handle.Handle];
-			state = VERTEX_CB_READ;
-
+			bufferEntry->State = VERTEX_CB_READ;
 			if (data)
 			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mBuffers[mCurBuffer], state, COPY_DST));
 				SetBufferData(handle, (int)size, 0, data);
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mBuffers[mCurBuffer], COPY_DST, state));
 			}
 			mCurBuffer++;
 			return handle;
@@ -534,9 +539,12 @@ namespace Graphics { namespace DX12 {
 		psoDesc.BlendState				= CD3DX12_BLEND_DESC::CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 		
-		psoDesc.DepthStencilState		= CD3DX12_DEPTH_STENCIL_DESC::CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-		psoDesc.DepthStencilState.DepthEnable = false;
-		psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+		{
+			psoDesc.DepthStencilState				= CD3DX12_DEPTH_STENCIL_DESC::CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+			psoDesc.DepthStencilState.DepthEnable	= desc.DepthEnabled;
+			psoDesc.DepthStencilState.DepthFunc		= ToDX12DepthFunc(desc.DepthFunction);
+			psoDesc.DSVFormat = ToDXGIFormat(desc.DepthFormat);
+		}
 
 		psoDesc.RasterizerState			= CD3DX12_RASTERIZER_DESC::CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
@@ -546,7 +554,7 @@ namespace Graphics { namespace DX12 {
 		psoDesc.pRootSignature			= mGraphicsRootSignature;
 		psoDesc.NumRenderTargets		= 1;
 		psoDesc.RTVFormats[0]			= mOutputFormat;
-		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE; //D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		psoDesc.SampleDesc.Count		= 1;
 		psoDesc.SampleDesc.Quality		= 0;
 		psoDesc.SampleMask				= 0xffffffff;
@@ -565,13 +573,13 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)
 	{
-		const auto dst = mBuffers[buffer.Handle];
-		auto dstDesc = dst->GetDesc();
-		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && dst != nullptr && size <= dstDesc.Width)
+		const auto bufferEntry = mBuffers[buffer.Handle];
+		auto dstDesc = bufferEntry->Buffer->GetDesc();
+		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && bufferEntry != nullptr && size <= dstDesc.Width)
 		{
 			// Make sure to have an intermediate buffer, if the DST buffers supports
 			// CPU read we can just map it! TO-DO!
-			if (!mIntermediateBuffers[buffer.Handle])
+			if (!bufferEntry->UploadHeap)
 			{
 				auto props = CD3DX12_HEAP_PROPERTIES::CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 				auto desc = CD3DX12_RESOURCE_DESC::Buffer(dstDesc.Width);
@@ -582,13 +590,24 @@ namespace Graphics { namespace DX12 {
 					&desc,
 					D3D12_RESOURCE_STATE_GENERIC_READ,
 					nullptr,
-					IID_PPV_ARGS(&mIntermediateBuffers[buffer.Handle])
+					IID_PPV_ARGS(&bufferEntry->UploadHeap)
 				);
 			}
 			D3D12_SUBRESOURCE_DATA sdata = {};
 			sdata.pData		= data;
 			sdata.RowPitch	= sdata.SlicePitch = size;
-			UpdateSubresources(mDefaultSurface.CmdContext, dst, mIntermediateBuffers[buffer.Handle], 0, 0, 1, &sdata);
+			auto& state = bufferEntry->State;
+			bool changed = false;
+			if (state != (COPY_DST))
+			{
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry->Buffer, state, COPY_DST));
+				changed = true;
+			}
+			UpdateSubresources(mDefaultSurface.CmdContext, bufferEntry->Buffer, bufferEntry->UploadHeap, 0, 0, 1, &sdata);
+			if (changed)
+			{
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry->Buffer, COPY_DST, state));
+			}
 		}
 		else
 		{
@@ -598,11 +617,11 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetVertexBuffer(const BufferHandle& buffer,int size, int eleSize)
 	{
-		const auto res = mBuffers[buffer.Handle];
-		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && res != nullptr)
+		const auto buffeEntry = mBuffers[buffer.Handle];
+		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && buffeEntry != nullptr)
 		{
 			D3D12_VERTEX_BUFFER_VIEW view	= {};
-			view.BufferLocation				= res->GetGPUVirtualAddress();
+			view.BufferLocation				= buffeEntry->Buffer->GetGPUVirtualAddress();
 			view.SizeInBytes				= size;
 			view.StrideInBytes				= eleSize;
 			mDefaultSurface.CmdContext->IASetVertexBuffers(0, 1, &view);
@@ -611,7 +630,6 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetTopology(const Topology& topology)
 	{
-		//mDefaultSurface.CmdContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
 		mDefaultSurface.CmdContext->IASetPrimitiveTopology(ToDXGITopology(topology));
 	}
 
@@ -659,16 +677,14 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data)
 	{
-		const auto res = mBuffers[buffer.Handle];
-		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && res != nullptr)
+		const auto bufferEntry = mBuffers[buffer.Handle];
+		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && bufferEntry != nullptr)
 		{
 			if (data)
 			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, mBuffersStates[buffer.Handle], COPY_DST));
 				SetBufferData(buffer, size, 0, data);
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, COPY_DST, mBuffersStates[buffer.Handle]));
 			}
-			mDefaultSurface.CmdContext->SetGraphicsRootConstantBufferView(slot, res->GetGPUVirtualAddress());
+			mDefaultSurface.CmdContext->SetGraphicsRootConstantBufferView(slot, bufferEntry->Buffer->GetGPUVirtualAddress());
 		}
 	}
 
@@ -678,6 +694,11 @@ namespace Graphics { namespace DX12 {
 		const auto res = mTextures[texture.Handle]->Resource;
 		if (texture.Handle != InvalidTexture.Handle && res != nullptr)
 		{
+			if (mTextures[texture.Handle]->State != (TEXTURE_READ))
+			{
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, mTextures[texture.Handle]->State, TEXTURE_READ));
+			}
+			mTextures[texture.Handle]->State = TEXTURE_READ;
 			auto slotHandle = mFrameHeap[idx]->GetCPU();
 			slotHandle.Offset(slot);
 			mDevice->CreateShaderResourceView(res, nullptr, slotHandle);
@@ -713,6 +734,22 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::ClearTargets(uint8_t num, TextureHandle* colorTargets, float clear[4], TextureHandle* depth, float d, uint16_t stencil)
 	{
+		for (int i = 0; i < num; i++)
+		{
+			const auto texEntry = mTextures[colorTargets[i].Handle];
+			mDefaultSurface.CmdContext->ClearRenderTargetView(texEntry->RenderTarget, clear, 0, nullptr);
+		}
+		if (depth)
+		{
+			const auto texEntry = mTextures[depth->Handle];
+			D3D12_CLEAR_FLAGS flags = D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL;
+			mDefaultSurface.CmdContext->ClearDepthStencilView(texEntry->DepthStencil, flags, d, stencil, 0, nullptr);
+		}
+	}
 
+	void DX12GraphicsInterface::DisableAllTargets()
+	{
+		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
+		mDefaultSurface.CmdContext->OMSetRenderTargets(1, &mDefaultSurface.RenderTargets[idx], false, nullptr);
 	}
 }}

@@ -51,7 +51,14 @@ namespace Graphics
 		DepthStencil = 2,
 		UnorderedAccess = 3
 	};
-
+	enum DepthFunc
+	{
+		Always = 0,
+		Never = 1,
+		Equal = 2,
+		LessEqual = 3,
+		GreatEqual = 4
+	};
 
 	struct BufferHandle
 	{
@@ -92,6 +99,9 @@ namespace Graphics
 		ShaderDescription VertexShader;
 		ShaderDescription PixelShader;
 		VertexInputDescription VertexDescription;
+		bool DepthEnabled;
+		DepthFunc DepthFunction;
+		Format DepthFormat;
 	};
 	struct ComputePipelineDescription
 	{
@@ -127,5 +137,6 @@ namespace Graphics
 		virtual void SetTexture(const TextureHandle& texture, uint8_t slot) = 0;
 		virtual void SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth) = 0;
 		virtual void ClearTargets(uint8_t num, TextureHandle* colorTargets,float clear[4], TextureHandle* depth,float d,uint16_t stencil) = 0;
+		virtual void DisableAllTargets() = 0;
 	};
 }
