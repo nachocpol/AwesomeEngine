@@ -59,12 +59,18 @@ namespace Graphics{ namespace DX12
 	{
 		BufferEntry() :
 			Buffer(nullptr),
-			UploadHeap(nullptr)
+			UploadHeap(nullptr),
+			LastFrame(0),
+			CopyCount(0)
 		{
 		}
 		ID3D12Resource* Buffer;
 		ID3D12Resource* UploadHeap;
 		D3D12_RESOURCE_STATES State;
+		BufferType Type;
+		// CB stuff
+		uint64_t LastFrame;
+		uint64_t CopyCount;
 	};
 	
 	class DX12GraphicsInterface : public GraphicsInterface
@@ -125,6 +131,9 @@ namespace Graphics{ namespace DX12
 		DX12Heap* mDepthStencilHeap;
 
 		ID3D12RootSignature* mGraphicsRootSignature;
+
+		uint64_t mFrame;
+		uint64_t mCurBackBuffer;
 	};
 
 }}

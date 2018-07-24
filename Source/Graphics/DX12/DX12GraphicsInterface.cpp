@@ -11,7 +11,9 @@ namespace Graphics { namespace DX12 {
 		mCurTexture(0),
 		mGraphicsRootSignature(nullptr),
 		mCurGraphicsPipeline(0),
-		mFrameHeap(nullptr)
+		mFrameHeap(nullptr),
+		mFrame(0),
+		mCurBackBuffer(0)
 	{
 		memset(mBuffers, 0, sizeof(BufferEntry*) * MAX_BUFFERS);
 
@@ -310,6 +312,7 @@ namespace Graphics { namespace DX12 {
 			std::cout << "We are recording commands!!!\n";
 		}
 
+		mCurBackBuffer = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 
 		// Lets start by making sure it is safe to write to the current buffer
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
@@ -366,6 +369,8 @@ namespace Graphics { namespace DX12 {
 		mDefaultSurface.SwapChain->Present(1, 0);
 		mDefaultSurface.GPUFencesValues[idx]++;
 		mDefaultSurface.Queue->Signal(mDefaultSurface.GPUFences[idx], mDefaultSurface.GPUFencesValues[idx]);
+
+		mFrame++;
 	}
 
 	void DX12GraphicsInterface::FlushAndWait()
@@ -398,6 +403,7 @@ namespace Graphics { namespace DX12 {
 		{
 			mBuffers[mCurBuffer] = new BufferEntry;
 			auto bufferEntry = mBuffers[mCurBuffer];
+			bufferEntry->Type = type;
 
 			D3D12_HEAP_PROPERTIES heapDesc = {};
 			auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
@@ -411,9 +417,25 @@ namespace Graphics { namespace DX12 {
 				nullptr, 
 				IID_PPV_ARGS(&bufferEntry->Buffer)
 			);
+			heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+			desc = CD3DX12_RESOURCE_DESC::Buffer(size);
+			if (type == Graphics::ConstantBuffer)
+			{
+				desc = CD3DX12_RESOURCE_DESC::Buffer(CB_INTERMIDIATE_SIZE);
+			}
+			mDevice->CreateCommittedResource
+			(
+				&heapProp,
+				D3D12_HEAP_FLAG_NONE,
+				&desc,
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				nullptr,
+				IID_PPV_ARGS(&bufferEntry->UploadHeap)
+			);
+			
 			BufferHandle handle = { mCurBuffer };
 			bufferEntry->State = VERTEX_CB_READ;
-			if (data)
+			if (data && type != Graphics::ConstantBuffer)
 			{
 				SetBufferData(handle, (int)size, 0, data);
 			}
@@ -574,25 +596,14 @@ namespace Graphics { namespace DX12 {
 	void DX12GraphicsInterface::SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)
 	{
 		const auto bufferEntry = mBuffers[buffer.Handle];
+		if (bufferEntry->Type == ConstantBuffer)
+		{
+			std::cout << "Do not call SetBufferData on a Constant buffer, just use the SetConstantBuffer method. \n";
+			return;
+		}
 		auto dstDesc = bufferEntry->Buffer->GetDesc();
 		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && bufferEntry != nullptr && size <= dstDesc.Width)
 		{
-			// Make sure to have an intermediate buffer, if the DST buffers supports
-			// CPU read we can just map it! TO-DO!
-			if (!bufferEntry->UploadHeap)
-			{
-				auto props = CD3DX12_HEAP_PROPERTIES::CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-				auto desc = CD3DX12_RESOURCE_DESC::Buffer(dstDesc.Width);
-				mDevice->CreateCommittedResource
-				(
-					&props,
-					D3D12_HEAP_FLAG_NONE,
-					&desc,
-					D3D12_RESOURCE_STATE_GENERIC_READ,
-					nullptr,
-					IID_PPV_ARGS(&bufferEntry->UploadHeap)
-				);
-			}
 			D3D12_SUBRESOURCE_DATA sdata = {};
 			sdata.pData		= data;
 			sdata.RowPitch	= sdata.SlicePitch = size;
@@ -682,7 +693,36 @@ namespace Graphics { namespace DX12 {
 		{
 			if (data)
 			{
-				SetBufferData(buffer, size, 0, data);
+				if (mFrame != bufferEntry->LastFrame)
+				{
+					bufferEntry->LastFrame = mFrame;
+					bufferEntry->CopyCount = 0;
+				}
+				const CD3DX12_RANGE  read(0, 0);
+				uint8_t* pData = nullptr;
+				uint32_t intermediateOffset = 0;
+				bufferEntry->UploadHeap->Map(0, &read, reinterpret_cast<void**>(&pData));
+				{
+					intermediateOffset	+= ((CB_INTERMIDIATE_SIZE) / NUM_BACK_BUFFERS) * mCurBackBuffer;
+					intermediateOffset	+= ((size + 255) & ~255) * bufferEntry->CopyCount;
+					pData				= pData + intermediateOffset;
+					memcpy(pData, data, size);
+				}
+				bufferEntry->UploadHeap->Unmap(0, nullptr);
+
+				bool changed = false;
+				if (bufferEntry->State != (COPY_DST))
+				{
+					mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry->Buffer, bufferEntry->State, COPY_DST));
+					changed = true;
+				}
+				mDefaultSurface.CmdContext->CopyBufferRegion(bufferEntry->Buffer, 0, bufferEntry->UploadHeap, intermediateOffset, size);
+				if (changed)
+				{
+					mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry->Buffer, COPY_DST, bufferEntry->State));
+				}
+
+				bufferEntry->CopyCount++;
 			}
 			mDefaultSurface.CmdContext->SetGraphicsRootConstantBufferView(slot, bufferEntry->Buffer->GetGPUVirtualAddress());
 		}

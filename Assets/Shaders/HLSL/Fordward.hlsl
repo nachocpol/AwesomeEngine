@@ -3,6 +3,7 @@ cbuffer AppData : register(b0)
 	float4x4 Model;
 	float4x4 View;
 	float4x4 Projection;
+	float4 DebugColor;
 }
 
 struct VSIn
@@ -24,5 +25,6 @@ VSOut VSFordwardSimple(VSIn i)
 
 float4 PSFordwardSimple(VSOut i): SV_Target0
 {
-	return float4(1.0f,0.0f,0.0f,1.0f);
+	//return float4(1.0f,0.0f,0.0f,1.0f);
+	return DebugColor;
 }

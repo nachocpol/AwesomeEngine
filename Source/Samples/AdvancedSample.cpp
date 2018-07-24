@@ -23,6 +23,7 @@ struct AppData
 	glm::mat4 Model;
 	glm::mat4 View;
 	glm::mat4 Projection;
+	glm::vec4 DebugColor;
 }AppData;
 
 Graphics::BufferHandle vertexBuffer;
@@ -75,8 +76,8 @@ int main()
 			gGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
 			gGraphicsInterface->SetGraphicsPipeline(pipeline);
 			{
-				AppData.View = glm::lookAtRH(glm::vec3(0.0f, 3.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-				AppData.Projection = glm::perspective(glm::radians(75.0f), 1280.0f / 920.0f, 0.0f, 100.0f);
+				AppData.View = glm::lookAtRH(glm::vec3(0.0f, 3.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+				AppData.Projection = glm::perspective(glm::radians(75.0f), 1280.0f / 920.0f, 0.1f, 100.0f);
 
 				AppData.Model = glm::mat4(1.0f);
 				AppData.Model = glm::translate(AppData.Model, glm::vec3(0.0f, 0.0f, 0.0f));
@@ -84,13 +85,15 @@ int main()
 				//AppData.Model = glm::rotate(AppData.Model, t * 0.2f, glm::vec3(0.0f, 1.0f, 0.0f));
 				//AppData.Model = glm::rotate(AppData.Model, t * 0.2f, glm::vec3(0.0f, 0.0f, 1.0f));
 				AppData.Model = glm::scale(AppData.Model, glm::vec3(1.0f, 1.0f, 1.0f));
+				AppData.DebugColor = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 			}
 			gGraphicsInterface->SetConstantBuffer(appDataBuffer, 0, sizeof(AppData), &AppData);
 			gGraphicsInterface->SetVertexBuffer(vertexBuffer, sizeof(VertexCube) * 36, sizeof(VertexCube));
 			gGraphicsInterface->Draw(36, 0);
 			{
 				AppData.Model = glm::mat4(1.0f);
-				AppData.Model = glm::translate(AppData.Model, glm::vec3(1.5f, 0.0f, -1.0f));
+				AppData.Model = glm::translate(AppData.Model, glm::vec3(1.0f, 0.5f, -1.0f));
+				AppData.DebugColor = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 			}
 			gGraphicsInterface->SetConstantBuffer(appDataBuffer, 0, sizeof(AppData), &AppData);
 			gGraphicsInterface->Draw(36, 0);
