@@ -127,3 +127,44 @@ project "AwesomeAdvanced"
 		{
 			"Graphics"
 		}
+
+project "AwesomeShowcase"
+	kind "ConsoleApp"
+	language "C++"
+	location "Temp/VSFiles"
+	targetdir "Build/%{cfg.platform}/%{cfg.buildcfg}"
+	files
+	{
+		"Source/Samples/**.h",
+		"Source/Samples/Showcase.cpp"
+	}
+	filter "configurations:Debug"
+		symbols "On"
+		includedirs 
+		{
+			"Source",
+			"Depen/DX12",
+			"Depen/GLM"
+		}	
+		libdirs
+		{
+		}
+		links
+		{
+			"Graphics"
+		}
+	filter "configurations:Release"
+		optimize "On"
+		includedirs 
+		{
+			"Source",
+			"Depen/DX12",
+			"Depen/GLM"
+		}
+		libdirs
+		{
+		}
+		links
+		{
+			"Graphics"
+		}

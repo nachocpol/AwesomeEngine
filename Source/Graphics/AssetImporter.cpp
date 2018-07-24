@@ -17,13 +17,13 @@ namespace Graphics
 
 	struct FullVertex
 	{
-		glm::vec3 Position;	float pad0;
-		glm::vec3 Normal;	float pad1;
-		glm::vec3 Tangent;	float pad2;
+		glm::vec4 Position;	
+		glm::vec4 Normal;	
+		glm::vec4 Tangent;	
 		glm::vec2 Texcoords;
 	};
 
-	bool AssetImporter::Load(const char* path)
+	bool AssetImporter::Load(const char* path,Mesh* outMeshes, uint8_t& numMeshes)
 	{
 		std::string fullPath = "..\\..\\Assets\\Meshes\\" + std::string(path);
 		tinyobj::attrib_t attribs;
@@ -52,10 +52,12 @@ namespace Graphics
 				cur->Position.x = attribs.vertices[shapeIt->mesh.indices[i + 0].vertex_index];
 				cur->Position.y = attribs.vertices[shapeIt->mesh.indices[i + 1].vertex_index];
 				cur->Position.z = attribs.vertices[shapeIt->mesh.indices[i + 2].vertex_index];
+				cur->Position.w = 0.0f;
 
 				cur->Normal.x = attribs.normals[shapeIt->mesh.indices[i + 0].normal_index];
 				cur->Normal.y = attribs.normals[shapeIt->mesh.indices[i + 1].normal_index];
 				cur->Normal.z = attribs.normals[shapeIt->mesh.indices[i + 2].normal_index];
+				cur->Normal.w = 0.0f;
 
 				cur->Texcoords.x = attribs.texcoords[shapeIt->mesh.indices[i + 0].texcoord_index];
 				cur->Texcoords.y = attribs.texcoords[shapeIt->mesh.indices[i + 1].texcoord_index];
@@ -63,6 +65,21 @@ namespace Graphics
 				cur++;
 			}
 			shapeIdx++;
+		}
+
+		// Create the meshes 
+		auto eleSize = sizeof(FullVertex);
+		numMeshes = shapes.size();
+		outMeshes = new Mesh[numMeshes];
+		for (int i = 0; i < numMeshes; i++)
+		{
+			auto numEles = vertexDataShapes[i].size();
+			outMeshes[i].VertexBuffer = mGraphicsInterface->CreateBuffer
+			(
+				BufferType::VertexBuffer, 
+				CPUAccess::None, 
+				numEles * eleSize, 
+				vertexDataShapes[i].data());
 		}
 
 		return true;

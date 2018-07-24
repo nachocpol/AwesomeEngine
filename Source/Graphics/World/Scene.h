@@ -6,12 +6,6 @@
 
 namespace Graphics
 {
-	struct Mesh
-	{
-		BufferHandle VertexBuffer;
-		bool HasIndices;
-		uint32_t VertexCount;
-	};
 	struct Actor
 	{
 		Mesh AMesh;

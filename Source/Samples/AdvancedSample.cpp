@@ -1,12 +1,10 @@
 #define NOMINMAX
 #include "Graphics/DX12/DX12GraphicsInterface.h"
 #include "Graphics/Platform/Windows/WWindow.h"
-#include "Graphics/AssetImporter.h"
 #include <stdio.h>
 #include "glm/ext.hpp"
 
 Graphics::GraphicsInterface* gGraphicsInterface = nullptr;
-Graphics::AssetImporter* gImporter = nullptr;
 
 struct VertexCube
 {
@@ -30,7 +28,6 @@ Graphics::BufferHandle vertexBuffer;
 Graphics::GraphicsPipeline pipeline;
 Graphics::GraphicsPipeline fullScreenPipeline;
 Graphics::BufferHandle appDataBuffer;
-Graphics::TextureHandle proceduralTex;
 Graphics::BufferHandle fullScreenBuffer;
 
 Graphics::TextureHandle mainTarget;
@@ -49,8 +46,6 @@ int main()
 	window->Initialize("Awesome Advanced", false, 1280, 920);
 	
 	InitGraphics(window);
-	//gImporter = new Graphics::AssetImporter(gGraphicsInterface);
-	//gImporter->Load("mitsuba\\mitsuba.obj");
 	InitResources();
 	
 	Resize(1280, 920);
@@ -81,9 +76,9 @@ int main()
 
 				AppData.Model = glm::mat4(1.0f);
 				AppData.Model = glm::translate(AppData.Model, glm::vec3(0.0f, 0.0f, 0.0f));
-				//AppData.Model = glm::rotate(AppData.Model, 0.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-				//AppData.Model = glm::rotate(AppData.Model, t * 0.2f, glm::vec3(0.0f, 1.0f, 0.0f));
-				//AppData.Model = glm::rotate(AppData.Model, t * 0.2f, glm::vec3(0.0f, 0.0f, 1.0f));
+				AppData.Model = glm::rotate(AppData.Model, 0.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+				AppData.Model = glm::rotate(AppData.Model, t * 0.2f, glm::vec3(0.0f, 1.0f, 0.0f));
+				AppData.Model = glm::rotate(AppData.Model, t * 0.2f, glm::vec3(0.0f, 0.0f, 1.0f));
 				AppData.Model = glm::scale(AppData.Model, glm::vec3(1.0f, 1.0f, 1.0f));
 				AppData.DebugColor = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 			}
@@ -158,16 +153,6 @@ void InitResources()
 		eles[0].EleFormat = Graphics::Format::RGB_32_Float;
 		eles[0].Offset = 0;
 
-		// eles[1].Semantic = "COLOR";
-		// eles[1].Idx = 0;
-		// eles[1].EleFormat = Graphics::Format::RGB_32_Float;
-		// eles[1].Offset = sizeof(float) * 3;
-		// 
-		// eles[2].Semantic = "UV";
-		// eles[2].Idx = 0;
-		// eles[2].EleFormat = Graphics::Format::RG_32_Float;
-		// eles[2].Offset = sizeof(float) * 3 * 2;
-
 		pdesc.VertexDescription.NumElements = sizeof(eles) / sizeof(Graphics::VertexInputDescription::VertexInputElement);
 		pdesc.VertexDescription.Elements = eles;
 		pdesc.DepthEnabled = true;
@@ -208,34 +193,6 @@ void InitResources()
 		fullScreenBuffer = gGraphicsInterface->CreateBuffer(Graphics::VertexBuffer, Graphics::None, sizeof(VertexScreen) * 6, &vtxData);
 	}
 	appDataBuffer = gGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AppData));
-
-	{
-		struct Texel
-		{
-			float R;
-			float G;
-			float B;
-			float A;
-		};
-		Texel* texels;
-		int w = 128;
-		int h = 128;
-		texels =(Texel*) malloc(sizeof(Texel) * w * h);
-		for (int y = 0; y < h; y++)
-		{
-			for (int x = 0; x < h; x++)
-			{
-				float u = (float)x / (float)w;
-				float v = (float)y / (float)h;
-				Texel t;
-				t.R = (sin(u * 50.0f) + 1.0f) * 0.5f;
-				t.G = (cos(v * 50.0f) + 1.0f) * 0.5f;
-				t.B = t.A = 0.0f;
-				texels[y * w + x] = t;
-			}
-		}
-		proceduralTex = gGraphicsInterface->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_32_Float,Graphics::TextureFlagNone, texels);
-	}
 }
 
 void Resize(int width, int height)

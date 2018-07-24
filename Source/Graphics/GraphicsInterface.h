@@ -107,6 +107,12 @@ namespace Graphics
 	{
 		std::string ComputeShaderSource;
 	};
+	struct Mesh
+	{
+		BufferHandle VertexBuffer;
+		uint32_t NumVertex;
+		uint32_t ElementSize;
+	};
 
 	static const BufferHandle InvalidBuffer = { UINT64_MAX };
 	static const TextureHandle InvalidTexture = { UINT64_MAX};
