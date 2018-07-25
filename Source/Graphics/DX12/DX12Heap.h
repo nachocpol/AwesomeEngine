@@ -15,6 +15,7 @@ namespace Graphics{ namespace DX12{
 		void OffsetHandles(uint32_t num);
 		CD3DX12_CPU_DESCRIPTOR_HANDLE GetCPU() { return mCPUHandle; }
 		CD3DX12_GPU_DESCRIPTOR_HANDLE GetGPU() { return mGPUHandle; }
+		UINT GetIncrementSize() { return mEntrySize; }
 		ID3D12DescriptorHeap* GetHeap() { return mHeap; }
 
 	private:

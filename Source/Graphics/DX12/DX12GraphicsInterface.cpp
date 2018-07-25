@@ -191,7 +191,7 @@ namespace Graphics { namespace DX12 {
 		{
 			CD3DX12_ROOT_PARAMETER p2;
 			CD3DX12_DESCRIPTOR_RANGE range;
-			range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+			range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0);
 			p2.InitAsDescriptorTable(1, &range);
 			params.push_back(p2);
 		}
@@ -659,7 +659,7 @@ namespace Graphics { namespace DX12 {
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
 		// Offset it for nex draw call
-		mFrameHeap[idx]->OffsetHandles(1);
+		mFrameHeap[idx]->OffsetHandles(2);
 
 		mDefaultSurface.CmdContext->DrawInstanced(numvtx, 1, vtxOffset, 0);
 	}
@@ -740,7 +740,7 @@ namespace Graphics { namespace DX12 {
 			}
 			mTextures[texture.Handle]->State = TEXTURE_READ;
 			auto slotHandle = mFrameHeap[idx]->GetCPU();
-			slotHandle.Offset(slot);
+			slotHandle.Offset(slot,mFrameHeap[idx]->GetIncrementSize());
 			mDevice->CreateShaderResourceView(res, nullptr, slotHandle);
 		}
 	}

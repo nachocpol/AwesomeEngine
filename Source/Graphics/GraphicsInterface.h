@@ -3,6 +3,9 @@
 #include <stdint.h>
 #include <iostream>
 
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_FORCE_LEFT_HANDED
+#include "glm/gtc/matrix_transform.hpp"
 #include "glm/glm.hpp"
 
 namespace Graphics
@@ -118,6 +121,8 @@ namespace Graphics
 	static const TextureHandle InvalidTexture = { UINT64_MAX};
 	static const GraphicsPipeline InvalidGraphicsPipeline = { UINT64_MAX };
 	static const ComputePipeline InvalidComputePipeline = { UINT64_MAX };
+
+	#define CHECK_TEXTURE(h) (h.Handle != Graphics::InvalidTexture.Handle)
 
 	class GraphicsInterface
 	{

@@ -2,8 +2,9 @@
 
 namespace Graphics
 {
-	Scene::Scene(GraphicsInterface* graphics):
-		mGraphics(graphics)
+	Scene::Scene(GraphicsInterface* graphics, AssetImporter* assetImp):
+		mGraphics(graphics),
+		mAssetImporter(assetImp)
 	{
 	}
 
@@ -21,6 +22,10 @@ namespace Graphics
 	}
 
 	void Scene::Draw(float dt)
+	{
+	}
+
+	void Scene::Resize(int w, int h)
 	{
 	}
 

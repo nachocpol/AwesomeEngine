@@ -21,7 +21,8 @@ project "Graphics"
 			"Depen/DX12",
 			"Depen/JSON",
 			"Depen/TinyObj",
-			"Depen/GLM"
+			"Depen/GLM",
+			"Depen/STB"
 		}	
 		libdirs
 		{
@@ -37,7 +38,8 @@ project "Graphics"
 			"Depen/DX12",
 			"Depen/JSON",
 			"Depen/TinyObj",
-			"Depen/GLM"
+			"Depen/GLM",
+			"Depen/STB"
 		}
 		libdirs
 		{
@@ -136,7 +138,8 @@ project "AwesomeShowcase"
 	files
 	{
 		"Source/Samples/**.h",
-		"Source/Samples/Showcase.cpp"
+		"Source/Samples/Showcase.cpp",
+		"Source/Samples/ShowcaseScene.cpp"
 	}
 	filter "configurations:Debug"
 		symbols "On"
