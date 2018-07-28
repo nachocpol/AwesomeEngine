@@ -14,8 +14,6 @@ public:
 	void Resize(int w, int h)override final;
 
 private:
-
-	Graphics::GraphicsPipeline mFordwardPipeline;
 	struct AppData
 	{
 		glm::mat4 Model;
@@ -25,9 +23,16 @@ private:
 	}mAppData;
 	Graphics::BufferHandle mAppDataHandle;
 
-	Graphics::TextureHandle mMainTarget;
-	Graphics::TextureHandle mMainDepthTarget;
-
+	// Pipeline used to fill the GBuffer
+	Graphics::GraphicsPipeline mGBufferPipeline;
+	struct GBuffer
+	{
+		Graphics::TextureHandle Color;
+		Graphics::TextureHandle Normals;
+		Graphics::TextureHandle Position;
+		Graphics::TextureHandle Depth;
+	}mGBuffer;
+	
 	Graphics::GraphicsPipeline mFullScreenPipeline;
 	Graphics::BufferHandle mFullScreenQuad;
 

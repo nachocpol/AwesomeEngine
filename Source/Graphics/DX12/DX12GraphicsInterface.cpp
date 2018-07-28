@@ -31,7 +31,7 @@ namespace Graphics { namespace DX12 {
 		HWND whandle = (HWND)targetWindow;
 		memset(&mDefaultSurface, 0, sizeof(DisplaySurface));
 		mDefaultSurface.Window = (Platform::Windows::WWindow*)targetWindow;
-		mOutputFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		mOutputFormat = Format::RGBA_8_Unorm;
 
 		UINT factoryFlags = 0;
 #ifdef _DEBUG
@@ -108,7 +108,7 @@ namespace Graphics { namespace DX12 {
 		DXGI_MODE_DESC bufferDesc = {};
 		bufferDesc.Width					= width;
 		bufferDesc.Height					= height;
-		bufferDesc.Format					= mOutputFormat;
+		bufferDesc.Format					= ToDXGIFormat(mOutputFormat);
 		bufferDesc.ScanlineOrdering			= DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 		bufferDesc.Scaling					= DXGI_MODE_SCALING_UNSPECIFIED;
 		bufferDesc.RefreshRate.Numerator	= 1;
@@ -277,6 +277,7 @@ namespace Graphics { namespace DX12 {
 		case Format::RGBA_32_Float:		return DXGI_FORMAT_R32G32B32A32_FLOAT;
 		case Format::Depth24_Stencil8:	return DXGI_FORMAT_D24_UNORM_S8_UINT;
 		case Format::RGBA_8_Unorm:		return DXGI_FORMAT_R8G8B8A8_UNORM;
+		case Format::RGBA_16_Float:		return DXGI_FORMAT_R16G16B16A16_FLOAT;
 		case Format::Unknown:
 		default:						return DXGI_FORMAT_UNKNOWN;
 		}
@@ -548,7 +549,7 @@ namespace Graphics { namespace DX12 {
 			eles[i].AlignedByteOffset	 = desc.VertexDescription.Elements[i].Offset;
 			eles[i].InputSlotClass		 = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
 			eles[i].InstanceDataStepRate = 0;
-			eles[i].InputSlot			= 0;
+			eles[i].InputSlot			 = 0;
 		}
 		inputL.NumElements = desc.VertexDescription.NumElements;
 		inputL.pInputElementDescs = eles.data();
@@ -557,29 +558,42 @@ namespace Graphics { namespace DX12 {
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};		
 		LoadShader(desc.PixelShader,psoDesc.PS);
 		LoadShader(desc.VertexShader,psoDesc.VS);
-		
-		psoDesc.BlendState				= CD3DX12_BLEND_DESC::CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-		
+	
+		// Blend info
+		{
+			psoDesc.BlendState = CD3DX12_BLEND_DESC::CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+		}
+		// Depth info
 		{
 			psoDesc.DepthStencilState				= CD3DX12_DEPTH_STENCIL_DESC::CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 			psoDesc.DepthStencilState.DepthEnable	= desc.DepthEnabled;
 			psoDesc.DepthStencilState.DepthFunc		= ToDX12DepthFunc(desc.DepthFunction);
-			psoDesc.DSVFormat = ToDXGIFormat(desc.DepthFormat);
+			psoDesc.DSVFormat						= ToDXGIFormat(desc.DepthFormat);
 		}
-
-		psoDesc.RasterizerState			= CD3DX12_RASTERIZER_DESC::CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-		psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-		
-		psoDesc.InputLayout				= inputL;
-		psoDesc.pRootSignature			= mGraphicsRootSignature;
-		psoDesc.NumRenderTargets		= 1;
-		psoDesc.RTVFormats[0]			= mOutputFormat;
-		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		// Raster info
+		{
+			psoDesc.RasterizerState				= CD3DX12_RASTERIZER_DESC::CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			psoDesc.RasterizerState.CullMode	= D3D12_CULL_MODE_NONE;
+			psoDesc.RasterizerState.FillMode	= D3D12_FILL_MODE_SOLID;
+		}
+		psoDesc.InputLayout = inputL;
+		psoDesc.pRootSignature = mGraphicsRootSignature;
+		int numTargets = 0;
+		for (int i = 0; i < 8; i++)
+		{
+			if (desc.ColorFormats[i] != None)
+			{
+				psoDesc.RTVFormats[i] = ToDXGIFormat(desc.ColorFormats[i]);
+				psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+				numTargets++;
+			}
+		}
+		psoDesc.NumRenderTargets		= numTargets;
+		psoDesc.PrimitiveTopologyType	= D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		psoDesc.SampleDesc.Count		= 1;
 		psoDesc.SampleDesc.Quality		= 0;
 		psoDesc.SampleMask				= 0xffffffff;
+
 		mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mGraphicsPipelines[mCurGraphicsPipeline]));
 
 		GraphicsPipeline handle = { mCurGraphicsPipeline };
@@ -791,5 +805,10 @@ namespace Graphics { namespace DX12 {
 	{
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 		mDefaultSurface.CmdContext->OMSetRenderTargets(1, &mDefaultSurface.RenderTargets[idx], false, nullptr);
+	}
+
+	Format DX12GraphicsInterface::GetOutputFormat()
+	{
+		return mOutputFormat;
 	}
 }}

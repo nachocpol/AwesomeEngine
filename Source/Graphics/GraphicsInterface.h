@@ -36,11 +36,12 @@ namespace Graphics
 	enum Format
 	{
 		Unknown = 0,
-		RG_32_Float = 1,
-		RGB_32_Float = 2,
-		RGBA_32_Float = 3,
-		Depth24_Stencil8 = 4,
-		RGBA_8_Unorm = 5
+		RGBA_16_Float = 1,
+		RG_32_Float = 2,
+		RGB_32_Float = 3,
+		RGBA_32_Float = 4,
+		Depth24_Stencil8 = 5,
+		RGBA_8_Unorm = 6
 	};
 	enum Topology
 	{
@@ -99,12 +100,18 @@ namespace Graphics
 	};
 	struct GraphicsPipelineDescription
 	{
+		GraphicsPipelineDescription()
+		{
+			memset(ColorFormats, 0, sizeof(ColorFormats));
+			memset(&DepthFormat, 0, sizeof(DepthFormat));
+		}
 		ShaderDescription VertexShader;
 		ShaderDescription PixelShader;
 		VertexInputDescription VertexDescription;
 		bool DepthEnabled;
 		DepthFunc DepthFunction;
 		Format DepthFormat;
+		Format ColorFormats[8];
 	};
 	struct ComputePipelineDescription
 	{
@@ -149,5 +156,6 @@ namespace Graphics
 		virtual void SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth) = 0;
 		virtual void ClearTargets(uint8_t num, TextureHandle* colorTargets,float clear[4], TextureHandle* depth,float d,uint16_t stencil) = 0;
 		virtual void DisableAllTargets() = 0;
+		virtual Format GetOutputFormat() = 0;
 	};
 }

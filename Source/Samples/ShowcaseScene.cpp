@@ -18,14 +18,12 @@ ShowcaseScene::~ShowcaseScene()
 bool ShowcaseScene::Initialize()
 {
 	Graphics::GraphicsPipelineDescription pdesc = {};
-	pdesc.PixelShader.ShaderEntryPoint	= "PSFordwardSimple";
-	pdesc.PixelShader.ShaderPath		= "Fordward.hlsl";
+	pdesc.PixelShader.ShaderEntryPoint	= "PSGBuffer";
+	pdesc.PixelShader.ShaderPath		= "Deferred.hlsl";
 	pdesc.PixelShader.Type				= Graphics::Pixel;
-
-	pdesc.VertexShader.ShaderEntryPoint = "VSFordwardSimple";
-	pdesc.VertexShader.ShaderPath		= "Fordward.hlsl";
+	pdesc.VertexShader.ShaderEntryPoint = "VSGBuffer";
+	pdesc.VertexShader.ShaderPath		= "Deferred.hlsl";
 	pdesc.VertexShader.Type				= Graphics::Vertex;
-
 	const size_t v3Size = sizeof(glm::vec3);
 	Graphics::VertexInputDescription::VertexInputElement eles[4] =
 	{
@@ -36,11 +34,13 @@ bool ShowcaseScene::Initialize()
 	};
 	pdesc.VertexDescription.Elements	= eles;
 	pdesc.VertexDescription.NumElements = 4;
-
 	pdesc.DepthEnabled					= true;
 	pdesc.DepthFunction					= Graphics::LessEqual;
 	pdesc.DepthFormat					= Graphics::Depth24_Stencil8;
-	mFordwardPipeline = mGraphics->CreateGraphicsPipeline(pdesc);
+	pdesc.ColorFormats[0]				= Graphics::Format::RGBA_8_Unorm;
+	pdesc.ColorFormats[1]				= Graphics::Format::RGBA_8_Unorm;
+	pdesc.ColorFormats[2]				= Graphics::Format::RGBA_16_Float;
+	mGBufferPipeline = mGraphics->CreateGraphicsPipeline(pdesc);
 
 	// Load test textures
 	{
@@ -98,8 +98,9 @@ bool ShowcaseScene::Initialize()
 		{
 			"POSITION",0, Graphics::Format::RGB_32_Float,0
 		};
-		desc.VertexDescription.NumElements	 = 1;
+		desc.VertexDescription.NumElements	= 1;
 		desc.VertexDescription.Elements		= eles;
+		desc.ColorFormats[0]				= mGraphics->GetOutputFormat();
 		mFullScreenPipeline					= mGraphics->CreateGraphicsPipeline(desc);
 		VertexScreen vtxData[6] =
 		{
@@ -122,6 +123,43 @@ void ShowcaseScene::Update(float dt)
 
 void ShowcaseScene::Draw(float dt)
 {
+	// GBuffer pass
+	{
+		Graphics::TextureHandle gbuffer[3] = { mGBuffer.Color,mGBuffer.Normals,mGBuffer.Position };
+		mGraphics->SetTargets(3, gbuffer, &mGBuffer.Depth);
+		float clear[4] = { 0.2f,0.2f,0.3f,1.0f };
+		mGraphics->ClearTargets(3, gbuffer, clear , &mGBuffer.Depth, 1.0f, 0);
+	
+		mGraphics->SetGraphicsPipeline(mGBufferPipeline);
+		mGraphics->SetScissor(0.0f, 0.0f, 1280.0f, 920.0f); // dont like this
+		for (int i = 0; i < mActors.size(); i++)
+		{
+			mGraphics->SetTopology(Graphics::TriangleList);
+			const auto curActor = mActors[i];
+			mAppData.Model = glm::mat4(1.0f);
+			mGraphics->SetConstantBuffer(mAppDataHandle, 0, sizeof(mAppData), &mAppData);
+			mGraphics->SetVertexBuffer(curActor->AMesh.VertexBuffer, curActor->AMesh.NumVertex * curActor->AMesh.ElementSize, curActor->AMesh.ElementSize);
+			if (CHECK_TEXTURE(curActor->ShadeInfo.AlbedoTexture))
+			{
+				mGraphics->SetTexture(curActor->ShadeInfo.AlbedoTexture, 0);
+			}
+			if (CHECK_TEXTURE(curActor->ShadeInfo.BumpMapTexture))
+			{
+				mGraphics->SetTexture(curActor->ShadeInfo.BumpMapTexture, 1);
+			}
+			mGraphics->Draw(curActor->AMesh.NumVertex, 0);
+		}
+
+		mGraphics->DisableAllTargets();
+	}
+
+	// Just show something
+	mGraphics->SetGraphicsPipeline(mFullScreenPipeline);
+	mGraphics->SetTexture(mGBuffer.Color, 0);
+	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
+	mGraphics->Draw(6, 0);
+
+#if 0
 	mGraphics->SetTargets(1, &mMainTarget, &mMainDepthTarget);
 	float clear[4] = { 0.2f,0.2f,0.3f,1.0f };
 	mGraphics->ClearTargets(1, &mMainTarget, clear, &mMainDepthTarget, 1.0f, 0);
@@ -150,15 +188,18 @@ void ShowcaseScene::Draw(float dt)
 		mGraphics->Draw(curActor->AMesh.NumVertex, 0);
 	}
 	mGraphics->DisableAllTargets();
-
+	
 	mGraphics->SetGraphicsPipeline(mFullScreenPipeline);
 	mGraphics->SetTexture(mMainTarget, 0);
 	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
 	mGraphics->Draw(6, 0);
+#endif
 }
 
 void ShowcaseScene::Resize(int w, int h)
 {
-	mMainTarget = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_8_Unorm, Graphics::TextureFlags::RenderTarget);
-	mMainDepthTarget = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::Depth24_Stencil8, Graphics::TextureFlags::DepthStencil);
+	mGBuffer.Color = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_8_Unorm, Graphics::TextureFlags::RenderTarget);
+	mGBuffer.Normals = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_8_Unorm, Graphics::TextureFlags::RenderTarget);
+	mGBuffer.Position = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::RenderTarget);
+	mGBuffer.Depth = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::Depth24_Stencil8, Graphics::TextureFlags::DepthStencil);
 }

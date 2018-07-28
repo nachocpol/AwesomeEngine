@@ -98,6 +98,7 @@ namespace Graphics{ namespace DX12
 		void SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth) final override;
 		void ClearTargets(uint8_t num, TextureHandle* colorTargets, float clear[4], TextureHandle* depth, float d, uint16_t stencil)final override;
 		void DisableAllTargets()final override;
+		Format GetOutputFormat()final override;
 
 	private:
 		void InitSurface(DisplaySurface* surface);
@@ -109,7 +110,7 @@ namespace Graphics{ namespace DX12
 
 		DisplaySurface mDefaultSurface;
 		ID3D12Device* mDevice;
-		DXGI_FORMAT mOutputFormat;
+		Graphics::Format mOutputFormat;
 
 		// Buffer pools
 		BufferEntry* mBuffers[MAX_BUFFERS];
