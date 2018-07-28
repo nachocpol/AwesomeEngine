@@ -32,6 +32,10 @@ private:
 		Graphics::TextureHandle Position;
 		Graphics::TextureHandle Depth;
 	}mGBuffer;
+
+	// Light pass
+	Graphics::GraphicsPipeline mLightPassPipeline;
+	Graphics::TextureHandle mLightPass;
 	
 	Graphics::GraphicsPipeline mFullScreenPipeline;
 	Graphics::BufferHandle mFullScreenQuad;

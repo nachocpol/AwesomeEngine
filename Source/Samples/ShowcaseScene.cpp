@@ -153,7 +153,14 @@ void ShowcaseScene::Draw(float dt)
 		mGraphics->DisableAllTargets();
 	}
 
-	// Just show something
+	// Light pass
+	{
+		// bind pipeline (with add blend)
+		// set light pass target
+		// for each light set cb and draw bounding shape
+	}
+
+	// Post processing and display
 	mGraphics->SetGraphicsPipeline(mFullScreenPipeline);
 	mGraphics->SetTexture(mGBuffer.Color, 0);
 	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));

@@ -35,4 +35,11 @@ namespace Graphics
 		mActors.push_back(a);
 		return a;
 	}
+
+	Light* Scene::AddLight()
+	{
+		Light* l = new Light;
+		mLights.push_back(l);
+		return l;
+	}
 }
