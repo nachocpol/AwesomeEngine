@@ -107,6 +107,8 @@ namespace Graphics{ namespace DX12
 		static DXGI_FORMAT ToDXGIFormat(const Graphics::Format& format);
 		static D3D12_PRIMITIVE_TOPOLOGY ToDXGITopology(const Graphics::Topology& topology);
 		static D3D12_COMPARISON_FUNC ToDX12DepthFunc(const DepthFunc& func);
+		static D3D12_BLEND ToDX12Blend(const BlendFunction& func);
+		static D3D12_BLEND_OP ToDX12BlendOp(const BlendOperation& op);
 
 		DisplaySurface mDefaultSurface;
 		ID3D12Device* mDevice;

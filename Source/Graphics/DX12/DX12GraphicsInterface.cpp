@@ -187,7 +187,7 @@ namespace Graphics { namespace DX12 {
 			p1.InitAsConstantBufferView(1);
 			params.push_back(p1);
 		}
-		// param 2 (TEX0)
+		// param 2 (TEX0) 2x textures
 		{
 			CD3DX12_ROOT_PARAMETER p2;
 			CD3DX12_DESCRIPTOR_RANGE range;
@@ -272,14 +272,15 @@ namespace Graphics { namespace DX12 {
 	{
 		switch (format)
 		{
-		case Format::RG_32_Float:		return DXGI_FORMAT_R32G32_FLOAT;
-		case Format::RGB_32_Float:		return DXGI_FORMAT_R32G32B32_FLOAT; 
-		case Format::RGBA_32_Float:		return DXGI_FORMAT_R32G32B32A32_FLOAT;
-		case Format::Depth24_Stencil8:	return DXGI_FORMAT_D24_UNORM_S8_UINT;
-		case Format::RGBA_8_Unorm:		return DXGI_FORMAT_R8G8B8A8_UNORM;
-		case Format::RGBA_16_Float:		return DXGI_FORMAT_R16G16B16A16_FLOAT;
-		case Format::Unknown:
-		default:						return DXGI_FORMAT_UNKNOWN;
+			case Format::RG_32_Float:		return DXGI_FORMAT_R32G32_FLOAT;
+			case Format::RGB_32_Float:		return DXGI_FORMAT_R32G32B32_FLOAT; 
+			case Format::RGBA_32_Float:		return DXGI_FORMAT_R32G32B32A32_FLOAT;
+			case Format::Depth24_Stencil8:	return DXGI_FORMAT_D24_UNORM_S8_UINT;
+			case Format::RGBA_8_Unorm:		return DXGI_FORMAT_R8G8B8A8_UNORM;
+			case Format::RGBA_16_Float:		return DXGI_FORMAT_R16G16B16A16_FLOAT;
+			case Format::RGBA_8_Snorm:		return DXGI_FORMAT_R8G8B8A8_SNORM;
+			case Format::Unknown:
+			default:						return DXGI_FORMAT_UNKNOWN;
 		}
 	}
 
@@ -287,9 +288,9 @@ namespace Graphics { namespace DX12 {
 	{
 		switch (topology)
 		{
-		case Topology::TriangleList: return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		case Topology::InvalidTopology:
-		default: return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
+			case Topology::TriangleList: return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+			case Topology::InvalidTopology:
+			default: return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
 		}
 	}
 
@@ -297,12 +298,43 @@ namespace Graphics { namespace DX12 {
 	{
 		switch (func)
 		{
-		case DepthFunc::Always:		return D3D12_COMPARISON_FUNC_ALWAYS;
-		case DepthFunc::Equal:		return D3D12_COMPARISON_FUNC_EQUAL;
-		case DepthFunc::GreatEqual: return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-		case DepthFunc::LessEqual:	return D3D12_COMPARISON_FUNC_LESS_EQUAL;
-		case DepthFunc::Never:		return D3D12_COMPARISON_FUNC_NEVER;
-		default:					return D3D12_COMPARISON_FUNC_ALWAYS;
+			case DepthFunc::Always:		return D3D12_COMPARISON_FUNC_ALWAYS;
+			case DepthFunc::Equal:		return D3D12_COMPARISON_FUNC_EQUAL;
+			case DepthFunc::GreatEqual: return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+			case DepthFunc::LessEqual:	return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+			case DepthFunc::Never:		return D3D12_COMPARISON_FUNC_NEVER;
+			default:					return D3D12_COMPARISON_FUNC_ALWAYS;
+		}
+	}
+
+	D3D12_BLEND DX12GraphicsInterface::ToDX12Blend(const BlendFunction & func)
+	{
+		switch (func)
+		{
+			case BlendFunction::BlendZero:			return D3D12_BLEND_ZERO;
+			case BlendFunction::BlendOne:			return D3D12_BLEND_ONE;
+			case BlendFunction::BlendSrcColor:		return D3D12_BLEND_SRC_COLOR;
+			case BlendFunction::BlendInvSrcColor:	return D3D12_BLEND_INV_SRC_COLOR;
+			case BlendFunction::BlendSrcAlpha:		return D3D12_BLEND_SRC_ALPHA;
+			case BlendFunction::BlendInvSrcAlpha:	return D3D12_BLEND_INV_SRC_ALPHA;
+			case BlendFunction::BlendDstAlpha:		return D3D12_BLEND_DEST_ALPHA;
+			case BlendFunction::BlendInvDstAlpha:	return D3D12_BLEND_INV_DEST_ALPHA;
+			case BlendFunction::BlendDstColor:		return D3D12_BLEND_DEST_COLOR;
+			case BlendFunction::BlendInvDstColor:	return D3D12_BLEND_INV_DEST_COLOR;
+			case BlendFunction::BlendFactor:		return D3D12_BLEND_BLEND_FACTOR;
+			default:								return D3D12_BLEND_ZERO;
+		}
+	}
+
+	D3D12_BLEND_OP DX12GraphicsInterface::ToDX12BlendOp(const BlendOperation & op)
+	{
+		switch (op)
+		{
+			case BlendOperation::BlendOpAdd:		return D3D12_BLEND_OP_ADD;
+			case BlendOperation::BlendOpSubstract:	return D3D12_BLEND_OP_SUBTRACT;
+			case BlendOperation::BlendOpMin:		return D3D12_BLEND_OP_MIN;
+			case BlendOperation::BlendOpMax:		return D3D12_BLEND_OP_MAX;
+			default:								return D3D12_BLEND_OP_ADD;
 		}
 	}
 
@@ -562,6 +594,24 @@ namespace Graphics { namespace DX12 {
 		// Blend info
 		{
 			psoDesc.BlendState = CD3DX12_BLEND_DESC::CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			for (int i = 0; i < 8; i++)
+			{
+				auto& cur = psoDesc.BlendState.RenderTarget[i];
+				auto& curDesc = desc.BlendTargets[i];
+
+				cur.RenderTargetWriteMask = curDesc.WriteMask;
+				cur.BlendEnable = curDesc.Enabled;
+				if (curDesc.Enabled)
+				{
+					cur.SrcBlend		= ToDX12Blend(curDesc.SrcBlendColor);
+					cur.DestBlend		= ToDX12Blend(curDesc.DstBlendColor);
+					cur.BlendOp			= ToDX12BlendOp(curDesc.BlendOpColor);
+
+					cur.SrcBlendAlpha	= ToDX12Blend(curDesc.SrcBlendAlpha);
+					cur.DestBlendAlpha	= ToDX12Blend(curDesc.DstBlendAlpha);
+					cur.BlendOpAlpha	= ToDX12BlendOp(curDesc.BlendOpAlpha);
+				}
+			}
 		}
 		// Depth info
 		{
@@ -673,6 +723,7 @@ namespace Graphics { namespace DX12 {
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
 		// Offset it for nex draw call
+		// TO-DO: we should only do this is the state changed
 		mFrameHeap[idx]->OffsetHandles(2);
 
 		mDefaultSurface.CmdContext->DrawInstanced(numvtx, 1, vtxOffset, 0);

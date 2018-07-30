@@ -6,11 +6,26 @@ cbuffer AppData : register(b0)
 	float4 DebugColor;
 }
 
-Texture2D AlbedoTexture : register(t0);
-Texture2D BumpTexture : register(t1);
+cbuffer	LightInfo : register (b1)
+{
+	float4 LightPosition; // xyz(For directional, this is direction) w(type)
+	float4 LightColor;    // w not used
+	float LightRange;	  // Only for spot and point
+	float LightAngle;	  // Only for Spot
+}
+
 SamplerState LinearWrapSampler : register(s0);
 
-struct VSIn
+Texture2D AlbedoTexture  : register(t0);
+Texture2D BumpTexture    : register(t1);
+
+Texture2D GColor    : register	(t0);
+Texture2D GNormals 	: register	(t1);
+Texture2D GPosition : register	(t2);
+
+
+
+struct VSInGBuffer
 {
 	float3 Position : POSITION;
 	float3 Normal 	: NORMAL;
@@ -18,7 +33,7 @@ struct VSIn
 	float2 Texcoord : TEXCOORD;
 };
 
-struct VSOut
+struct VSOutGBuffer
 {
 	float4 ClipPos  : SV_Position;
 	float4 WPos		: WPOS;
@@ -27,16 +42,16 @@ struct VSOut
 	float3x3 TBN	: TBNMATRIX;
 };
 
-struct PSOut
+struct PSOutGBuffer
 {
 	float4 Color    : SV_Target0;
 	float4 Normals  : SV_Target1;
 	float4 Position : SV_Target2;
 };
 
-VSOut VSGBuffer(VSIn i)
+VSOutGBuffer VSGBuffer(VSInGBuffer i)
 {
-	VSOut o;
+	VSOutGBuffer o;
 	o.WPos = mul(Model,float4(i.Position,1.0f));
 	o.ClipPos = mul(Projection,mul(View,o.WPos));
 	o.PNormal = normalize(i.Normal);
@@ -51,17 +66,65 @@ VSOut VSGBuffer(VSIn i)
 	return o;
 }
 
-PSOut PSGBuffer(VSOut i)
+PSOutGBuffer PSGBuffer(VSOutGBuffer i)
 {	
 	float4 c = AlbedoTexture.Sample(LinearWrapSampler,i.PTexcoord);
 	float3 n = BumpTexture.Sample(LinearWrapSampler,i.PTexcoord).xyz;;
 	n = normalize(n * 2.0f - 1.0f);
 	n = normalize(mul(i.TBN, n));
 
-	PSOut o;
+	PSOutGBuffer o;
 	o.Color = c;
 	o.Normals = float4(n,1.0f);
 	o.Position = i.WPos;
 
 	return o;
+}
+
+struct VSInLightPass
+{
+	float4 Position : POSITION;
+};
+
+struct VSOutLightPass
+{
+	float4 ClipPos  : SV_Position;
+	float2 TexCoord : TEXCOORD;
+};
+
+VSOutLightPass VSLightPass(VSInLightPass i)
+{
+	VSOutLightPass o;
+	o.ClipPos = i.Position;
+	o.TexCoord = 0.5f * (i.Position.xy + 1.0f);
+	o.TexCoord.y = 1.0 - o.TexCoord.y;
+	return o;
+}
+
+float4 PSLightPass(VSOutLightPass i): SV_Target0
+{
+	float4 pcol = GColor.Sample(LinearWrapSampler, i.TexCoord);
+	float3 pnorm = GNormals.Sample(LinearWrapSampler, i.TexCoord).xyz;
+
+	float ndl = 0.0f;
+
+	if(LightPosition.w == 0.0f) // Directional
+	{
+		ndl = max(dot(pnorm.xyz,-LightPosition.xyz),0.0f);
+	}
+	else if(LightPosition.w == 1.0f) // Point
+	{
+		
+	}
+	else if(LightPosition.w == 2.0f) // Spot
+	{
+		
+	}
+	else
+	{
+
+	}
+
+	float4 finalColor = pcol* LightColor * ndl;
+	return finalColor;
 }

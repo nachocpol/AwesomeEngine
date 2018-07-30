@@ -41,7 +41,8 @@ namespace Graphics
 		RGB_32_Float = 3,
 		RGBA_32_Float = 4,
 		Depth24_Stencil8 = 5,
-		RGBA_8_Unorm = 6
+		RGBA_8_Unorm = 6,
+		RGBA_8_Snorm = 7,
 	};
 	enum Topology
 	{
@@ -62,6 +63,27 @@ namespace Graphics
 		Equal = 2,
 		LessEqual = 3,
 		GreatEqual = 4
+	};
+	enum BlendOperation
+	{
+		BlendOpAdd = 0,
+		BlendOpSubstract = 1,
+		BlendOpMin = 2,
+		BlendOpMax = 3
+	};
+	enum BlendFunction
+	{
+		BlendZero = 0,
+		BlendOne = 1,
+		BlendSrcColor = 2,
+		BlendInvSrcColor = 3,
+		BlendSrcAlpha = 4,
+		BlendInvSrcAlpha = 5,
+		BlendDstAlpha = 6,
+		BlendInvDstAlpha = 7,
+		BlendDstColor = 8,
+		BlendInvDstColor = 9,
+		BlendFactor = 10
 	};
 
 	struct BufferHandle
@@ -112,6 +134,18 @@ namespace Graphics
 		DepthFunc DepthFunction;
 		Format DepthFormat;
 		Format ColorFormats[8];
+		struct BlendDesc
+		{
+			BlendDesc() :Enabled(false),WriteMask(15) { }
+			bool Enabled;
+			uint8_t WriteMask;
+			BlendFunction SrcBlendColor;
+			BlendFunction DstBlendColor;
+			BlendOperation BlendOpColor;
+			BlendFunction SrcBlendAlpha;
+			BlendFunction DstBlendAlpha;
+			BlendOperation BlendOpAlpha;
+		}BlendTargets[8];
 	};
 	struct ComputePipelineDescription
 	{

@@ -23,6 +23,15 @@ private:
 	}mAppData;
 	Graphics::BufferHandle mAppDataHandle;
 
+	struct LightInfo
+	{
+		glm::vec4 LightPosition; // xyz(For directional this is direction) w(type)
+		glm::vec4 LightColor;	 // w not used
+		float LightRange;		 // Only for spot and point
+		float LightAngle;		 // Only for Spot
+	}mLightInfo;
+	Graphics::BufferHandle mLightInfoHandle;
+
 	// Pipeline used to fill the GBuffer
 	Graphics::GraphicsPipeline mGBufferPipeline;
 	struct GBuffer

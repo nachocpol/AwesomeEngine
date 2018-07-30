@@ -17,30 +17,66 @@ ShowcaseScene::~ShowcaseScene()
 
 bool ShowcaseScene::Initialize()
 {
-	Graphics::GraphicsPipelineDescription pdesc = {};
-	pdesc.PixelShader.ShaderEntryPoint	= "PSGBuffer";
-	pdesc.PixelShader.ShaderPath		= "Deferred.hlsl";
-	pdesc.PixelShader.Type				= Graphics::Pixel;
-	pdesc.VertexShader.ShaderEntryPoint = "VSGBuffer";
-	pdesc.VertexShader.ShaderPath		= "Deferred.hlsl";
-	pdesc.VertexShader.Type				= Graphics::Vertex;
-	const size_t v3Size = sizeof(glm::vec3);
-	Graphics::VertexInputDescription::VertexInputElement eles[4] =
+	// GBuffer pipeline
 	{
-		{ "POSITION",0,Graphics::Format::RGB_32_Float,0 },
-		{ "NORMAL",0,Graphics::Format::RGB_32_Float,v3Size },
-		{ "TANGENT",0,Graphics::Format::RGB_32_Float,v3Size * 2 },
-		{ "TEXCOORD",0,Graphics::Format::RG_32_Float,v3Size * 3 },
-	};
-	pdesc.VertexDescription.Elements	= eles;
-	pdesc.VertexDescription.NumElements = 4;
-	pdesc.DepthEnabled					= true;
-	pdesc.DepthFunction					= Graphics::LessEqual;
-	pdesc.DepthFormat					= Graphics::Depth24_Stencil8;
-	pdesc.ColorFormats[0]				= Graphics::Format::RGBA_8_Unorm;
-	pdesc.ColorFormats[1]				= Graphics::Format::RGBA_8_Unorm;
-	pdesc.ColorFormats[2]				= Graphics::Format::RGBA_16_Float;
-	mGBufferPipeline = mGraphics->CreateGraphicsPipeline(pdesc);
+		Graphics::GraphicsPipelineDescription pdesc = {};
+		pdesc.PixelShader.ShaderEntryPoint	= "PSGBuffer";
+		pdesc.PixelShader.ShaderPath		= "Deferred.hlsl";
+		pdesc.PixelShader.Type				= Graphics::Pixel;
+		pdesc.VertexShader.ShaderEntryPoint = "VSGBuffer";
+		pdesc.VertexShader.ShaderPath		= "Deferred.hlsl";
+		pdesc.VertexShader.Type				= Graphics::Vertex;
+		const size_t v3Size = sizeof(glm::vec3);
+		Graphics::VertexInputDescription::VertexInputElement eles[4] =
+		{
+			{ "POSITION",0,Graphics::Format::RGB_32_Float,0 },
+			{ "NORMAL",0,Graphics::Format::RGB_32_Float,v3Size },
+			{ "TANGENT",0,Graphics::Format::RGB_32_Float,v3Size * 2 },
+			{ "TEXCOORD",0,Graphics::Format::RG_32_Float,v3Size * 3 },
+		};
+		pdesc.VertexDescription.Elements	= eles;
+		pdesc.VertexDescription.NumElements = 4;
+		pdesc.DepthEnabled					= true;
+		pdesc.DepthFunction					= Graphics::LessEqual;
+		pdesc.DepthFormat					= Graphics::Depth24_Stencil8;
+		pdesc.ColorFormats[0]				= Graphics::Format::RGBA_16_Float;
+		pdesc.ColorFormats[1]				= Graphics::Format::RGBA_8_Snorm;
+		pdesc.ColorFormats[2]				= Graphics::Format::RGBA_16_Float;
+		mGBufferPipeline = mGraphics->CreateGraphicsPipeline(pdesc);
+	}
+	// Light pass pipeline
+	{
+		Graphics::GraphicsPipelineDescription desc;
+		desc.VertexShader.ShaderEntryPoint	= "VSLightPass";
+		desc.VertexShader.ShaderPath		= "Deferred.hlsl";
+		desc.VertexShader.Type				= Graphics::Vertex;
+
+		desc.PixelShader.ShaderEntryPoint	= "PSLightPass";
+		desc.PixelShader.ShaderPath		= "Deferred.hlsl";
+		desc.PixelShader.Type				= Graphics::Pixel;
+
+		Graphics::VertexInputDescription::VertexInputElement eles[1] =
+		{
+			"POSITION",0,Graphics::Format::RGB_32_Float,0
+		};
+		desc.VertexDescription.Elements		= eles;
+		desc.VertexDescription.NumElements	= 1;
+		desc.DepthEnabled					= false;
+		desc.ColorFormats[0]				= Graphics::Format::RGBA_16_Float;
+		{
+			desc.BlendTargets[0].Enabled		= true;
+			desc.BlendTargets[0].SrcBlendColor	= Graphics::BlendFunction::BlendOne;
+			desc.BlendTargets[0].DstBlendColor	= Graphics::BlendFunction::BlendOne;
+			desc.BlendTargets[0].BlendOpColor	= Graphics::BlendOperation::BlendOpAdd;
+			
+			desc.BlendTargets[0].SrcBlendAlpha = Graphics::BlendFunction::BlendOne;
+			desc.BlendTargets[0].DstBlendAlpha = Graphics::BlendFunction::BlendOne;
+			desc.BlendTargets[0].BlendOpAlpha = Graphics::BlendOperation::BlendOpAdd;
+		}
+		mLightPassPipeline = mGraphics->CreateGraphicsPipeline(desc);
+
+		mLightInfoHandle = mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(mLightInfo));
+	}
 
 	// Load test textures
 	{
@@ -80,7 +116,7 @@ bool ShowcaseScene::Initialize()
 
 	// Cb
 	mAppDataHandle = mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AppData));
-	mAppData.View		= glm::lookAt(glm::vec3(0.0f, 1.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0));
+	mAppData.View		= glm::lookAt(glm::vec3(0.0f, 3.0f, 4.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0));
 	mAppData.Projection = glm::perspective(glm::radians(85.0f), 1280.0f / 920.0f, 0.1f, 100.0f);
 
 	// Full screen stuf
@@ -123,12 +159,14 @@ void ShowcaseScene::Update(float dt)
 
 void ShowcaseScene::Draw(float dt)
 {
+	float clearBlue[4] = { 0.2f,0.2f,0.3f,1.0f };
+	float clearBlack[4] = { 0.0f,0.0f,0.0f,1.0f };
+
 	// GBuffer pass
 	{
 		Graphics::TextureHandle gbuffer[3] = { mGBuffer.Color,mGBuffer.Normals,mGBuffer.Position };
 		mGraphics->SetTargets(3, gbuffer, &mGBuffer.Depth);
-		float clear[4] = { 0.2f,0.2f,0.3f,1.0f };
-		mGraphics->ClearTargets(3, gbuffer, clear , &mGBuffer.Depth, 1.0f, 0);
+		mGraphics->ClearTargets(3, gbuffer, clearBlack, &mGBuffer.Depth, 1.0f, 0);
 	
 		mGraphics->SetGraphicsPipeline(mGBufferPipeline);
 		mGraphics->SetScissor(0.0f, 0.0f, 1280.0f, 920.0f); // dont like this
@@ -137,6 +175,7 @@ void ShowcaseScene::Draw(float dt)
 			mGraphics->SetTopology(Graphics::TriangleList);
 			const auto curActor = mActors[i];
 			mAppData.Model = glm::mat4(1.0f);
+			mAppData.Model = glm::rotate(mAppData.Model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 			mGraphics->SetConstantBuffer(mAppDataHandle, 0, sizeof(mAppData), &mAppData);
 			mGraphics->SetVertexBuffer(curActor->AMesh.VertexBuffer, curActor->AMesh.NumVertex * curActor->AMesh.ElementSize, curActor->AMesh.ElementSize);
 			if (CHECK_TEXTURE(curActor->ShadeInfo.AlbedoTexture))
@@ -155,14 +194,33 @@ void ShowcaseScene::Draw(float dt)
 
 	// Light pass
 	{
-		// bind pipeline (with add blend)
-		// set light pass target
-		// for each light set cb and draw bounding shape
+		mGraphics->SetTargets(1, &mLightPass, nullptr);
+		mGraphics->ClearTargets(1, &mLightPass, clearBlack, nullptr, 0.0f, 0);
+		mGraphics->SetGraphicsPipeline(mLightPassPipeline);
+		mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
+		{
+			mGraphics->SetTexture(mGBuffer.Color, 0);
+			mGraphics->SetTexture(mGBuffer.Normals, 1);
+
+			mLightInfo.LightColor = glm::vec4(0.4f, 0.4f, 1.0f,1.0f);
+			mLightInfo.LightPosition = glm::vec4(-0.5f,-0.5f,-1.0f,0.0f);
+			mGraphics->SetConstantBuffer(mLightInfoHandle, 1, sizeof(mLightInfo), &mLightInfo);
+			mGraphics->Draw(6, 0);
+
+			mGraphics->SetTexture(mGBuffer.Color, 0);
+			mGraphics->SetTexture(mGBuffer.Normals, 1);
+
+			mLightInfo.LightColor = glm::vec4(0.8f, 0.3f, 0.3f, 1.0f);
+			mLightInfo.LightPosition = glm::vec4( 0.5f,  -0.25f, -1.0f, 0.0f);
+			mGraphics->SetConstantBuffer(mLightInfoHandle, 1, sizeof(mLightInfo), &mLightInfo);
+			mGraphics->Draw(6, 0);
+		}
+		mGraphics->DisableAllTargets();
 	}
 
 	// Post processing and display
 	mGraphics->SetGraphicsPipeline(mFullScreenPipeline);
-	mGraphics->SetTexture(mGBuffer.Color, 0);
+	mGraphics->SetTexture(mLightPass, 0);
 	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
 	mGraphics->Draw(6, 0);
 
@@ -205,8 +263,10 @@ void ShowcaseScene::Draw(float dt)
 
 void ShowcaseScene::Resize(int w, int h)
 {
-	mGBuffer.Color = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_8_Unorm, Graphics::TextureFlags::RenderTarget);
-	mGBuffer.Normals = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_8_Unorm, Graphics::TextureFlags::RenderTarget);
+	mGBuffer.Color = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::RenderTarget);
+	mGBuffer.Normals = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_8_Snorm, Graphics::TextureFlags::RenderTarget);
 	mGBuffer.Position = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::RenderTarget);
 	mGBuffer.Depth = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::Depth24_Stencil8, Graphics::TextureFlags::DepthStencil);
+
+	mLightPass = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::RenderTarget);
 }
