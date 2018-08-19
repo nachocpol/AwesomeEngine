@@ -7,6 +7,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#include "Graphics/World/Scene.h"
+
 namespace Graphics
 {
 	AssetImporter::AssetImporter(GraphicsInterface* graphics):
@@ -18,7 +20,7 @@ namespace Graphics
 	{
 	}
 
-	bool AssetImporter::LoadModel(const char* path,Mesh*& outMeshes, uint8_t& numMeshes)
+	bool AssetImporter::LoadModel(const char* path,Graphics::Scene* scene)
 	{
 		std::string fullPath = "..\\..\\Assets\\Meshes\\" + std::string(path);
 		tinyobj::attrib_t attribs;
@@ -107,20 +109,47 @@ namespace Graphics
 
 		// Create the meshes 
 		auto eleSize = sizeof(FullVertex);
-		numMeshes = shapes.size();
-		outMeshes = new Mesh[numMeshes];
+		auto numMeshes = shapes.size();
+		Mesh* loadedMeshes = new Mesh[numMeshes];
 		for (int i = 0; i < numMeshes; i++)
 		{
 			auto numEles = vertexDataShapes[i].size();
-			outMeshes[i].VertexBuffer = mGraphicsInterface->CreateBuffer
+			loadedMeshes[i].VertexBuffer = mGraphicsInterface->CreateBuffer
 			(
 				BufferType::VertexBuffer, 
 				CPUAccess::None, 
 				numEles * eleSize, 
 				vertexDataShapes[i].data()
 			);
-			outMeshes[i].ElementSize = eleSize;
-			outMeshes[i].NumVertex = numEles;
+			loadedMeshes[i].ElementSize = eleSize;
+			loadedMeshes[i].NumVertex = numEles;
+		}
+
+		// Add the meshes to the scene 
+		for (int i = 0; i < numMeshes; i++)
+		{
+			auto actor = scene->AddActor();
+			actor->AMesh = loadedMeshes[i];
+
+			tinyobj::material_t* mat;
+			if (!materials.empty())
+			{
+				mat = &materials[shapes[i].mesh.material_ids[0]];
+				if (!mat->diffuse_texname.empty())
+				{
+					LoadAndCreateTexture(mat->diffuse_texname.c_str(), actor->ShadeInfo.AlbedoTexture);
+				}
+				if (!mat->bump_texname.empty())
+				{
+					LoadAndCreateTexture(mat->bump_texname.c_str(), actor->ShadeInfo.BumpMapTexture);
+				}
+				actor->ShadeInfo.AlbedoColor = glm::vec4(mat->diffuse[0], mat->diffuse[1], mat->diffuse[2], 1.0f);
+			}
+			// Make obvious that we dont have a material
+			else
+			{
+				actor->ShadeInfo.AlbedoColor = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+			}
 		}
 
 		return true;
@@ -148,5 +177,27 @@ namespace Graphics
 		{
 			stbi_image_free(loadedData);
 		}
+	}
+
+	bool AssetImporter::LoadAndCreateTexture(const char* path, Graphics::TextureHandle& outHandle)
+	{
+		// Check if the texture is already loaded
+		if (mLoadedTextures.find(path) != mLoadedTextures.end())
+		{
+			outHandle = mLoadedTextures[path];
+			return true;
+		}
+		// ...otherwise load it
+		unsigned char* tData = nullptr;
+		int x, y;
+		Graphics::Format format;
+		if (LoadTexture(path, tData, x, y, format))
+		{
+			outHandle = mGraphicsInterface->CreateTexture2D(x, y, 1, 1, format, Graphics::TextureFlagNone, tData);
+			mLoadedTextures[path] = outHandle;
+			FreeLoadedTexture(tData);
+			return true;
+		}
+		return false;
 	}
 }

@@ -11,7 +11,7 @@
 	#pragma comment(lib,"d3dcompiler")
 
 	#define NUM_BACK_BUFFERS		3
-	#define MAX_BUFFERS				256
+	#define MAX_BUFFERS				512
 	#define MAX_TEXTURES			256
 	#define MAX_GRAPHICS_PIPELINES  256
 

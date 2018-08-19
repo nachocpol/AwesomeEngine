@@ -1,9 +1,11 @@
 #pragma once
 
 #include "GraphicsInterface.h"
-
+#include <map>
 namespace Graphics 
 {
+	class Scene;
+
 	struct FullVertex
 	{
 		glm::vec3 Position;
@@ -18,11 +20,14 @@ namespace Graphics
 	public:
 		AssetImporter(GraphicsInterface* graphics);
 		~AssetImporter();
-		bool LoadModel(const char* path, Mesh*& outMeshes,uint8_t& numMeshes);
+		bool LoadModel(const char* path, Graphics::Scene* scene);
 		bool LoadTexture(const char* path, unsigned char*& outData, int& width, int& height, Graphics::Format& format);
 		void FreeLoadedTexture(void* loadedData);
+		bool LoadAndCreateTexture(const char* path, Graphics::TextureHandle& outHandle);
 
 	private:
 		GraphicsInterface* mGraphicsInterface;
+		// We cache already loaded textures
+		std::map<std::string, Graphics::TextureHandle> mLoadedTextures;
 	};
 }

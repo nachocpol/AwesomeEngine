@@ -15,6 +15,7 @@ namespace Graphics
 		}
 		TextureHandle AlbedoTexture;
 		TextureHandle BumpMapTexture;
+		glm::vec4 AlbedoColor;
 	};
 	struct Actor
 	{

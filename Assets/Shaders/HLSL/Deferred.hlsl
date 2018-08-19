@@ -6,6 +6,12 @@ cbuffer AppData : register(b0)
 	float4 DebugColor;
 }
 
+cbuffer MaterialInfo: register (b1)
+{
+	float4 AlbedoColor;
+	int UseBumpTex;
+}
+
 cbuffer	LightInfo : register (b1)
 {
 	float4 LightPosition; // xyz(For directional, this is direction) w(type)
@@ -57,11 +63,13 @@ VSOutGBuffer VSGBuffer(VSInGBuffer i)
 	o.PNormal = normalize(i.Normal);
 	o.PTexcoord = i.Texcoord;
 
-	float3 T 	= normalize(mul(Model,float4(i.Tangent,0.0f))).xyz;
-	float3 N 	= normalize(mul(Model,float4(i.Normal,0.0f))).xyz;
-	//T 			= normalize(T - dot(T, N) * N);
-	float3 B 	= cross(T,N);
-	o.TBN 		= float3x3(T,B,N);
+	if(UseBumpTex)
+	{
+		float3 T 	= normalize(mul(Model,float4(i.Tangent,0.0f))).xyz;
+		float3 N 	= normalize(mul(Model,float4(i.Normal,0.0f))).xyz;
+		float3 B 	= cross(T,N);
+		o.TBN 		= float3x3(T,B,N);
+	}
 	
 	return o;
 }
@@ -69,12 +77,20 @@ VSOutGBuffer VSGBuffer(VSInGBuffer i)
 PSOutGBuffer PSGBuffer(VSOutGBuffer i)
 {	
 	float4 c = AlbedoTexture.Sample(LinearWrapSampler,i.PTexcoord);
-	float3 n = BumpTexture.Sample(LinearWrapSampler,i.PTexcoord).xyz;;
-	n = normalize(n * 2.0f - 1.0f);
-	n = normalize(mul(i.TBN, n));
+	float3 n;
+	if(UseBumpTex)
+	{
+		n = BumpTexture.Sample(LinearWrapSampler,i.PTexcoord).xyz;
+		n = normalize(n * 2.0f - 1.0f);
+		n = normalize(mul(i.TBN, n));
+	}
+	else
+	{
+		n = i.PNormal.xyz;
+	}
 
 	PSOutGBuffer o;
-	o.Color = c;
+	o.Color = c * AlbedoColor;
 	o.Normals = float4(n,1.0f);
 	o.Position = i.WPos;
 
@@ -125,6 +141,8 @@ float4 PSLightPass(VSOutLightPass i): SV_Target0
 
 	}
 
+	float4 ambient = pcol * 0.15f;
 	float4 finalColor = pcol* LightColor * ndl;
+	finalColor += ambient;
 	return finalColor;
 }

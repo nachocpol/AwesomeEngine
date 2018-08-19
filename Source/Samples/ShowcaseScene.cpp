@@ -83,41 +83,24 @@ bool ShowcaseScene::Initialize()
 		unsigned char* tData = nullptr;
 		int x, y;
 		Graphics::Format format;
-		if (mAssetImporter->LoadTexture("tiles05/Tiles05_COL_VAR1_1K.jpg", tData, x, y, format))
+		if (mAssetImporter->LoadTexture("white.png", tData, x, y, format))
 		{
-			mTestAlbedo = mGraphics->CreateTexture2D(x, y, 1, 1, format, Graphics::TextureFlagNone, tData);
-			mAssetImporter->FreeLoadedTexture(tData);
-		}
-	}
-	{
-		unsigned char* tData = nullptr;
-		int x, y;
-		Graphics::Format format;
-		if (mAssetImporter->LoadTexture("tiles05/Tiles05_NRM_1K.jpg", tData, x, y, format))
-		{
-			mTestBump = mGraphics->CreateTexture2D(x, y, 1, 1, format, Graphics::TextureFlagNone, tData);
+			mWhiteTexture = mGraphics->CreateTexture2D(x, y, 1, 1, format, Graphics::TextureFlagNone, tData);
 			mAssetImporter->FreeLoadedTexture(tData);
 		}
 	}
 
 	// Load models
-	Graphics::Mesh* loadedMeshes = nullptr;
-	uint8_t numLoadedMeshes = 0;
-	//mAssetImporter->LoadModel("mitsuba/mitsuba-sphere.obj", loadedMeshes, numLoadedMeshes);
-	mAssetImporter->LoadModel("cube.obj", loadedMeshes, numLoadedMeshes);
-	
-	for (int i = 0; i < numLoadedMeshes; i++)
-	{
-		auto actor = AddActor();
-		actor->AMesh = loadedMeshes[i];
-		actor->ShadeInfo.AlbedoTexture = mTestAlbedo;
-		actor->ShadeInfo.BumpMapTexture = mTestBump;
-	}
+	//mAssetImporter->LoadModel("mitsuba/mitsuba-sphere.obj", this);
+	//mAssetImporter->LoadModel("cube.obj", this);
+	mAssetImporter->LoadModel("sponza/sponza.obj", this);
 
 	// Cb
 	mAppDataHandle = mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AppData));
-	mAppData.View		= glm::lookAt(glm::vec3(0.0f, 3.0f, 4.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0));
-	mAppData.Projection = glm::perspective(glm::radians(85.0f), 1280.0f / 920.0f, 0.1f, 100.0f);
+	mAppData.View		= glm::lookAt(glm::vec3(10.0f,10.0f,0.0f), glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0));
+	mAppData.Projection = glm::perspective(glm::radians(85.0f), 1280.0f / 920.0f, 0.1f, 500.0f);
+
+	mMaterialInfoHandle = mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(MaterialInfo));
 
 	// Full screen stuf
 	{
@@ -170,22 +153,39 @@ void ShowcaseScene::Draw(float dt)
 	
 		mGraphics->SetGraphicsPipeline(mGBufferPipeline);
 		mGraphics->SetScissor(0.0f, 0.0f, 1280.0f, 920.0f); // dont like this
+
 		for (int i = 0; i < mActors.size(); i++)
 		{
 			mGraphics->SetTopology(Graphics::TriangleList);
 			const auto curActor = mActors[i];
 			mAppData.Model = glm::mat4(1.0f);
-			mAppData.Model = glm::rotate(mAppData.Model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+			mAppData.Model = glm::scale(mAppData.Model, glm::vec3(0.1f));
+			//mAppData.Model = glm::rotate(mAppData.Model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 			mGraphics->SetConstantBuffer(mAppDataHandle, 0, sizeof(mAppData), &mAppData);
+
 			mGraphics->SetVertexBuffer(curActor->AMesh.VertexBuffer, curActor->AMesh.NumVertex * curActor->AMesh.ElementSize, curActor->AMesh.ElementSize);
+			// Albedo texture
 			if (CHECK_TEXTURE(curActor->ShadeInfo.AlbedoTexture))
 			{
 				mGraphics->SetTexture(curActor->ShadeInfo.AlbedoTexture, 0);
 			}
+			else
+			{
+				mGraphics->SetTexture(mWhiteTexture, 0);
+			}
+			// Bump texture
 			if (CHECK_TEXTURE(curActor->ShadeInfo.BumpMapTexture))
 			{
 				mGraphics->SetTexture(curActor->ShadeInfo.BumpMapTexture, 1);
+				mMaterialInfo.UseBumpTex = 1;
 			}
+			else
+			{
+				mMaterialInfo.UseBumpTex = 0;
+			}
+			mMaterialInfo.AlbedoColor = curActor->ShadeInfo.AlbedoColor;
+			mGraphics->SetConstantBuffer(mMaterialInfoHandle, 1, sizeof(mMaterialInfo), &mMaterialInfo);
+
 			mGraphics->Draw(curActor->AMesh.NumVertex, 0);
 		}
 
@@ -202,18 +202,18 @@ void ShowcaseScene::Draw(float dt)
 			mGraphics->SetTexture(mGBuffer.Color, 0);
 			mGraphics->SetTexture(mGBuffer.Normals, 1);
 
-			mLightInfo.LightColor = glm::vec4(0.4f, 0.4f, 1.0f,1.0f);
+			mLightInfo.LightColor = glm::vec4(1.0f, 1.0f, 1.0f,1.0f);
 			mLightInfo.LightPosition = glm::vec4(-0.5f,-0.5f,-1.0f,0.0f);
 			mGraphics->SetConstantBuffer(mLightInfoHandle, 1, sizeof(mLightInfo), &mLightInfo);
 			mGraphics->Draw(6, 0);
 
-			mGraphics->SetTexture(mGBuffer.Color, 0);
-			mGraphics->SetTexture(mGBuffer.Normals, 1);
-
-			mLightInfo.LightColor = glm::vec4(0.8f, 0.3f, 0.3f, 1.0f);
-			mLightInfo.LightPosition = glm::vec4( 0.5f,  -0.25f, -1.0f, 0.0f);
-			mGraphics->SetConstantBuffer(mLightInfoHandle, 1, sizeof(mLightInfo), &mLightInfo);
-			mGraphics->Draw(6, 0);
+			// mGraphics->SetTexture(mGBuffer.Color, 0);
+			// mGraphics->SetTexture(mGBuffer.Normals, 1);
+			// 
+			// mLightInfo.LightColor = glm::vec4(0.8f, 0.3f, 0.3f, 1.0f);
+			// mLightInfo.LightPosition = glm::vec4( 0.5f,  -0.25f, -1.0f, 0.0f);
+			// mGraphics->SetConstantBuffer(mLightInfoHandle, 1, sizeof(mLightInfo), &mLightInfo);
+			// mGraphics->Draw(6, 0);
 		}
 		mGraphics->DisableAllTargets();
 	}
@@ -223,42 +223,6 @@ void ShowcaseScene::Draw(float dt)
 	mGraphics->SetTexture(mLightPass, 0);
 	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
 	mGraphics->Draw(6, 0);
-
-#if 0
-	mGraphics->SetTargets(1, &mMainTarget, &mMainDepthTarget);
-	float clear[4] = { 0.2f,0.2f,0.3f,1.0f };
-	mGraphics->ClearTargets(1, &mMainTarget, clear, &mMainDepthTarget, 1.0f, 0);
-	mGraphics->SetTopology(Graphics::Topology::TriangleList);
-	mGraphics->SetScissor(0.0f, 0.0f, 1280.0f, 920.0f);
-	mGraphics->SetGraphicsPipeline(mFordwardPipeline);
-	for (int i = 0; i < mActors.size(); i++)
-	{
-		const auto curActor = mActors[i];
-		mAppData.Model = glm::mat4(1.0f);
-		mAppData.Model = glm::translate(mAppData.Model, glm::vec3(0.0f, 0.0f, 0.0f));
-		mAppData.Model = glm::scale(mAppData.Model, glm::vec3(1.0f));
-		mAppData.DebugColor = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-		mGraphics->SetVertexBuffer(curActor->AMesh.VertexBuffer, curActor->AMesh.ElementSize * curActor->AMesh.NumVertex, curActor->AMesh.ElementSize);
-		mGraphics->SetConstantBuffer(mAppDataHandle, 0, sizeof(mAppData), &mAppData);
-		{
-			if (CHECK_TEXTURE(curActor->ShadeInfo.AlbedoTexture))
-			{
-				mGraphics->SetTexture(curActor->ShadeInfo.AlbedoTexture,0);
-			}
-			if (CHECK_TEXTURE(curActor->ShadeInfo.BumpMapTexture))
-			{
-				mGraphics->SetTexture(curActor->ShadeInfo.BumpMapTexture, 1);
-			}
-		}
-		mGraphics->Draw(curActor->AMesh.NumVertex, 0);
-	}
-	mGraphics->DisableAllTargets();
-	
-	mGraphics->SetGraphicsPipeline(mFullScreenPipeline);
-	mGraphics->SetTexture(mMainTarget, 0);
-	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
-	mGraphics->Draw(6, 0);
-#endif
 }
 
 void ShowcaseScene::Resize(int w, int h)

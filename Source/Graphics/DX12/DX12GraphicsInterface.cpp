@@ -473,6 +473,7 @@ namespace Graphics { namespace DX12 {
 				SetBufferData(handle, (int)size, 0, data);
 			}
 			mCurBuffer++;
+			std::cout << mCurBuffer << std::endl;
 			return handle;
 		}
 		return InvalidBuffer;

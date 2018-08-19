@@ -23,6 +23,13 @@ private:
 	}mAppData;
 	Graphics::BufferHandle mAppDataHandle;
 
+	struct MaterialInfo
+	{
+		glm::vec4 AlbedoColor;
+		int UseBumpTex;
+	}mMaterialInfo;
+	Graphics::BufferHandle mMaterialInfoHandle;
+
 	struct LightInfo
 	{
 		glm::vec4 LightPosition; // xyz(For directional this is direction) w(type)
@@ -49,6 +56,5 @@ private:
 	Graphics::GraphicsPipeline mFullScreenPipeline;
 	Graphics::BufferHandle mFullScreenQuad;
 
-	Graphics::TextureHandle mTestAlbedo;
-	Graphics::TextureHandle mTestBump;
+	Graphics::TextureHandle mWhiteTexture;
 };
