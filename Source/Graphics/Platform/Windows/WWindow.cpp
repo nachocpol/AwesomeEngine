@@ -1,5 +1,6 @@
 #include "Graphics/Platform/Windows/WWindow.h"
 #include <iostream>
+#include "Graphics/Platform/InputManager.h"
 
 namespace Graphics { namespace Platform {namespace Windows {
 
@@ -16,7 +17,9 @@ namespace Graphics { namespace Platform {namespace Windows {
 				}
 			}
 			return 0;
-
+		case WM_CHAR:
+			InputManager::GetInstance()->KeyStates[(char)wParam] = KeyState::StateDown;
+			break;
 		case WM_DESTROY:
 			PostQuitMessage(0);
 			return 0;
@@ -105,6 +108,9 @@ namespace Graphics { namespace Platform {namespace Windows {
 		UpdateWindow(mHandle);
 		mClosed = false;
 
+		// Provide the input with a handle to this window
+		InputManager::GetInstance()->WHandle = mHandle;
+
 		return true;
 	}
 
@@ -115,6 +121,8 @@ namespace Graphics { namespace Platform {namespace Windows {
 
 	void WWindow::Update()
 	{
+		memset(InputManager::GetInstance()->KeyStates, 0, sizeof(InputManager::GetInstance()->KeyStates));
+
 		MSG msg = {};
 		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{

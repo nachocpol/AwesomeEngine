@@ -1,5 +1,6 @@
 #include "DX12GraphicsInterface.h"
 #include "Graphics/Platform/Windows/WWindow.h"
+#include "cro_mipmap.h"
 #include <iostream>
 #include <vector>
 
@@ -34,15 +35,13 @@ namespace Graphics { namespace DX12 {
 		mOutputFormat = Format::RGBA_8_Unorm;
 
 		UINT factoryFlags = 0;
-#ifdef _DEBUG
-		ID3D12Debug* debugController = nullptr;
-		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
-		{
-			debugController->EnableDebugLayer();
-			factoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
-			debugController->Release();
-		}
-#endif
+		// ID3D12Debug* debugController = nullptr;
+		// if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+		// {
+		// 	debugController->EnableDebugLayer();
+		// 	factoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+		// 	debugController->Release();
+		// }
 
 		// Query adapters:
 		IDXGIFactory4* factory = nullptr;
@@ -473,12 +472,12 @@ namespace Graphics { namespace DX12 {
 				SetBufferData(handle, (int)size, 0, data);
 			}
 			mCurBuffer++;
-			std::cout << mCurBuffer << std::endl;
 			return handle;
 		}
 		return InvalidBuffer;
 	}
 
+#pragma optimize("",off)
 	TextureHandle DX12GraphicsInterface::CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags /* = TextureFlagNone*/, void* data /*= nullptr*/)
 	{
 		if ((width * height * layers * mips) == 0)
@@ -530,8 +529,12 @@ namespace Graphics { namespace DX12 {
 		// Upload buffer
 		UINT64 rowSize;
 		UINT64 totalSize;
-		mDevice->GetCopyableFootprints(&texDesc, 0, 1, 0, nullptr, nullptr, &rowSize, &totalSize);
-		heapP.Type = D3D12_HEAP_TYPE_UPLOAD;
+		mDevice->GetCopyableFootprints(&texDesc, 0, mips, 0, nullptr, nullptr, &rowSize, &totalSize);
+		
+		// Sometimes the following CreateCommittedResource call will fail with "wrong memory preference..." 
+		// setting again fixes it. Prob because it is a static member¿??¿
+		heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+
 		mDevice->CreateCommittedResource
 		(
 			&heapP, D3D12_HEAP_FLAG_NONE,
@@ -539,15 +542,32 @@ namespace Graphics { namespace DX12 {
 			nullptr,
 			IID_PPV_ARGS(&curTexEntry->UploadHeap)
 		);
+		std::cout << "Upload Heap size: " << totalSize << std::endl;
 		if (data)
 		{
-			D3D12_SUBRESOURCE_DATA sdat = {};
-			sdat.pData		= data;
-			sdat.RowPitch	= rowSize;
-			sdat.SlicePitch	= rowSize * height;
-			mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, state, COPY_DST));
-			UpdateSubresources(mDefaultSurface.CmdContext, curTexEntry->Resource, curTexEntry->UploadHeap, 0, 0, 1, &sdat);
-			mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, COPY_DST,state));
+			auto baseDesc = curTexEntry->Resource->GetDesc();
+			// Offset to the data buffer
+			int curOff = 0;
+			D3D12_PLACED_SUBRESOURCE_FOOTPRINT* footPrints = new D3D12_PLACED_SUBRESOURCE_FOOTPRINT[mips];
+			mDevice->GetCopyableFootprints(&baseDesc, 0, mips, 0, footPrints, nullptr, nullptr,nullptr);
+			for (int i = 0; i < mips; i++)
+			{
+				mDevice->GetCopyableFootprints(&baseDesc, i, 1, 0, nullptr, nullptr, &rowSize, &totalSize);
+
+				D3D12_SUBRESOURCE_DATA d	= {};
+				d.pData						= (void*)(curOff + (unsigned char*)data);
+				d.RowPitch					= rowSize;		
+				d.SlicePitch				= totalSize; 
+
+				const D3D12_PLACED_SUBRESOURCE_FOOTPRINT& curPrint = footPrints[i];
+
+				mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, state, COPY_DST));
+				UpdateSubresources(mDefaultSurface.CmdContext, curTexEntry->Resource, curTexEntry->UploadHeap, curPrint.Offset, i,1, &d);
+				mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, COPY_DST,state));
+				
+				curOff += rowSize * curPrint.Footprint.Height;
+			}
+			delete[] footPrints;
 		}
 
 		if ((flags & RenderTarget) == RenderTarget)
@@ -567,6 +587,7 @@ namespace Graphics { namespace DX12 {
 		mCurTexture++;
 		return handle;
 	}
+#pragma optimize("",on)
 
 	GraphicsPipeline DX12GraphicsInterface::CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)
 	{

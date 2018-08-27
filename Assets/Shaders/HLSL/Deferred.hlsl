@@ -61,15 +61,15 @@ VSOutGBuffer VSGBuffer(VSInGBuffer i)
 	o.WPos = mul(Model,float4(i.Position,1.0f));
 	o.ClipPos = mul(Projection,mul(View,o.WPos));
 	o.PNormal = normalize(i.Normal);
-	o.PTexcoord = i.Texcoord;
+	o.PTexcoord = float2(i.Texcoord.x,1.0f - i.Texcoord.y);
 
-	if(UseBumpTex)
-	{
-		float3 T 	= normalize(mul(Model,float4(i.Tangent,0.0f))).xyz;
-		float3 N 	= normalize(mul(Model,float4(i.Normal,0.0f))).xyz;
-		float3 B 	= cross(T,N);
-		o.TBN 		= float3x3(T,B,N);
-	}
+	//if(UseBumpTex)
+	//{
+	//	float3 T 	= normalize(mul(Model,float4(i.Tangent,0.0f))).xyz;
+	//	float3 N 	= normalize(mul(Model,float4(i.Normal,0.0f))).xyz;
+	//	float3 B 	= cross(T,N);
+	//	o.TBN 		= float3x3(T,B,N);
+	//}
 	
 	return o;
 }
@@ -78,13 +78,13 @@ PSOutGBuffer PSGBuffer(VSOutGBuffer i)
 {	
 	float4 c = AlbedoTexture.Sample(LinearWrapSampler,i.PTexcoord);
 	float3 n;
-	if(UseBumpTex)
-	{
-		n = BumpTexture.Sample(LinearWrapSampler,i.PTexcoord).xyz;
-		n = normalize(n * 2.0f - 1.0f);
-		n = normalize(mul(i.TBN, n));
-	}
-	else
+	//if(UseBumpTex)
+	//{
+	//	n = BumpTexture.Sample(LinearWrapSampler,i.PTexcoord).xyz;
+	//	n = normalize(n * 2.0f - 1.0f);
+	//	n = normalize(mul(i.TBN, n));
+	//}
+	//else
 	{
 		n = i.PNormal.xyz;
 	}
@@ -120,13 +120,13 @@ VSOutLightPass VSLightPass(VSInLightPass i)
 float4 PSLightPass(VSOutLightPass i): SV_Target0
 {
 	float4 pcol = GColor.Sample(LinearWrapSampler, i.TexCoord);
-	float3 pnorm = GNormals.Sample(LinearWrapSampler, i.TexCoord).xyz;
+	float3 pnorm = normalize(GNormals.Sample(LinearWrapSampler, i.TexCoord).xyz);
 
 	float ndl = 0.0f;
 
 	if(LightPosition.w == 0.0f) // Directional
 	{
-		ndl = max(dot(pnorm.xyz,-LightPosition.xyz),0.0f);
+		ndl = max(dot(pnorm.xyz,-normalize(LightPosition.xyz)),0.0f);
 	}
 	else if(LightPosition.w == 1.0f) // Point
 	{

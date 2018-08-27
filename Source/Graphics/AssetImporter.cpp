@@ -7,7 +7,15 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#include "cro_mipmap.h"
+
 #include "Graphics/World/Scene.h"
+
+#include "DirectXTex.h"
+
+#include <stdint.h>
+
+#pragma optimize("",off)
 
 namespace Graphics
 {
@@ -155,19 +163,56 @@ namespace Graphics
 		return true;
 	}
 
-	bool AssetImporter::LoadTexture(const char* path, unsigned char*& outData, int& width, int& height,Graphics::Format& format )
+	bool AssetImporter::LoadTexture(const char* path, unsigned char*& outData, int& width, int& height,int& mips, Graphics::Format& format, bool calcMips )
 	{
-		int n;
 		std::string fullPath = "../../Assets/Textures/" + std::string(path);
-		// we force all textures to have RGBA!
-		outData = stbi_load(fullPath.c_str(), &width, &height, &n, 4);
-		if (!outData)
+		std::wstring wname = std::wstring(fullPath.begin(), fullPath.end());
+
+		DirectX::TexMetadata metadata = {};
+		DirectX::ScratchImage scratchImage;
+		HRESULT res;
+
+		if (fullPath.find(".dds") != std::string::npos)
+		{
+			res = DirectX::LoadFromDDSFile(wname.c_str(), DirectX::DDS_FLAGS_NONE, &metadata, scratchImage);
+		}
+		else if (fullPath.find(".tga") != std::string::npos)
+		{
+			res = DirectX::LoadFromTGAFile(wname.c_str(), &metadata, scratchImage);
+		}
+		else
+		{
+			res = DirectX::LoadFromWICFile(wname.c_str(), DirectX::WIC_FLAGS_NONE, &metadata, scratchImage);
+		}
+		if (FAILED(res))
 		{
 			return false;
 		}
-		// We are loading a texture with 8bits per element (unsigned char)
-		// Also we force it to be RGBA
-		format = Graphics::Format::RGBA_8_Unorm;
+
+		mips = 1;
+		DirectX::ScratchImage scratchWithMips;
+		if (calcMips && metadata.mipLevels == 1)
+		{
+			DirectX::GenerateMipMaps((const DirectX::Image)*scratchImage.GetImages(), DirectX::TEX_FILTER_FANT, 0, scratchWithMips);
+			mips = scratchWithMips.GetImageCount();
+			
+			auto image = scratchWithMips.GetImage(0, 0, 0);
+			width = image->width;
+			height = image->height;
+			format = Graphics::Format::RGBA_8_Unorm;
+			outData = (unsigned char*)malloc(scratchWithMips.GetPixelsSize());
+			memcpy(outData, image->pixels, scratchWithMips.GetPixelsSize());
+		}
+		else
+		{
+			auto image = scratchImage.GetImage(0,0,0);
+			width = image->width;
+			height = image->height;
+			format = Graphics::Format::RGBA_8_Unorm;
+			outData = (unsigned char*)malloc(width * height * sizeof(uint8_t) * 4);
+			memcpy(outData, image->pixels, width * height * sizeof(uint8_t) * 4);
+		}
+
 		return true;
 	}
 
@@ -175,7 +220,7 @@ namespace Graphics
 	{
 		if (loadedData)
 		{
-			stbi_image_free(loadedData);
+			// stbi_image_free(loadedData);
 		}
 	}
 
@@ -189,15 +234,16 @@ namespace Graphics
 		}
 		// ...otherwise load it
 		unsigned char* tData = nullptr;
-		int x, y;
+		int x, y,m;
 		Graphics::Format format;
-		if (LoadTexture(path, tData, x, y, format))
+		if (LoadTexture(path, tData, x, y, m, format, true))
 		{
-			outHandle = mGraphicsInterface->CreateTexture2D(x, y, 1, 1, format, Graphics::TextureFlagNone, tData);
+			outHandle = mGraphicsInterface->CreateTexture2D(x, y, m, 1, format, Graphics::TextureFlagNone, tData);
 			mLoadedTextures[path] = outHandle;
 			FreeLoadedTexture(tData);
 			return true;
 		}
+
 		return false;
 	}
 }

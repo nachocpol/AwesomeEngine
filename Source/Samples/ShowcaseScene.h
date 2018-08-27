@@ -14,6 +14,26 @@ public:
 	void Resize(int w, int h)override final;
 
 private:
+	struct Camera
+	{
+		Camera(): Position(0.0f,10.0f,-1.0f),
+			View(0.0f,0.0f,1.0f),
+			Up(0.0f,1.0f,0.0f),
+			Right(1.0f,0.0,0.0f),
+			LastMouse(512.0f,420.0f),
+			Yaw(-90.0f),
+			Pitch(0.0f)
+		{
+		}
+		glm::vec3 Position;
+		glm::vec3 View;
+		glm::vec3 Up;
+		glm::vec3 Right;
+		glm::vec2 LastMouse;
+		float Yaw;
+		float Pitch;
+	}mCamera;
+
 	struct AppData
 	{
 		glm::mat4 Model;

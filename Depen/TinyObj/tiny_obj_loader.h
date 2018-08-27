@@ -63,9 +63,6 @@ namespace tinyobj {
 
 #endif
 
-// NACHO
-#pragma optimize("",off)
-
 // https://en.wikipedia.org/wiki/Wavefront_.obj_file says ...
 //
 //  -blendu on | off                       # set horizontal texture blending
@@ -2396,9 +2393,6 @@ bool LoadObjWithCallback(std::istream &inStream, const callback_t &callback,
 
   return true;
 }
-
-// NACHO
-#pragma optimize( "", on )  
 
 #ifdef __clang__
 #pragma clang diagnostic pop

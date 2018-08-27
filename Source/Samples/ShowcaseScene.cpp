@@ -1,4 +1,5 @@
 #include "ShowcaseScene.h"
+#include "Graphics/Platform/InputManager.h"
 #include <stdint.h>
 
 struct VertexScreen
@@ -81,9 +82,9 @@ bool ShowcaseScene::Initialize()
 	// Load test textures
 	{
 		unsigned char* tData = nullptr;
-		int x, y;
+		int x, y,m;
 		Graphics::Format format;
-		if (mAssetImporter->LoadTexture("white.png", tData, x, y, format))
+		if (mAssetImporter->LoadTexture("white.png", tData, x, y, m, format, false))
 		{
 			mWhiteTexture = mGraphics->CreateTexture2D(x, y, 1, 1, format, Graphics::TextureFlagNone, tData);
 			mAssetImporter->FreeLoadedTexture(tData);
@@ -96,8 +97,7 @@ bool ShowcaseScene::Initialize()
 	mAssetImporter->LoadModel("sponza/sponza.obj", this);
 
 	// Cb
-	mAppDataHandle = mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AppData));
-	mAppData.View		= glm::lookAt(glm::vec3(10.0f,10.0f,0.0f), glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0));
+	mAppDataHandle		= mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AppData));
 	mAppData.Projection = glm::perspective(glm::radians(85.0f), 1280.0f / 920.0f, 0.1f, 500.0f);
 
 	mMaterialInfoHandle = mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(MaterialInfo));
@@ -138,6 +138,43 @@ bool ShowcaseScene::Initialize()
 
 void ShowcaseScene::Update(float dt)
 {
+	const auto input = Graphics::Platform::InputManager::GetInstance();
+
+	if (input->IsKeyPressed('a'))
+	{
+		mCamera.Position += mCamera.Right;
+	}
+	else if (input->IsKeyPressed('d'))
+	{
+		mCamera.Position -= mCamera.Right;
+	}
+	else if (input->IsKeyPressed('w'))
+	{
+		mCamera.Position += mCamera.View;
+	}
+	else if (input->IsKeyPressed('s'))
+	{
+		mCamera.Position -= mCamera.View;
+	}
+
+	glm::vec2 mousePos	= input->GetMousePos();
+	glm::vec2 mouseOff	= mousePos - mCamera.LastMouse;
+	mCamera.LastMouse	= mousePos;
+
+	mouseOff		*= 0.5f;
+	mCamera.Yaw		-= mouseOff.x;
+	mCamera.Pitch	-= mouseOff.y;
+	mCamera.Pitch	= glm::clamp(mCamera.Pitch, -89.0f, 89.0f);
+
+	mCamera.View.x = cos(glm::radians(mCamera.Yaw)) * cos(glm::radians(mCamera.Pitch));
+	mCamera.View.y = sin(glm::radians(mCamera.Pitch));
+	mCamera.View.z = sin(glm::radians(mCamera.Yaw)) * cos(glm::radians(mCamera.Pitch));
+	mCamera.View = glm::normalize(mCamera.View);
+
+	mCamera.Right = glm::normalize(glm::cross(mCamera.View, glm::vec3(0.0f, 1.0f, 0.0f)));
+	mCamera.Up = glm::normalize(glm::cross(mCamera.Right,mCamera.View));
+
+	mAppData.View = glm::lookAt(mCamera.Position, mCamera.Position + mCamera.View, mCamera.Up);
 }
 
 void ShowcaseScene::Draw(float dt)
@@ -203,7 +240,7 @@ void ShowcaseScene::Draw(float dt)
 			mGraphics->SetTexture(mGBuffer.Normals, 1);
 
 			mLightInfo.LightColor = glm::vec4(1.0f, 1.0f, 1.0f,1.0f);
-			mLightInfo.LightPosition = glm::vec4(-0.5f,-0.5f,-1.0f,0.0f);
+			mLightInfo.LightPosition = glm::vec4(0.5f,-0.6f,0.5f,0.0f);
 			mGraphics->SetConstantBuffer(mLightInfoHandle, 1, sizeof(mLightInfo), &mLightInfo);
 			mGraphics->Draw(6, 0);
 

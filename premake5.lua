@@ -22,13 +22,17 @@ project "Graphics"
 			"Depen/JSON",
 			"Depen/TinyObj",
 			"Depen/GLM",
-			"Depen/STB"
+			"Depen/STB",
+
+			"../DirectXTex/DirectXTex"
 		}	
 		libdirs
 		{
+			"../DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Debug"
 		}
 		links
 		{
+			"DirectXTex"
 		}
 	filter "configurations:Release"
 		optimize "On"
@@ -39,13 +43,17 @@ project "Graphics"
 			"Depen/JSON",
 			"Depen/TinyObj",
 			"Depen/GLM",
-			"Depen/STB"
+			"Depen/STB",
+
+			"../DirectXTex/DirectXTex"	
 		}
 		libdirs
 		{
+			"../DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Release"
 		}
 		links
 		{
+			"DirectXTex"
 		}
 
 project "AwesomeTriangle"
