@@ -44,8 +44,9 @@ struct VSOutGBuffer
 	float4 ClipPos  : SV_Position;
 	float4 WPos		: WPOS;
 	float3 PNormal  : NORMAL;
-	float2 PTexcoord: TEXCOORD;
+	float2 PTexcoord: TEXCOORD0;
 	float3x3 TBN	: TBNMATRIX;
+	float3 PDebugCol: TEXCOORD1;
 };
 
 struct PSOutGBuffer
@@ -62,14 +63,16 @@ VSOutGBuffer VSGBuffer(VSInGBuffer i)
 	o.ClipPos = mul(Projection,mul(View,o.WPos));
 	o.PNormal = normalize(i.Normal);
 	o.PTexcoord = float2(i.Texcoord.x,1.0f - i.Texcoord.y);
+	o.PDebugCol = float3(0.0f,0.0f,0.0f);
 
-	//if(UseBumpTex)
-	//{
-	//	float3 T 	= normalize(mul(Model,float4(i.Tangent,0.0f))).xyz;
-	//	float3 N 	= normalize(mul(Model,float4(i.Normal,0.0f))).xyz;
-	//	float3 B 	= cross(T,N);
-	//	o.TBN 		= float3x3(T,B,N);
-	//}
+	if(UseBumpTex)
+	{
+		float3 T 	= normalize(mul(Model,float4(i.Tangent,0.0f))).xyz;
+		float3 N 	= normalize(mul(Model,float4(i.Normal,0.0f))).xyz;
+		float3 B 	= cross(T,N);
+		o.TBN 		= float3x3(T,B,N);
+		o.PDebugCol = B;	
+	}
 	
 	return o;
 }
@@ -78,19 +81,22 @@ PSOutGBuffer PSGBuffer(VSOutGBuffer i)
 {	
 	float4 c = AlbedoTexture.Sample(LinearWrapSampler,i.PTexcoord);
 	float3 n;
-	//if(UseBumpTex)
-	//{
-	//	n = BumpTexture.Sample(LinearWrapSampler,i.PTexcoord).xyz;
-	//	n = normalize(n * 2.0f - 1.0f);
-	//	n = normalize(mul(i.TBN, n));
-	//}
-	//else
+	if(UseBumpTex)
+	{
+		n = BumpTexture.Sample(LinearWrapSampler,i.PTexcoord).xyz;
+		n = normalize((n * 2.0f) - 1.0f);
+		n = normalize(mul(i.TBN, n));
+
+		n = i.PNormal; // NACHO
+	}
+	else
 	{
 		n = i.PNormal.xyz;
 	}
 
 	PSOutGBuffer o;
 	o.Color = c * AlbedoColor;
+	o.Color = float4(i.PDebugCol,1.0f); // NACHo
 	o.Normals = float4(n,1.0f);
 	o.Position = i.WPos;
 

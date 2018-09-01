@@ -77,4 +77,12 @@ private:
 	Graphics::BufferHandle mFullScreenQuad;
 
 	Graphics::TextureHandle mWhiteTexture;
+
+	enum DeferredDebugMode
+	{
+		DebugNone = 0,
+		DebugNormals,
+		DebugAlbedo,
+		DebugPositions
+	}mDeferredDebugMode;
 };

@@ -14,7 +14,8 @@ namespace Graphics { namespace DX12 {
 		mCurGraphicsPipeline(0),
 		mFrameHeap(nullptr),
 		mFrame(0),
-		mCurBackBuffer(0)
+		mCurBackBuffer(0),
+		mNumDrawCalls(0)
 	{
 		memset(mBuffers, 0, sizeof(BufferEntry*) * MAX_BUFFERS);
 
@@ -379,6 +380,8 @@ namespace Graphics { namespace DX12 {
 		mFrameHeap[idx]->Reset();
 		ID3D12DescriptorHeap* heaps[] = { mFrameHeap[idx]->GetHeap() };
 		context->SetDescriptorHeaps(1, heaps);
+
+		mNumDrawCalls = 0;
 	}
 
 	void DX12GraphicsInterface::EndFrame()
@@ -401,6 +404,8 @@ namespace Graphics { namespace DX12 {
 		mDefaultSurface.SwapChain->Present(1, 0);
 		mDefaultSurface.GPUFencesValues[idx]++;
 		mDefaultSurface.Queue->Signal(mDefaultSurface.GPUFences[idx], mDefaultSurface.GPUFencesValues[idx]);
+
+		std::cout << mNumDrawCalls << std::endl;
 
 		mFrame++;
 	}
@@ -431,8 +436,12 @@ namespace Graphics { namespace DX12 {
 
 	BufferHandle DX12GraphicsInterface::CreateBuffer(BufferType type, CPUAccess cpuAccess, uint64_t size, void* data /*= nullptr*/)
 	{
-		if (type == Graphics::VertexBuffer || type == Graphics::ConstantBuffer)
+		if (type == Graphics::VertexBuffer || type == Graphics::ConstantBuffer || type == Graphics::IndexBuffer)
 		{
+			bool isIndex = type == Graphics::IndexBuffer;
+
+			assert(mCurBuffer < MAX_BUFFERS);
+
 			mBuffers[mCurBuffer] = new BufferEntry;
 			auto bufferEntry = mBuffers[mCurBuffer];
 			bufferEntry->Type = type;
@@ -445,7 +454,7 @@ namespace Graphics { namespace DX12 {
 				&heapProp, 
 				D3D12_HEAP_FLAG_NONE, 
 				&desc, 
-				VERTEX_CB_READ,
+				isIndex ? INDEX_READ : VERTEX_CB_READ,
 				nullptr, 
 				IID_PPV_ARGS(&bufferEntry->Buffer)
 			);
@@ -466,7 +475,7 @@ namespace Graphics { namespace DX12 {
 			);
 			
 			BufferHandle handle = { mCurBuffer };
-			bufferEntry->State = VERTEX_CB_READ;
+			bufferEntry->State = isIndex ? INDEX_READ : VERTEX_CB_READ;
 			if (data && type != Graphics::ConstantBuffer)
 			{
 				SetBufferData(handle, (int)size, 0, data);
@@ -477,7 +486,6 @@ namespace Graphics { namespace DX12 {
 		return InvalidBuffer;
 	}
 
-#pragma optimize("",off)
 	TextureHandle DX12GraphicsInterface::CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags /* = TextureFlagNone*/, void* data /*= nullptr*/)
 	{
 		if ((width * height * layers * mips) == 0)
@@ -542,7 +550,6 @@ namespace Graphics { namespace DX12 {
 			nullptr,
 			IID_PPV_ARGS(&curTexEntry->UploadHeap)
 		);
-		std::cout << "Upload Heap size: " << totalSize << std::endl;
 		if (data)
 		{
 			auto baseDesc = curTexEntry->Resource->GetDesc();
@@ -645,7 +652,7 @@ namespace Graphics { namespace DX12 {
 		// Raster info
 		{
 			psoDesc.RasterizerState				= CD3DX12_RASTERIZER_DESC::CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-			psoDesc.RasterizerState.CullMode	= D3D12_CULL_MODE_NONE;
+			psoDesc.RasterizerState.CullMode	= D3D12_CULL_MODE_BACK;
 			psoDesc.RasterizerState.FillMode	= D3D12_FILL_MODE_SOLID;
 		}
 		psoDesc.InputLayout = inputL;
@@ -724,6 +731,20 @@ namespace Graphics { namespace DX12 {
 			mDefaultSurface.CmdContext->IASetVertexBuffers(0, 1, &view);
 		}
 	}
+#pragma optimize("",off)
+	void DX12GraphicsInterface::SetIndexBuffer(const BufferHandle& buffer,int size)
+	{
+		const auto buffeEntry = mBuffers[buffer.Handle];
+		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && buffeEntry != nullptr)
+		{
+			D3D12_INDEX_BUFFER_VIEW view = {};
+			view.BufferLocation = buffeEntry->Buffer->GetGPUVirtualAddress();
+			view.SizeInBytes = size;
+			auto s = sizeof(unsigned int);
+			view.Format = DXGI_FORMAT_R32_UINT;
+			mDefaultSurface.CmdContext->IASetIndexBuffer(&view);
+		}
+	}
 
 	void DX12GraphicsInterface::SetTopology(const Topology& topology)
 	{
@@ -749,6 +770,21 @@ namespace Graphics { namespace DX12 {
 		mFrameHeap[idx]->OffsetHandles(2);
 
 		mDefaultSurface.CmdContext->DrawInstanced(numvtx, 1, vtxOffset, 0);
+
+		mNumDrawCalls++;
+	}
+
+	void DX12GraphicsInterface::DrawIndexed(uint32_t numIdx)
+	{
+		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
+		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
+		// Offset it for nex draw call
+		// TO-DO: we should only do this is the state changed
+		mFrameHeap[idx]->OffsetHandles(2);
+
+		mDefaultSurface.CmdContext->DrawIndexedInstanced(numIdx, 1, 0, 0, 0);
+
+		mNumDrawCalls++;
 	}
 
 	void DX12GraphicsInterface::SetViewport(float x, float y, float w, float h, float zmin /*=0.0f*/, float zmax/*=1.0f*/)

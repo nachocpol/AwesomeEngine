@@ -133,6 +133,9 @@ bool ShowcaseScene::Initialize()
 		mFullScreenQuad = mGraphics->CreateBuffer(Graphics::VertexBuffer, Graphics::None, sizeof(VertexScreen) * 6, &vtxData);
 	}
 
+	// Load default sphere
+	mAssetImporter->LoadModel("sphere.obj", this);
+
 	return true;
 }
 
@@ -196,11 +199,12 @@ void ShowcaseScene::Draw(float dt)
 			mGraphics->SetTopology(Graphics::TriangleList);
 			const auto curActor = mActors[i];
 			mAppData.Model = glm::mat4(1.0f);
-			mAppData.Model = glm::scale(mAppData.Model, glm::vec3(0.1f));
+			mAppData.Model = glm::scale(mAppData.Model, glm::vec3(1.1f));
 			//mAppData.Model = glm::rotate(mAppData.Model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 			mGraphics->SetConstantBuffer(mAppDataHandle, 0, sizeof(mAppData), &mAppData);
 
-			mGraphics->SetVertexBuffer(curActor->AMesh.VertexBuffer, curActor->AMesh.NumVertex * curActor->AMesh.ElementSize, curActor->AMesh.ElementSize);
+			mGraphics->SetVertexBuffer(curActor->AMesh.VertexBuffer, curActor->AMesh.NumVertex * curActor->AMesh.VertexSize, curActor->AMesh.VertexSize);
+			mGraphics->SetIndexBuffer(curActor->AMesh.IndexBuffer, curActor->AMesh.NumIndices * sizeof(unsigned int));
 			// Albedo texture
 			if (CHECK_TEXTURE(curActor->ShadeInfo.AlbedoTexture))
 			{
@@ -223,7 +227,7 @@ void ShowcaseScene::Draw(float dt)
 			mMaterialInfo.AlbedoColor = curActor->ShadeInfo.AlbedoColor;
 			mGraphics->SetConstantBuffer(mMaterialInfoHandle, 1, sizeof(mMaterialInfo), &mMaterialInfo);
 
-			mGraphics->Draw(curActor->AMesh.NumVertex, 0);
+			mGraphics->DrawIndexed(curActor->AMesh.NumIndices);
 		}
 
 		mGraphics->DisableAllTargets();
@@ -255,11 +259,51 @@ void ShowcaseScene::Draw(float dt)
 		mGraphics->DisableAllTargets();
 	}
 
+	if (Graphics::Platform::InputManager::GetInstance()->IsSpecialKeyPressed(Graphics::Platform::SpecialKey::F1))
+	{
+		mDeferredDebugMode = DebugNone;
+	}
+	if (Graphics::Platform::InputManager::GetInstance()->IsSpecialKeyPressed(Graphics::Platform::SpecialKey::F2))
+	{
+		mDeferredDebugMode = DebugAlbedo;
+	}
+	if (Graphics::Platform::InputManager::GetInstance()->IsSpecialKeyPressed(Graphics::Platform::SpecialKey::F3))
+	{
+		mDeferredDebugMode = DebugNormals;
+	}
+	if (Graphics::Platform::InputManager::GetInstance()->IsSpecialKeyPressed(Graphics::Platform::SpecialKey::F4))
+	{
+		mDeferredDebugMode = DebugPositions;
+	}
+
 	// Post processing and display
 	mGraphics->SetGraphicsPipeline(mFullScreenPipeline);
 	mGraphics->SetTexture(mLightPass, 0);
 	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
 	mGraphics->Draw(6, 0);
+
+	// Debug mode
+	if (mDeferredDebugMode != DebugNone)
+	{
+		Graphics::TextureHandle debugTex = Graphics::InvalidTexture;
+		switch (mDeferredDebugMode)
+		{
+		case ShowcaseScene::DebugNormals:
+			debugTex = mGBuffer.Normals;
+			break;
+		case ShowcaseScene::DebugAlbedo:
+			debugTex = mGBuffer.Color;
+			break;
+		case ShowcaseScene::DebugPositions:
+			debugTex = mGBuffer.Position;
+			break;
+		}
+
+		mGraphics->SetGraphicsPipeline(mFullScreenPipeline);
+		mGraphics->SetTexture(debugTex, 0);
+		mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
+		mGraphics->Draw(6, 0);
+	}
 }
 
 void ShowcaseScene::Resize(int w, int h)

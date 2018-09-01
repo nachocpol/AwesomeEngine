@@ -24,15 +24,21 @@ project "Graphics"
 			"Depen/GLM",
 			"Depen/STB",
 
-			"../DirectXTex/DirectXTex"
+			"../DirectXTex/DirectXTex",
+
+			"../assimp/include"
 		}	
 		libdirs
 		{
-			"../DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Debug"
+			"../DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Debug",
+			"../assimp/lib/Debug"
 		}
 		links
 		{
-			"DirectXTex"
+			"DirectXTex",
+			"assimp-vc140-mt",
+			"IrrXML",
+			"zlibstaticd"
 		}
 	filter "configurations:Release"
 		optimize "On"
@@ -45,15 +51,19 @@ project "Graphics"
 			"Depen/GLM",
 			"Depen/STB",
 
-			"../DirectXTex/DirectXTex"	
+			"../DirectXTex/DirectXTex",
+
+			"../assimp/include"	
 		}
 		libdirs
 		{
-			"../DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Release"
+			"../DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Release",
+			"../assimp/lib/Release"
 		}
 		links
 		{
-			"DirectXTex"
+			"DirectXTex",
+			"assimp-vc140-mt"
 		}
 
 project "AwesomeTriangle"
@@ -159,10 +169,12 @@ project "AwesomeShowcase"
 		}	
 		libdirs
 		{
+			"../assimp/lib/Debug"
 		}
 		links
 		{
-			"Graphics"
+			"Graphics",
+			"assimp-vc140-mt"
 		}
 	filter "configurations:Release"
 		optimize "On"
@@ -174,8 +186,10 @@ project "AwesomeShowcase"
 		}
 		libdirs
 		{
+			"../assimp/lib/Release"
 		}
 		links
 		{
-			"Graphics"
+			"Graphics",
+			"assimp-vc140-mt"
 		}

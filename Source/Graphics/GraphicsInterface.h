@@ -151,11 +151,21 @@ namespace Graphics
 	{
 		std::string ComputeShaderSource;
 	};
+	struct BoundingSphere
+	{
+		BoundingSphere() :Center(0.0f), Radius(-1.0f) {}
+		BoundingSphere(glm::vec3 c, float r) :Center(c), Radius(r) {}
+		glm::vec3 Center;
+		float Radius;
+	};
 	struct Mesh
 	{
 		BufferHandle VertexBuffer;
 		uint32_t NumVertex;
-		uint32_t ElementSize;
+		uint32_t VertexSize;
+		BufferHandle IndexBuffer;
+		uint32_t NumIndices;
+		BoundingSphere SphericalBounds;
 	};
 
 	static const BufferHandle InvalidBuffer = { UINT64_MAX };
@@ -180,9 +190,11 @@ namespace Graphics
 		virtual ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc) = 0;
 		virtual void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data) = 0;
 		virtual void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize) = 0;
+		virtual void SetIndexBuffer(const BufferHandle& buffer, int size) = 0;
 		virtual void SetTopology(const Topology& topology) = 0;
 		virtual void SetGraphicsPipeline(const GraphicsPipeline& pipeline) = 0;
 		virtual void Draw(uint32_t numvtx,uint32_t vtxOffset) = 0;
+		virtual void DrawIndexed(uint32_t numIdx) = 0;
 		virtual void SetViewport(float x, float y, float w, float h, float zmin = 0.0f, float zmax = 1.0f) = 0;
 		virtual void SetScissor(float x, float y, float w, float h) = 0;
 		virtual void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data) = 0;

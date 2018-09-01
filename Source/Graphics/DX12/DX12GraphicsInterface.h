@@ -88,9 +88,11 @@ namespace Graphics{ namespace DX12
 		ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc)final override;
 		void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)final override;
 		void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize)final override;
+		void SetIndexBuffer(const BufferHandle& buffer,int size)final override;
 		void SetTopology(const Topology& topology)final override;
 		void SetGraphicsPipeline(const GraphicsPipeline& pipeline)final override;
 		void Draw(uint32_t numvtx, uint32_t vtxOffset)final override;
+		void DrawIndexed(uint32_t numIdx)final override;
 		void SetViewport(float x, float y, float w, float h, float zmin = 0.0f, float zmax = 1.0f)final override;
 		void SetScissor(float x, float y, float w, float h)final override;
 		void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data)final override;
@@ -137,6 +139,8 @@ namespace Graphics{ namespace DX12
 
 		uint64_t mFrame;
 		uint64_t mCurBackBuffer;
+
+		uint64_t mNumDrawCalls;
 	};
 
 }}

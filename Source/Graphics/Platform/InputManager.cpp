@@ -7,6 +7,7 @@ namespace Graphics {namespace Platform {
 	InputManager::InputManager()
 	{
 		memset(KeyStates, 0, sizeof(KeyStates));
+		memset(SpecialKeyStates, 0, sizeof(SpecialKeyStates));
 	}
 
 	InputManager::~InputManager()
@@ -27,6 +28,15 @@ namespace Graphics {namespace Platform {
 	bool InputManager::IsKeyPressed(char key)
 	{
 		if (KeyStates[key] == StateDown)
+		{
+			return true;
+		}
+		return false;
+	}
+
+	bool InputManager::IsSpecialKeyPressed(SpecialKey key)
+	{
+		if (SpecialKeyStates[key] == StateDown)
 		{
 			return true;
 		}

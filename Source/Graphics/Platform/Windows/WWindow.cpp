@@ -6,19 +6,31 @@ namespace Graphics { namespace Platform {namespace Windows {
 
 	LRESULT CALLBACK WndProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 	{
+		auto inputManager = InputManager::GetInstance();
 		switch (msg)
 		{
 		case WM_KEYDOWN:
-			if (wParam == VK_ESCAPE) 
+			switch (wParam)
 			{
-				if (MessageBox(0, L"Are you sure you want to exit?",L"Really?", MB_YESNO | MB_ICONQUESTION) == IDYES)
-				{
-					DestroyWindow(hWnd);
-				}
+			case VK_F1:		inputManager->SpecialKeyStates[SpecialKey::F1]	= KeyState::StateDown; break;
+			case VK_F2:		inputManager->SpecialKeyStates[SpecialKey::F2]	= KeyState::StateDown; break;
+			case VK_F3:		inputManager->SpecialKeyStates[SpecialKey::F3]	= KeyState::StateDown; break;
+			case VK_F4:		inputManager->SpecialKeyStates[SpecialKey::F4]	= KeyState::StateDown; break;
+			case VK_F5:		inputManager->SpecialKeyStates[SpecialKey::F5]	= KeyState::StateDown; break;
+			case VK_F6:		inputManager->SpecialKeyStates[SpecialKey::F6]	= KeyState::StateDown; break;
+			case VK_F7:		inputManager->SpecialKeyStates[SpecialKey::F7]	= KeyState::StateDown; break;
+			case VK_F8:		inputManager->SpecialKeyStates[SpecialKey::F8]	= KeyState::StateDown; break;
+			case VK_F9:		inputManager->SpecialKeyStates[SpecialKey::F9]	= KeyState::StateDown; break;
+			case VK_F10:	inputManager->SpecialKeyStates[SpecialKey::F10] = KeyState::StateDown; break;
+			case VK_F11:	inputManager->SpecialKeyStates[SpecialKey::F11] = KeyState::StateDown; break;
+			case VK_F12:	inputManager->SpecialKeyStates[SpecialKey::F12] = KeyState::StateDown; break;
+			case VK_ESCAPE:	inputManager->SpecialKeyStates[SpecialKey::ESC] = KeyState::StateDown; break;
+			case VK_TAB:	inputManager->SpecialKeyStates[SpecialKey::TAB]	= KeyState::StateDown; break;
+			default: break;
 			}
-			return 0;
+			break;
 		case WM_CHAR:
-			InputManager::GetInstance()->KeyStates[(char)wParam] = KeyState::StateDown;
+			inputManager->KeyStates[(char)wParam] = KeyState::StateDown;
 			break;
 		case WM_DESTROY:
 			PostQuitMessage(0);
@@ -121,7 +133,9 @@ namespace Graphics { namespace Platform {namespace Windows {
 
 	void WWindow::Update()
 	{
-		memset(InputManager::GetInstance()->KeyStates, 0, sizeof(InputManager::GetInstance()->KeyStates));
+		auto inputManager = InputManager::GetInstance();
+		memset(inputManager->KeyStates, 0, sizeof(inputManager->KeyStates));
+		memset(inputManager->SpecialKeyStates, 0, sizeof(inputManager->SpecialKeyStates));
 
 		MSG msg = {};
 		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
