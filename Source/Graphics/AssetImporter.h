@@ -23,7 +23,7 @@ namespace Graphics
 		bool LoadModel(const char* path, Graphics::Scene* scene);
 		bool LoadTexture(const char* path, unsigned char*& outData, int& width, int& height, int& mips, Graphics::Format& format, bool calcMips);
 		void FreeLoadedTexture(void* loadedData);
-		bool LoadAndCreateTexture(const char* path, Graphics::TextureHandle& outHandle);
+		Graphics::TextureHandle LoadAndCreateTexture(const char* path);
 	private:
 		GraphicsInterface* mGraphicsInterface;
 		// We cache already loaded textures

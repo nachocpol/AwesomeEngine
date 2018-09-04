@@ -594,7 +594,7 @@ namespace Graphics { namespace DX12 {
 		mCurTexture++;
 		return handle;
 	}
-#pragma optimize("",on)
+//#pragma optimize("",on)
 
 	GraphicsPipeline DX12GraphicsInterface::CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)
 	{
@@ -731,7 +731,7 @@ namespace Graphics { namespace DX12 {
 			mDefaultSurface.CmdContext->IASetVertexBuffers(0, 1, &view);
 		}
 	}
-#pragma optimize("",off)
+// #pragma optimize("",off)
 	void DX12GraphicsInterface::SetIndexBuffer(const BufferHandle& buffer,int size)
 	{
 		const auto buffeEntry = mBuffers[buffer.Handle];

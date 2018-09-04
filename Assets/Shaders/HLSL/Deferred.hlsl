@@ -56,13 +56,24 @@ struct PSOutGBuffer
 	float4 Position : SV_Target2;
 };
 
+float4 ToLinearRGB(float4 base,float gamma)
+{
+	return pow(base,float4(gamma,gamma,gamma,gamma));
+}
+
+float4 ToSRGB(float4 base, float gamma)
+{
+	float grcp = 1.0f/ gamma;
+	return pow(base,float4(grcp,grcp,grcp,grcp));
+}
+
 VSOutGBuffer VSGBuffer(VSInGBuffer i)
 {
 	VSOutGBuffer o;
 	o.WPos = mul(Model,float4(i.Position,1.0f));
 	o.ClipPos = mul(Projection,mul(View,o.WPos));
 	o.PNormal = normalize(i.Normal);
-	o.PTexcoord = float2(i.Texcoord.x,1.0f - i.Texcoord.y);
+	o.PTexcoord = float2(i.Texcoord.x,i.Texcoord.y);
 	o.PDebugCol = float3(0.0f,0.0f,0.0f);
 
 	if(UseBumpTex)
@@ -71,7 +82,6 @@ VSOutGBuffer VSGBuffer(VSInGBuffer i)
 		float3 N 	= normalize(mul(Model,float4(i.Normal,0.0f))).xyz;
 		float3 B 	= cross(T,N);
 		o.TBN 		= float3x3(T,B,N);
-		o.PDebugCol = B;	
 	}
 	
 	return o;
@@ -79,15 +89,13 @@ VSOutGBuffer VSGBuffer(VSInGBuffer i)
 
 PSOutGBuffer PSGBuffer(VSOutGBuffer i)
 {	
-	float4 c = AlbedoTexture.Sample(LinearWrapSampler,i.PTexcoord);
+	float4 c = ToLinearRGB(AlbedoTexture.Sample(LinearWrapSampler,i.PTexcoord),2.2);
 	float3 n;
 	if(UseBumpTex)
 	{
 		n = BumpTexture.Sample(LinearWrapSampler,i.PTexcoord).xyz;
 		n = normalize((n * 2.0f) - 1.0f);
 		n = normalize(mul(i.TBN, n));
-
-		n = i.PNormal; // NACHO
 	}
 	else
 	{
@@ -96,7 +104,6 @@ PSOutGBuffer PSGBuffer(VSOutGBuffer i)
 
 	PSOutGBuffer o;
 	o.Color = c * AlbedoColor;
-	o.Color = float4(i.PDebugCol,1.0f); // NACHo
 	o.Normals = float4(n,1.0f);
 	o.Position = i.WPos;
 
@@ -150,5 +157,5 @@ float4 PSLightPass(VSOutLightPass i): SV_Target0
 	float4 ambient = pcol * 0.15f;
 	float4 finalColor = pcol* LightColor * ndl;
 	finalColor += ambient;
-	return finalColor;
+	return ToSRGB(finalColor,2.2);
 }

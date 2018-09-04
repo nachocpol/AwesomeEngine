@@ -199,7 +199,7 @@ void ShowcaseScene::Draw(float dt)
 			mGraphics->SetTopology(Graphics::TriangleList);
 			const auto curActor = mActors[i];
 			mAppData.Model = glm::mat4(1.0f);
-			mAppData.Model = glm::scale(mAppData.Model, glm::vec3(1.1f));
+			mAppData.Model = glm::scale(mAppData.Model, glm::vec3(0.1f));
 			//mAppData.Model = glm::rotate(mAppData.Model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 			mGraphics->SetConstantBuffer(mAppDataHandle, 0, sizeof(mAppData), &mAppData);
 
