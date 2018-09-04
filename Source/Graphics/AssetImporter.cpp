@@ -37,7 +37,7 @@ namespace Graphics
 	{
 		std::string fullPath = "..\\..\\Assets\\Meshes\\" + std::string(path);
 
-		unsigned int assimpFlags = aiProcess_CalcTangentSpace | aiProcess_Triangulate | aiProcess_GenSmoothNormals;
+		unsigned int assimpFlags = aiProcess_CalcTangentSpace | aiProcess_Triangulate;
 		bool isLeftHanded = true;
 		if (isLeftHanded)
 		{
@@ -50,6 +50,7 @@ namespace Graphics
 			std::cout << aImporter.GetErrorString() << std::endl;
 			return false;
 		}
+		std::cout << aImporter.GetErrorString();
 
 		// Lets generate the meshes
 		unsigned int numMeshes = loadedScene->mNumMeshes;
@@ -74,6 +75,7 @@ namespace Graphics
 				if (curLoadedMesh->HasTangentsAndBitangents())
 				{
 					vtx->Tangent = glm::vec3(curLoadedMesh->mTangents[v].x, curLoadedMesh->mTangents[v].y, curLoadedMesh->mTangents[v].z);
+					vtx->Bitangent = glm::vec3(curLoadedMesh->mBitangents[v].x, curLoadedMesh->mBitangents[v].y, curLoadedMesh->mBitangents[v].z);
 				}
 				if (curLoadedMesh->HasTextureCoords(0)) // Note that we ignore all the other uv channels
 				{
@@ -109,6 +111,7 @@ namespace Graphics
 			if (loadedScene->HasMaterials())
 			{
 				const auto curMaterial = loadedScene->mMaterials[curLoadedMesh->mMaterialIndex];
+
 				aiString tpath;
 				aiColor4D albedoColor;
 				aiGetMaterialColor(curMaterial, AI_MATKEY_COLOR_DIFFUSE, &albedoColor);
@@ -117,7 +120,9 @@ namespace Graphics
 				{
 					loadedMaterials[i].AlbedoTexture = LoadAndCreateTexture(tpath.C_Str());
 				}
-				if (curMaterial->GetTexture(aiTextureType_NORMALS, 0, &tpath) == aiReturn_SUCCESS)
+				tpath.Clear();
+				// aiTextureType_HEIGHT uhhhhhhmmm nope
+				if (curMaterial->GetTexture(aiTextureType_HEIGHT, 0, &tpath) == aiReturn_SUCCESS)
 				{
 					loadedMaterials[i].BumpMapTexture = LoadAndCreateTexture(tpath.C_Str());
 				}

@@ -195,7 +195,7 @@ namespace Graphics { namespace DX12 {
 			p2.InitAsDescriptorTable(1, &range);
 			params.push_back(p2);
 		}
-		// LineaWrapSampler (0)
+		// LineaWrapSampler (s0)
 		{
 			CD3DX12_STATIC_SAMPLER_DESC s0;
 			s0.Init
@@ -204,6 +204,17 @@ namespace Graphics { namespace DX12 {
 				D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR
 			);
 			samplers.push_back(s0);
+		}
+		// LinearClampSampler (s1)
+		{
+			CD3DX12_STATIC_SAMPLER_DESC s1;
+			s1.Init
+			(
+				1,
+				D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR,
+				D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP
+			);
+			samplers.push_back(s1);
 		}
 		rsDesc.Init((UINT)params.size(), params.data(), (UINT)samplers.size(),samplers.data());
 		rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
@@ -534,15 +545,16 @@ namespace Graphics { namespace DX12 {
 			IID_PPV_ARGS(&curTexEntry->Resource)
 		);
 
-		// Upload buffer
-		UINT64 rowSize;
+		// Here we cache a few values that we will use to upload the mips:
 		UINT64 totalSize;
-		mDevice->GetCopyableFootprints(&texDesc, 0, mips, 0, nullptr, nullptr, &rowSize, &totalSize);
+		D3D12_PLACED_SUBRESOURCE_FOOTPRINT* footPrints = new D3D12_PLACED_SUBRESOURCE_FOOTPRINT[mips];
+		UINT64* rowSizes = new UINT64[mips];
+		mDevice->GetCopyableFootprints(&texDesc, 0, mips, 0, footPrints, nullptr, rowSizes, &totalSize);
 		
+		// Upload buffer
 		// Sometimes the following CreateCommittedResource call will fail with "wrong memory preference..." 
 		// setting again fixes it. Prob because it is a static member¿??¿
 		heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-
 		mDevice->CreateCommittedResource
 		(
 			&heapP, D3D12_HEAP_FLAG_NONE,
@@ -553,29 +565,28 @@ namespace Graphics { namespace DX12 {
 		if (data)
 		{
 			auto baseDesc = curTexEntry->Resource->GetDesc();
-			// Offset to the data buffer
 			int curOff = 0;
-			D3D12_PLACED_SUBRESOURCE_FOOTPRINT* footPrints = new D3D12_PLACED_SUBRESOURCE_FOOTPRINT[mips];
-			mDevice->GetCopyableFootprints(&baseDesc, 0, mips, 0, footPrints, nullptr, nullptr,nullptr);
 			for (int i = 0; i < mips; i++)
 			{
-				mDevice->GetCopyableFootprints(&baseDesc, i, 1, 0, nullptr, nullptr, &rowSize, &totalSize);
+				const D3D12_PLACED_SUBRESOURCE_FOOTPRINT& curPrint = footPrints[i];
+
+				UINT64 curSliceSize = rowSizes[i] * curPrint.Footprint.Height;
 
 				D3D12_SUBRESOURCE_DATA d	= {};
 				d.pData						= (void*)(curOff + (unsigned char*)data);
-				d.RowPitch					= rowSize;		
-				d.SlicePitch				= totalSize; 
-
-				const D3D12_PLACED_SUBRESOURCE_FOOTPRINT& curPrint = footPrints[i];
+				d.RowPitch					= rowSizes[i];
+				d.SlicePitch				= curSliceSize;
 
 				mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, state, COPY_DST));
 				UpdateSubresources(mDefaultSurface.CmdContext, curTexEntry->Resource, curTexEntry->UploadHeap, curPrint.Offset, i,1, &d);
 				mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, COPY_DST,state));
 				
-				curOff += rowSize * curPrint.Footprint.Height;
+				curOff += rowSizes[i] * curPrint.Footprint.Height;
 			}
-			delete[] footPrints;
 		}
+
+		delete[] footPrints;
+		delete[] rowSizes;
 
 		if ((flags & RenderTarget) == RenderTarget)
 		{
@@ -853,6 +864,11 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetTexture(const TextureHandle& texture, uint8_t slot)
 	{
+		if (!CHECK_TEXTURE(texture))
+		{
+			std::cout << "Trying to set an invalid texture! \n";
+			return;
+		}
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 		const auto res = mTextures[texture.Handle]->Resource;
 		if (texture.Handle != InvalidTexture.Handle && res != nullptr)

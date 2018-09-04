@@ -21,6 +21,7 @@ cbuffer	LightInfo : register (b1)
 }
 
 SamplerState LinearWrapSampler : register(s0);
+SamplerState LinearClampSampler : register(s1);
 
 Texture2D AlbedoTexture  : register(t0);
 Texture2D BumpTexture    : register(t1);
@@ -36,6 +37,7 @@ struct VSInGBuffer
 	float3 Position : POSITION;
 	float3 Normal 	: NORMAL;
 	float3 Tangent 	: TANGENT;
+	float3 Bitangent: BITANGENT;
 	float2 Texcoord : TEXCOORD;
 };
 
@@ -80,7 +82,11 @@ VSOutGBuffer VSGBuffer(VSInGBuffer i)
 	{
 		float3 T 	= normalize(mul(Model,float4(i.Tangent,0.0f))).xyz;
 		float3 N 	= normalize(mul(Model,float4(i.Normal,0.0f))).xyz;
-		float3 B 	= cross(T,N);
+		float3 B 	= normalize(mul(Model,float4(i.Bitangent,0.0f))).xyz;
+		if(dot(cross(T,N),B) < 0.0f)
+		{
+			T = T * -1.0f;
+		}
 		o.TBN 		= float3x3(T,B,N);
 	}
 	
@@ -94,7 +100,7 @@ PSOutGBuffer PSGBuffer(VSOutGBuffer i)
 	if(UseBumpTex)
 	{
 		n = BumpTexture.Sample(LinearWrapSampler,i.PTexcoord).xyz;
-		n = normalize((n * 2.0f) - 1.0f);
+		n = n * 2.0f - 1.0f;
 		n = normalize(mul(i.TBN, n));
 	}
 	else
@@ -154,7 +160,7 @@ float4 PSLightPass(VSOutLightPass i): SV_Target0
 
 	}
 
-	float4 ambient = pcol * 0.15f;
+	float4 ambient = pcol * 0.05f;
 	float4 finalColor = pcol* LightColor * ndl;
 	finalColor += ambient;
 	return ToSRGB(finalColor,2.2);

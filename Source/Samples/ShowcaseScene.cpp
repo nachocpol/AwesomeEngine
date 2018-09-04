@@ -10,6 +10,7 @@ struct VertexScreen
 ShowcaseScene::ShowcaseScene(Graphics::GraphicsInterface* graphics, Graphics::AssetImporter* assetImp):
 	Scene::Scene(graphics,assetImp)
 {
+	mDeferredDebugMode = DeferredDebugMode::DebugNone;
 }
 
 ShowcaseScene::~ShowcaseScene()
@@ -28,20 +29,21 @@ bool ShowcaseScene::Initialize()
 		pdesc.VertexShader.ShaderPath		= "Deferred.hlsl";
 		pdesc.VertexShader.Type				= Graphics::Vertex;
 		const size_t v3Size = sizeof(glm::vec3);
-		Graphics::VertexInputDescription::VertexInputElement eles[4] =
+		Graphics::VertexInputDescription::VertexInputElement eles[5] =
 		{
 			{ "POSITION",0,Graphics::Format::RGB_32_Float,0 },
 			{ "NORMAL",0,Graphics::Format::RGB_32_Float,v3Size },
 			{ "TANGENT",0,Graphics::Format::RGB_32_Float,v3Size * 2 },
-			{ "TEXCOORD",0,Graphics::Format::RG_32_Float,v3Size * 3 },
+			{ "BITANGENT",0,Graphics::Format::RGB_32_Float,v3Size * 3 },
+			{ "TEXCOORD",0,Graphics::Format::RG_32_Float,v3Size * 4 },
 		};
 		pdesc.VertexDescription.Elements	= eles;
-		pdesc.VertexDescription.NumElements = 4;
+		pdesc.VertexDescription.NumElements = sizeof(eles) / sizeof(Graphics::VertexInputDescription::VertexInputElement);
 		pdesc.DepthEnabled					= true;
 		pdesc.DepthFunction					= Graphics::LessEqual;
 		pdesc.DepthFormat					= Graphics::Depth24_Stencil8;
 		pdesc.ColorFormats[0]				= Graphics::Format::RGBA_16_Float;
-		pdesc.ColorFormats[1]				= Graphics::Format::RGBA_8_Snorm;
+		pdesc.ColorFormats[1]				= Graphics::Format::RGBA_16_Float;
 		pdesc.ColorFormats[2]				= Graphics::Format::RGBA_16_Float;
 		mGBufferPipeline = mGraphics->CreateGraphicsPipeline(pdesc);
 	}
@@ -309,7 +311,7 @@ void ShowcaseScene::Draw(float dt)
 void ShowcaseScene::Resize(int w, int h)
 {
 	mGBuffer.Color = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::RenderTarget);
-	mGBuffer.Normals = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_8_Snorm, Graphics::TextureFlags::RenderTarget);
+	mGBuffer.Normals = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::RenderTarget);
 	mGBuffer.Position = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::RenderTarget);
 	mGBuffer.Depth = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::Depth24_Stencil8, Graphics::TextureFlags::DepthStencil);
 
