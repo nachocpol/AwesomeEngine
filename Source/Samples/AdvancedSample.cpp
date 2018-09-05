@@ -1,6 +1,7 @@
 #define NOMINMAX
 #include "Graphics/DX12/DX12GraphicsInterface.h"
 #include "Graphics/Platform/Windows/WWindow.h"
+
 #include <stdio.h>
 #include "glm/ext.hpp"
 

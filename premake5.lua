@@ -82,7 +82,8 @@ project "AwesomeTriangle"
 		{
 			"Source",
 			"Depen/DX12",
-			"Depen/GLM"
+			"Depen/GLM",
+			"Depen/STB"
 		}	
 		libdirs
 		{
@@ -97,7 +98,8 @@ project "AwesomeTriangle"
 		{
 			"Source",
 			"Depen/DX12",
-			"Depen/GLM"
+			"Depen/GLM",
+			"Depen/STB"
 		}
 		libdirs
 		{
@@ -123,7 +125,8 @@ project "AwesomeAdvanced"
 		{
 			"Source",
 			"Depen/DX12",
-			"Depen/GLM"
+			"Depen/GLM",
+			"Depen/STB"
 		}	
 		libdirs
 		{
@@ -138,7 +141,8 @@ project "AwesomeAdvanced"
 		{
 			"Source",
 			"Depen/DX12",
-			"Depen/GLM"
+			"Depen/GLM",
+			"Depen/STB"
 		}
 		libdirs
 		{
@@ -165,7 +169,8 @@ project "AwesomeShowcase"
 		{
 			"Source",
 			"Depen/DX12",
-			"Depen/GLM"
+			"Depen/GLM",
+			"Depen/STB"
 		}	
 		libdirs
 		{
@@ -182,7 +187,8 @@ project "AwesomeShowcase"
 		{
 			"Source",
 			"Depen/DX12",
-			"Depen/GLM"
+			"Depen/GLM",
+			"Depen/STB"
 		}
 		libdirs
 		{

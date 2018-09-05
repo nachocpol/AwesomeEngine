@@ -3,6 +3,7 @@
 #include "Graphics/DX12/DX12GraphicsInterface.h"
 #include "Graphics/Platform/Windows/WWindow.h"
 #include "Graphics/AssetImporter.h"
+#include "Graphics/UI/UIInterface.h"
 #include "ShowcaseScene.h"
 
 bool InitSystems();
@@ -12,6 +13,7 @@ Graphics::Platform::BaseWindow* gWindow = nullptr;
 Graphics::GraphicsInterface* gGraphics = nullptr;
 Graphics::AssetImporter* gAssetImporter = nullptr;
 ShowcaseScene* gScene = nullptr;
+Graphics::UI::UIInterface* gUIInterface = nullptr;
 
 int main()
 {
@@ -26,11 +28,19 @@ int main()
 	bool running = true;
 	while (running)
 	{
+		gUIInterface->StartFrame();
 		gWindow->Update();
 		gScene->Update(0.0f);
 
 		gGraphics->StartFrame();
 		gScene->Draw(0.0f);
+		
+		ImGui::Begin("HELLO");
+		bool demoOpen = true;
+		ImGui::ShowDemoWindow(&demoOpen);
+		ImGui::End();
+
+		gUIInterface->EndFrame();
 		gGraphics->EndFrame();
 
 		running = !gWindow->IsClosed();
@@ -48,6 +58,9 @@ bool InitSystems()
 	gGraphics->Initialize(gWindow);
 
 	gAssetImporter = new Graphics::AssetImporter(gGraphics);
+
+	gUIInterface = new Graphics::UI::UIInterface;
+	gUIInterface->Initialize(gWindow,gGraphics);
 
 	return true;
 }
