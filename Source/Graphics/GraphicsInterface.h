@@ -43,6 +43,8 @@ namespace Graphics
 		Depth24_Stencil8 = 5,
 		RGBA_8_Unorm = 6,
 		RGBA_8_Snorm = 7,
+		R_16_Uint = 8,
+		R_32_Uint = 9
 	};
 	enum Topology
 	{
@@ -190,11 +192,11 @@ namespace Graphics
 		virtual ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc) = 0;
 		virtual void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data) = 0;
 		virtual void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize) = 0;
-		virtual void SetIndexBuffer(const BufferHandle& buffer, int size) = 0;
+		virtual void SetIndexBuffer(const BufferHandle& buffer, int size, Format idxFormat) = 0;
 		virtual void SetTopology(const Topology& topology) = 0;
 		virtual void SetGraphicsPipeline(const GraphicsPipeline& pipeline) = 0;
 		virtual void Draw(uint32_t numvtx,uint32_t vtxOffset) = 0;
-		virtual void DrawIndexed(uint32_t numIdx) = 0;
+		virtual void DrawIndexed(uint32_t numIdx, uint32_t idxOff = 0, uint32_t vtxOff = 0) = 0;
 		virtual void SetViewport(float x, float y, float w, float h, float zmin = 0.0f, float zmax = 1.0f) = 0;
 		virtual void SetScissor(float x, float y, float w, float h) = 0;
 		virtual void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data) = 0;
@@ -203,5 +205,8 @@ namespace Graphics
 		virtual void ClearTargets(uint8_t num, TextureHandle* colorTargets,float clear[4], TextureHandle* depth,float d,uint16_t stencil) = 0;
 		virtual void DisableAllTargets() = 0;
 		virtual Format GetOutputFormat() = 0;
+		virtual bool MapBuffer(BufferHandle buffer, unsigned char** outPtr,bool writeOnly = true) = 0;
+		virtual void UnMapBuffer(BufferHandle buffer, bool writeOnly = true) = 0;
+		virtual void SetBlendFactors(float blend[4]) {}
 	};
 }

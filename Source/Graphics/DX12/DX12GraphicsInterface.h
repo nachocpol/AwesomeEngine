@@ -88,11 +88,11 @@ namespace Graphics{ namespace DX12
 		ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc)final override;
 		void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)final override;
 		void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize)final override;
-		void SetIndexBuffer(const BufferHandle& buffer,int size)final override;
+		void SetIndexBuffer(const BufferHandle& buffer,int size, Format idxFormat)final override;
 		void SetTopology(const Topology& topology)final override;
 		void SetGraphicsPipeline(const GraphicsPipeline& pipeline)final override;
 		void Draw(uint32_t numvtx, uint32_t vtxOffset)final override;
-		void DrawIndexed(uint32_t numIdx)final override;
+		void DrawIndexed(uint32_t numIdx, uint32_t idxOff = 0,uint32_t vtxOff = 0)final override;
 		void SetViewport(float x, float y, float w, float h, float zmin = 0.0f, float zmax = 1.0f)final override;
 		void SetScissor(float x, float y, float w, float h)final override;
 		void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data)final override;
@@ -101,6 +101,9 @@ namespace Graphics{ namespace DX12
 		void ClearTargets(uint8_t num, TextureHandle* colorTargets, float clear[4], TextureHandle* depth, float d, uint16_t stencil)final override;
 		void DisableAllTargets()final override;
 		Format GetOutputFormat()final override;
+		bool MapBuffer(BufferHandle buffer, unsigned char** outPtr, bool writeOnly = true)final override;
+		void UnMapBuffer(BufferHandle buffer, bool writeOnly = true)final override;
+		void SetBlendFactors(float blend[4])override;;
 
 	private:
 		void InitSurface(DisplaySurface* surface);

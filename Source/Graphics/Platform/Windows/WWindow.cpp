@@ -29,12 +29,38 @@ namespace Graphics { namespace Platform {namespace Windows {
 			default: break;
 			}
 			break;
+
 		case WM_CHAR:
 			inputManager->KeyStates[(char)wParam] = KeyState::StateDown;
 			break;
+
 		case WM_DESTROY:
 			PostQuitMessage(0);
 			return 0;
+
+			// Left mouse button:
+		case WM_LBUTTONDOWN:
+			inputManager->MouseButtonStates[MouseButton::Left] = KeyState::StateDown;
+			break;
+		case WM_LBUTTONUP:
+			inputManager->MouseButtonStates[MouseButton::Left] = KeyState::StateUp;
+			break;
+
+			// Right mouse button:
+		case WM_RBUTTONDOWN:
+			inputManager->MouseButtonStates[MouseButton::Right] = KeyState::StateDown;
+			break;
+		case WM_RBUTTONUP:
+			inputManager->MouseButtonStates[MouseButton::Right] = KeyState::StateUp;
+			break;
+
+			// Middle mouse button:
+		case WM_MBUTTONDOWN:
+			inputManager->MouseButtonStates[MouseButton::Middle] = KeyState::StateDown;
+			break;
+		case WM_MBUTTONUP:
+			inputManager->MouseButtonStates[MouseButton::Middle] = KeyState::StateUp;
+			break;
 		}
 		return DefWindowProc(hWnd,msg,wParam,lParam);
 	}

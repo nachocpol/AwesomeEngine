@@ -1,12 +1,10 @@
 #pragma once
 
 #include "IMGUI/imgui.h"
+#include "Graphics/GraphicsInterface.h"
 
 namespace Graphics
 { 
-	class GraphicsInterface;
-	typedef struct BufferHandle;
-	typedef struct GraphicsPipeline;
 	namespace Platform
 	{
 		class BaseWindow;
@@ -27,12 +25,21 @@ namespace Graphics
 	
 		private:
 			void CreateUIResources();
+			void UpdateBuffers(ImDrawData* data);
 			
 			GraphicsInterface* mGraphicsInterface;
 			Graphics::Platform::BaseWindow* mOutputWindow;
-			BufferHandle mVertexBuffer;
-			BufferHandle mIndexBuffer;
-			GraphicsPipeline mGraphicsPipeline;
+			Graphics::BufferHandle mVertexBuffer;
+			Graphics::BufferHandle mIndexBuffer;
+			Graphics::GraphicsPipeline mGraphicsPipeline;
+			struct UIData
+			{
+				float matrix[4][4];
+			}mUIData;
+			Graphics::BufferHandle mUIDataHandle;
+
+			uint32_t mMaxVertices;
+			uint32_t mMaxIndices;
 		};
 	}
 }

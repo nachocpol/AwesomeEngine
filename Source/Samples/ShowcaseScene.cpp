@@ -206,7 +206,7 @@ void ShowcaseScene::Draw(float dt)
 			mGraphics->SetConstantBuffer(mAppDataHandle, 0, sizeof(mAppData), &mAppData);
 
 			mGraphics->SetVertexBuffer(curActor->AMesh.VertexBuffer, curActor->AMesh.NumVertex * curActor->AMesh.VertexSize, curActor->AMesh.VertexSize);
-			mGraphics->SetIndexBuffer(curActor->AMesh.IndexBuffer, curActor->AMesh.NumIndices * sizeof(unsigned int));
+			mGraphics->SetIndexBuffer(curActor->AMesh.IndexBuffer, curActor->AMesh.NumIndices * sizeof(unsigned int),Graphics::Format::R_32_Uint);
 			// Albedo texture
 			if (CHECK_TEXTURE(curActor->ShadeInfo.AlbedoTexture))
 			{

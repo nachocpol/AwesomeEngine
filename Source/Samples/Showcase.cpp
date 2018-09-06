@@ -35,9 +35,8 @@ int main()
 		gGraphics->StartFrame();
 		gScene->Draw(0.0f);
 		
-		ImGui::Begin("HELLO");
-		bool demoOpen = true;
-		ImGui::ShowDemoWindow(&demoOpen);
+		ImGui::Begin("UI");
+		ImGui::Text("Hello ImGui!");
 		ImGui::End();
 
 		gUIInterface->EndFrame();

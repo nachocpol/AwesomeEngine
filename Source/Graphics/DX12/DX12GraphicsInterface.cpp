@@ -36,13 +36,13 @@ namespace Graphics { namespace DX12 {
 		mOutputFormat = Format::RGBA_8_Unorm;
 
 		UINT factoryFlags = 0;
-		// ID3D12Debug* debugController = nullptr;
-		// if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
-		// {
-		// 	debugController->EnableDebugLayer();
-		// 	factoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
-		// 	debugController->Release();
-		// }
+		ID3D12Debug* debugController = nullptr;
+		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+		{
+			debugController->EnableDebugLayer();
+			factoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+			debugController->Release();
+		}
 
 		// Query adapters:
 		IDXGIFactory4* factory = nullptr;
@@ -290,6 +290,9 @@ namespace Graphics { namespace DX12 {
 			case Format::RGBA_8_Unorm:		return DXGI_FORMAT_R8G8B8A8_UNORM;
 			case Format::RGBA_16_Float:		return DXGI_FORMAT_R16G16B16A16_FLOAT;
 			case Format::RGBA_8_Snorm:		return DXGI_FORMAT_R8G8B8A8_SNORM;
+			case Format::R_16_Uint:			return DXGI_FORMAT_R16_UINT;
+			case Format::R_32_Uint:			return DXGI_FORMAT_R32_UINT;
+
 			case Format::Unknown:
 			default:						return DXGI_FORMAT_UNKNOWN;
 		}
@@ -709,8 +712,9 @@ namespace Graphics { namespace DX12 {
 		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && bufferEntry != nullptr && size <= dstDesc.Width)
 		{
 			D3D12_SUBRESOURCE_DATA sdata = {};
-			sdata.pData		= data;
-			sdata.RowPitch	= sdata.SlicePitch = size;
+			sdata.pData	= data;
+			sdata.RowPitch = size;
+			sdata.SlicePitch = 0;
 			auto& state = bufferEntry->State;
 			bool changed = false;
 			if (state != (COPY_DST))
@@ -718,7 +722,7 @@ namespace Graphics { namespace DX12 {
 				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry->Buffer, state, COPY_DST));
 				changed = true;
 			}
-			UpdateSubresources(mDefaultSurface.CmdContext, bufferEntry->Buffer, bufferEntry->UploadHeap, 0, 0, 1, &sdata);
+			UpdateSubresources(mDefaultSurface.CmdContext, bufferEntry->Buffer, bufferEntry->UploadHeap, offset, 0, 1, &sdata);
 			if (changed)
 			{
 				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry->Buffer, COPY_DST, state));
@@ -743,7 +747,7 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 // #pragma optimize("",off)
-	void DX12GraphicsInterface::SetIndexBuffer(const BufferHandle& buffer,int size)
+	void DX12GraphicsInterface::SetIndexBuffer(const BufferHandle& buffer,int size, Format idxFormat)
 	{
 		const auto buffeEntry = mBuffers[buffer.Handle];
 		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && buffeEntry != nullptr)
@@ -751,8 +755,7 @@ namespace Graphics { namespace DX12 {
 			D3D12_INDEX_BUFFER_VIEW view = {};
 			view.BufferLocation = buffeEntry->Buffer->GetGPUVirtualAddress();
 			view.SizeInBytes = size;
-			auto s = sizeof(unsigned int);
-			view.Format = DXGI_FORMAT_R32_UINT;
+			view.Format = ToDXGIFormat(idxFormat);
 			mDefaultSurface.CmdContext->IASetIndexBuffer(&view);
 		}
 	}
@@ -777,7 +780,7 @@ namespace Graphics { namespace DX12 {
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
 		// Offset it for nex draw call
-		// TO-DO: we should only do this is the state changed
+		// TO-DO: we should only do this if the state changed
 		mFrameHeap[idx]->OffsetHandles(2);
 
 		mDefaultSurface.CmdContext->DrawInstanced(numvtx, 1, vtxOffset, 0);
@@ -785,15 +788,15 @@ namespace Graphics { namespace DX12 {
 		mNumDrawCalls++;
 	}
 
-	void DX12GraphicsInterface::DrawIndexed(uint32_t numIdx)
+	void DX12GraphicsInterface::DrawIndexed(uint32_t numIdx, uint32_t idxOff /*= 0*/, uint32_t vtxOff /*= 0*/)
 	{
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
 		// Offset it for nex draw call
-		// TO-DO: we should only do this is the state changed
+		// TO-DO: we should only do this if the state changed
 		mFrameHeap[idx]->OffsetHandles(2);
 
-		mDefaultSurface.CmdContext->DrawIndexedInstanced(numIdx, 1, 0, 0, 0);
+		mDefaultSurface.CmdContext->DrawIndexedInstanced(numIdx, 1, idxOff, vtxOff, 0);
 
 		mNumDrawCalls++;
 	}
@@ -935,5 +938,51 @@ namespace Graphics { namespace DX12 {
 	Format DX12GraphicsInterface::GetOutputFormat()
 	{
 		return mOutputFormat;
+	}
+	
+	bool DX12GraphicsInterface::MapBuffer(BufferHandle buffer, unsigned char** outPtr, bool writeOnly /*=true*/)
+	{
+		D3D12_RANGE range = CD3DX12_RANGE(0, 0);
+		const BufferEntry* bentry = mBuffers[buffer.Handle];
+		if (bentry->UploadHeap)
+		{
+			HRESULT res = S_OK;
+			res = bentry->UploadHeap->Map(0, writeOnly ? &range : nullptr, (void**)outPtr);
+			if (FAILED(res))
+			{
+				outPtr = nullptr;
+				return false;
+			}
+			return true;
+		}
+		return false;
+	}
+
+	void DX12GraphicsInterface::UnMapBuffer(BufferHandle buffer, bool writeOnly/*=true*/)
+	{
+		const BufferEntry* bentry = mBuffers[buffer.Handle];
+		if (bentry->UploadHeap)
+		{
+			HRESULT res = S_OK;
+			bentry->UploadHeap->Unmap(0, nullptr);
+
+			// Lets make sure the data is ready to be used by the GPU:
+			bool changed = false;
+			if (bentry->State != COPY_DST)
+			{
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bentry->Buffer, bentry->State, COPY_DST));
+				changed = true;
+			}				
+			mDefaultSurface.CmdContext->CopyBufferRegion(bentry->Buffer, 0, bentry->UploadHeap, 0, bentry->UploadHeap->GetDesc().Width);
+			if (changed)
+			{
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bentry->Buffer,COPY_DST, bentry->State));
+			}
+		}
+	}
+
+	void DX12GraphicsInterface::SetBlendFactors(float blend[4])
+	{
+		mDefaultSurface.CmdContext->OMSetBlendFactor(blend);
 	}
 }}

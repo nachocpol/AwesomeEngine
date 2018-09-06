@@ -30,15 +30,25 @@ namespace Graphics{ namespace Platform
 		SpecialKeyCount
 	};
 
+	enum MouseButton
+	{
+		Left = 0,
+		Right,
+		Middle,
+		MouseButtonCount
+	};
+
 	class InputManager
 	{
 	public:
 		static InputManager* GetInstance();
 		bool IsKeyPressed(char key);
 		bool IsSpecialKeyPressed(SpecialKey key);
+		bool IsMouseButtonPressed(MouseButton btn);
 		glm::vec2 GetMousePos();
 		KeyState KeyStates[256];
 		KeyState SpecialKeyStates[SpecialKeyCount];
+		KeyState MouseButtonStates[MouseButtonCount];
 		// Platform window handle
 		void* WHandle;
 
