@@ -3,6 +3,9 @@
 #include "Graphics/Platform/InputManager.h"
 #include "IMGUI/imgui.h"
 
+float gVtxUsage = 0.0f;
+float gIdxUsage = 0.0f;
+
 namespace Graphics{namespace UI{
 
 	UIInterface::UIInterface():
@@ -81,6 +84,11 @@ namespace Graphics{namespace UI{
 #pragma optimize("",off)
 	void UIInterface::EndFrame()
 	{
+		ImGui::Begin("UI Information");
+		ImGui::Text("Vertex usage:%f%c", gVtxUsage, '%');
+		ImGui::Text("Index usage:%f%c", gIdxUsage, '%');
+		ImGui::End();
+
 		ImGui::Render();
 
 		// Process the ImGUI cmd lists
@@ -109,7 +117,7 @@ namespace Graphics{namespace UI{
 
 			size_t vtxStride = sizeof(ImDrawVert);
 			size_t idxStride = sizeof(ImDrawIdx);
-			Graphics::Format idxFmt = idxStride == 2 ? Format::R_16_Uint : Format::R_16_Uint;
+			Graphics::Format idxFmt = idxStride == 2 ? Format::R_16_Uint : Format::R_32_Uint;
 
 			// Bind state
 			float imBlend[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -120,6 +128,9 @@ namespace Graphics{namespace UI{
 			mGraphicsInterface->SetConstantBuffer(mUIDataHandle, 0, sizeof(mUIData), &mUIData.matrix);
 			mGraphicsInterface->SetBlendFactors(imBlend);
 			ImVec2 displayPos = drawPipe->DisplayPos;
+
+			uint32_t idxOffset = 0;
+			uint32_t vtxOffset = 0;
 
 			// Iterate over each command list
 			for (int i = 0; i < drawPipe->CmdListsCount; i++)
@@ -144,10 +155,16 @@ namespace Graphics{namespace UI{
 								curCmd->ClipRect.z - displayPos.x, curCmd->ClipRect.w - displayPos.y
 							);
 							mGraphicsInterface->SetTexture(iTex,0);
-							mGraphicsInterface->DrawIndexed(curCmd->ElemCount, 0,0);
+							mGraphicsInterface->DrawIndexed(curCmd->ElemCount, idxOffset, vtxOffset);
 						}
+						else
+						{
+							assert(false);
+						}
+						idxOffset += curCmd->ElemCount;
 					}
 				}
+				vtxOffset += cmdList->VtxBuffer.Size;
 			}
 
 			// Careful, we may need to reset the scissor just in case
@@ -173,13 +190,13 @@ namespace Graphics{namespace UI{
 		io.Fonts->SetTexID((void*)fontTex.Handle);
 
 		// Buffers
-		mMaxVertices = 5000;
+		mMaxVertices = 10000;
 		uint64_t vtxBufferSize = sizeof(ImDrawVert) * mMaxVertices;
-		mVertexBuffer = mGraphicsInterface->CreateBuffer(BufferType::VertexBuffer, CPUAccess::None, vtxBufferSize);
+		mVertexBuffer = mGraphicsInterface->CreateBuffer(BufferType::VertexBuffer, CPUAccess::Write, vtxBufferSize);
 
 		mMaxIndices = 10000;
 		uint64_t idxBufferSize = sizeof(ImDrawIdx) * mMaxIndices;
-		mIndexBuffer = mGraphicsInterface->CreateBuffer(BufferType::IndexBuffer, CPUAccess::None, idxBufferSize);
+		mIndexBuffer = mGraphicsInterface->CreateBuffer(BufferType::IndexBuffer, CPUAccess::Write, idxBufferSize);
 
 		mUIDataHandle = mGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, CPUAccess::None, sizeof(mUIData));
 
@@ -251,6 +268,9 @@ namespace Graphics{namespace UI{
 
 		mGraphicsInterface->UnMapBuffer(mVertexBuffer);
 		mGraphicsInterface->UnMapBuffer(mIndexBuffer);
+
+		gVtxUsage = ((float)curVtxOffset / float(mMaxVertices * vtxStride)) * 100.0f;
+		gIdxUsage = ((float)curIdxOffset / float(mMaxIndices * idxStride)) * 100.0f;
 	}
 
 }}

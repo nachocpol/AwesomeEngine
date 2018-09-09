@@ -68,9 +68,10 @@ namespace Graphics{ namespace DX12
 		ID3D12Resource* UploadHeap;
 		D3D12_RESOURCE_STATES State;
 		BufferType Type;
-		// CB stuff
+		CPUAccess Access;
 		uint64_t LastFrame;
-		uint64_t CopyCount;
+		// Used to track how many times we bind a Constant Buffer
+		uint64_t CopyCount; 
 	};
 	
 	class DX12GraphicsInterface : public GraphicsInterface

@@ -59,6 +59,5 @@ VSOutUI VSUI(VSInUI i)
 
 float4 PSUI(VSOutUI i): SV_Target0
 {
-	return float4(i.TexCoord.xy,0.0f,1.0f);
 	return MainTex.Sample(LinearWrapSampler,i.TexCoord) * i.VertexColor;
 }

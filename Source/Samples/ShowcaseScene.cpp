@@ -1,5 +1,6 @@
 #include "ShowcaseScene.h"
 #include "Graphics/Platform/InputManager.h"
+#include "Graphics/UI/IMGUI/imgui.h"
 #include <stdint.h>
 
 struct VertexScreen
@@ -284,6 +285,12 @@ void ShowcaseScene::Draw(float dt)
 	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
 	mGraphics->Draw(6, 0);
 
+
+	ImGui::Begin("GBuffer Debug");
+	ImGui::Image((ImTextureID)mGBuffer.Normals.Handle, ImVec2(128, 128));
+	ImGui::Image((ImTextureID)mGBuffer.Color.Handle, ImVec2(128, 128));
+	ImGui::Image((ImTextureID)mGBuffer.Position.Handle, ImVec2(128, 128));
+	ImGui::End();
 	// Debug mode
 	if (mDeferredDebugMode != DebugNone)
 	{

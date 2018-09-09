@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 
+#pragma optimize("",off)
+
 namespace Graphics { namespace DX12 {
 
 	DX12GraphicsInterface::DX12GraphicsInterface():
@@ -419,8 +421,6 @@ namespace Graphics { namespace DX12 {
 		mDefaultSurface.GPUFencesValues[idx]++;
 		mDefaultSurface.Queue->Signal(mDefaultSurface.GPUFences[idx], mDefaultSurface.GPUFencesValues[idx]);
 
-		std::cout << mNumDrawCalls << std::endl;
-
 		mFrame++;
 	}
 
@@ -450,54 +450,62 @@ namespace Graphics { namespace DX12 {
 
 	BufferHandle DX12GraphicsInterface::CreateBuffer(BufferType type, CPUAccess cpuAccess, uint64_t size, void* data /*= nullptr*/)
 	{
-		if (type == Graphics::VertexBuffer || type == Graphics::ConstantBuffer || type == Graphics::IndexBuffer)
+		assert(mCurBuffer < MAX_BUFFERS);
+
+		bool isIndex = type == BufferType::IndexBuffer;
+		bool isWrite = cpuAccess == CPUAccess::Write;
+
+		mBuffers[mCurBuffer] = new BufferEntry;
+		auto bufferEntry = mBuffers[mCurBuffer];
+		bufferEntry->Type = type;
+		bufferEntry->Access = cpuAccess;
+		bufferEntry->LastFrame = mFrame;
+		bufferEntry->State = isIndex ? INDEX_READ : VERTEX_CB_READ;
+
+		// GPU resource
+		D3D12_HEAP_PROPERTIES heapDesc = {};
+		auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+		auto desc = CD3DX12_RESOURCE_DESC::Buffer(size);
+		mDevice->CreateCommittedResource
+		(
+			&heapProp, 
+			D3D12_HEAP_FLAG_NONE, 
+			&desc, 
+			bufferEntry->State,
+			nullptr, 
+			IID_PPV_ARGS(&bufferEntry->Buffer)
+		);
+
+		// Upload resource
+		heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		desc = CD3DX12_RESOURCE_DESC::Buffer(size);
+		if (type == Graphics::ConstantBuffer)
 		{
-			bool isIndex = type == Graphics::IndexBuffer;
-
-			assert(mCurBuffer < MAX_BUFFERS);
-
-			mBuffers[mCurBuffer] = new BufferEntry;
-			auto bufferEntry = mBuffers[mCurBuffer];
-			bufferEntry->Type = type;
-
-			D3D12_HEAP_PROPERTIES heapDesc = {};
-			auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-			auto desc = CD3DX12_RESOURCE_DESC::Buffer(size);
-			mDevice->CreateCommittedResource
-			(
-				&heapProp, 
-				D3D12_HEAP_FLAG_NONE, 
-				&desc, 
-				isIndex ? INDEX_READ : VERTEX_CB_READ,
-				nullptr, 
-				IID_PPV_ARGS(&bufferEntry->Buffer)
-			);
-			heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-			desc = CD3DX12_RESOURCE_DESC::Buffer(size);
-			if (type == Graphics::ConstantBuffer)
-			{
-				desc = CD3DX12_RESOURCE_DESC::Buffer(CB_INTERMIDIATE_SIZE);
-			}
-			mDevice->CreateCommittedResource
-			(
-				&heapProp,
-				D3D12_HEAP_FLAG_NONE,
-				&desc,
-				D3D12_RESOURCE_STATE_GENERIC_READ,
-				nullptr,
-				IID_PPV_ARGS(&bufferEntry->UploadHeap)
-			);
-			
-			BufferHandle handle = { mCurBuffer };
-			bufferEntry->State = isIndex ? INDEX_READ : VERTEX_CB_READ;
-			if (data && type != Graphics::ConstantBuffer)
-			{
-				SetBufferData(handle, (int)size, 0, data);
-			}
-			mCurBuffer++;
-			return handle;
+			desc = CD3DX12_RESOURCE_DESC::Buffer(CB_INTERMIDIATE_SIZE);
 		}
-		return InvalidBuffer;
+		else if(type != Graphics::ConstantBuffer && isWrite)
+		{
+			// CPUAccess::Write, we can now Map the buffer, but we need to do it
+			// in a safer way so we do not override data
+			desc.Width *= NUM_BACK_BUFFERS;
+		}
+		mDevice->CreateCommittedResource
+		(
+			&heapProp,
+			D3D12_HEAP_FLAG_NONE,
+			&desc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&bufferEntry->UploadHeap)
+		);
+		
+		BufferHandle handle = { mCurBuffer };
+		if (data && type != Graphics::ConstantBuffer)
+		{
+			SetBufferData(handle, (int)size, 0, data);
+		}
+		mCurBuffer++;
+		return handle;
 	}
 
 	TextureHandle DX12GraphicsInterface::CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags /* = TextureFlagNone*/, void* data /*= nullptr*/)
@@ -939,11 +947,17 @@ namespace Graphics { namespace DX12 {
 	{
 		return mOutputFormat;
 	}
-	
+
 	bool DX12GraphicsInterface::MapBuffer(BufferHandle buffer, unsigned char** outPtr, bool writeOnly /*=true*/)
 	{
 		D3D12_RANGE range = CD3DX12_RANGE(0, 0);
-		const BufferEntry* bentry = mBuffers[buffer.Handle];
+		BufferEntry* bentry = mBuffers[buffer.Handle];
+		if (!bentry || (bentry->Access != CPUAccess::Write && bentry->Access != CPUAccess::ReadWrite))
+		{
+			outPtr = nullptr;
+			assert(false);
+			return false;
+		}
 		if (bentry->UploadHeap)
 		{
 			HRESULT res = S_OK;
@@ -953,6 +967,10 @@ namespace Graphics { namespace DX12 {
 				outPtr = nullptr;
 				return false;
 			}
+			// Return the current portion of the upload buffer
+			size_t off = (mFrame % NUM_BACK_BUFFERS) * bentry->Buffer->GetDesc().Width;
+			*outPtr += off;
+			bentry->LastFrame = mFrame;
 			return true;
 		}
 		return false;
@@ -960,20 +978,21 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::UnMapBuffer(BufferHandle buffer, bool writeOnly/*=true*/)
 	{
-		const BufferEntry* bentry = mBuffers[buffer.Handle];
-		if (bentry->UploadHeap)
+		BufferEntry* bentry = mBuffers[buffer.Handle];
+		if (bentry && bentry->UploadHeap)
 		{
 			HRESULT res = S_OK;
 			bentry->UploadHeap->Unmap(0, nullptr);
-
+			size_t off = (bentry->LastFrame % NUM_BACK_BUFFERS) * bentry->Buffer->GetDesc().Width;
+			bentry->LastFrame = 0;
 			// Lets make sure the data is ready to be used by the GPU:
 			bool changed = false;
 			if (bentry->State != COPY_DST)
 			{
 				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bentry->Buffer, bentry->State, COPY_DST));
 				changed = true;
-			}				
-			mDefaultSurface.CmdContext->CopyBufferRegion(bentry->Buffer, 0, bentry->UploadHeap, 0, bentry->UploadHeap->GetDesc().Width);
+			}			
+			mDefaultSurface.CmdContext->CopyBufferRegion(bentry->Buffer, 0, bentry->UploadHeap, off, bentry->UploadHeap->GetDesc().Width / NUM_BACK_BUFFERS);
 			if (changed)
 			{
 				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bentry->Buffer,COPY_DST, bentry->State));

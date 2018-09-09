@@ -35,10 +35,6 @@ int main()
 		gGraphics->StartFrame();
 		gScene->Draw(0.0f);
 		
-		ImGui::Begin("UI");
-		ImGui::Text("Hello ImGui!");
-		ImGui::End();
-
 		gUIInterface->EndFrame();
 		gGraphics->EndFrame();
 
