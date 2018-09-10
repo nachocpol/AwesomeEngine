@@ -78,11 +78,12 @@ private:
 
 	Graphics::TextureHandle mWhiteTexture;
 
-	enum DeferredDebugMode
+	// Atmosphere
+	struct AtmosphereData
 	{
-		DebugNone = 0,
-		DebugNormals,
-		DebugAlbedo,
-		DebugPositions
-	}mDeferredDebugMode;
+		glm::vec4 View;
+	}mAtmosphereData;
+	Graphics::BufferHandle mAtmosphereDataHandle;
+
+	Graphics::GraphicsPipeline mAtmospherePipeline;
 };

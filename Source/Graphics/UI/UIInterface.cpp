@@ -212,6 +212,7 @@ namespace Graphics{namespace UI{
 
 		pdesc.ColorFormats[0] = mGraphicsInterface->GetOutputFormat();
 		pdesc.DepthEnabled = false;
+		pdesc.DepthWriteEnabled = false;
 		pdesc.DepthFunction = Graphics::DepthFunc::Always;
 		
 		int vec2Size = sizeof(float) * 2;

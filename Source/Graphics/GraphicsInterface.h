@@ -126,6 +126,8 @@ namespace Graphics
 	{
 		GraphicsPipelineDescription()
 		{
+			DepthEnabled = false;
+			DepthWriteEnabled = false;
 			memset(ColorFormats, 0, sizeof(ColorFormats));
 			memset(&DepthFormat, 0, sizeof(DepthFormat));
 		}
@@ -133,6 +135,7 @@ namespace Graphics
 		ShaderDescription PixelShader;
 		VertexInputDescription VertexDescription;
 		bool DepthEnabled;
+		bool DepthWriteEnabled;
 		DepthFunc DepthFunction;
 		Format DepthFormat;
 		Format ColorFormats[8];

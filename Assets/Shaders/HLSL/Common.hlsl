@@ -10,7 +10,7 @@ SamplerState LinearWrapSampler : register(s0);
 // Generic blit to screen
 struct VSIn
 {
-	float4 Position : POSITION;
+	float3 Position : POSITION;
 };
 
 struct VSOut
@@ -22,7 +22,7 @@ struct VSOut
 VSOut VSFullScreen(VSIn i)
 {
 	VSOut o;
-	o.ClipPos = i.Position;
+	o.ClipPos = float4(i.Position.xy,1.0f,1.0f);
 	o.TexCoord = 0.5f * (i.Position.xy + 1.0f);
 	o.TexCoord.y = 1.0 - o.TexCoord.y;
 	return o;

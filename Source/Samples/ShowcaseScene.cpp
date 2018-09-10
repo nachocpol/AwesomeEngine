@@ -11,7 +11,7 @@ struct VertexScreen
 ShowcaseScene::ShowcaseScene(Graphics::GraphicsInterface* graphics, Graphics::AssetImporter* assetImp):
 	Scene::Scene(graphics,assetImp)
 {
-	mDeferredDebugMode = DeferredDebugMode::DebugNone;
+
 }
 
 ShowcaseScene::~ShowcaseScene()
@@ -41,6 +41,7 @@ bool ShowcaseScene::Initialize()
 		pdesc.VertexDescription.Elements	= eles;
 		pdesc.VertexDescription.NumElements = sizeof(eles) / sizeof(Graphics::VertexInputDescription::VertexInputElement);
 		pdesc.DepthEnabled					= true;
+		pdesc.DepthWriteEnabled				= true;
 		pdesc.DepthFunction					= Graphics::LessEqual;
 		pdesc.DepthFormat					= Graphics::Depth24_Stencil8;
 		pdesc.ColorFormats[0]				= Graphics::Format::RGBA_16_Float;
@@ -66,6 +67,7 @@ bool ShowcaseScene::Initialize()
 		desc.VertexDescription.Elements		= eles;
 		desc.VertexDescription.NumElements	= 1;
 		desc.DepthEnabled					= false;
+		desc.DepthWriteEnabled				= false;
 		desc.ColorFormats[0]				= Graphics::Format::RGBA_16_Float;
 		{
 			desc.BlendTargets[0].Enabled		= true;
@@ -102,13 +104,14 @@ bool ShowcaseScene::Initialize()
 	// Cb
 	mAppDataHandle		= mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AppData));
 	mAppData.Projection = glm::perspective(glm::radians(85.0f), 1280.0f / 920.0f, 0.1f, 500.0f);
-
 	mMaterialInfoHandle = mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(MaterialInfo));
+	mAtmosphereDataHandle = mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AtmosphereData));
 
 	// Full screen stuf
 	{
 		Graphics::GraphicsPipelineDescription desc;
 		desc.DepthEnabled					= false;
+		desc.DepthWriteEnabled				= false;
 		desc.DepthFunction					= Graphics::Always;
 		desc.VertexShader.ShaderEntryPoint	= "VSFullScreen";
 		desc.VertexShader.ShaderPath		= "Common.hlsl";
@@ -134,6 +137,30 @@ bool ShowcaseScene::Initialize()
 			-1.0f,-1.0f,0.0f
 		};
 		mFullScreenQuad = mGraphics->CreateBuffer(Graphics::VertexBuffer, Graphics::None, sizeof(VertexScreen) * 6, &vtxData);
+	}
+
+	// Atmosphere pipeline
+	{
+		Graphics::GraphicsPipelineDescription desc;
+		desc.DepthEnabled = true;
+		desc.DepthWriteEnabled = false;
+		desc.DepthFunction = Graphics::Equal; // we paint it at far (so we can discard fragments from it)
+		desc.DepthFormat = Graphics::Format::Depth24_Stencil8;
+		desc.VertexShader.ShaderEntryPoint = "VSAtmosphere";
+		desc.VertexShader.ShaderPath = "Atmosphere.hlsl";
+		desc.VertexShader.Type = Graphics::Vertex;
+		desc.PixelShader.ShaderEntryPoint = "PSAtmosphere";
+		desc.PixelShader.ShaderPath = "Atmosphere.hlsl";
+		desc.PixelShader.Type = Graphics::Pixel;
+		Graphics::VertexInputDescription::VertexInputElement eles[1] =
+		{
+			"POSITION",0, Graphics::Format::RGB_32_Float,0
+		};
+		desc.VertexDescription.NumElements = 1;
+		desc.VertexDescription.Elements = eles;
+		desc.ColorFormats[0] = Graphics::Format::RGBA_16_Float;
+
+		mAtmospherePipeline = mGraphics->CreateGraphicsPipeline(desc);
 	}
 
 	// Load default sphere
@@ -258,26 +285,18 @@ void ShowcaseScene::Draw(float dt)
 			// mLightInfo.LightPosition = glm::vec4( 0.5f,  -0.25f, -1.0f, 0.0f);
 			// mGraphics->SetConstantBuffer(mLightInfoHandle, 1, sizeof(mLightInfo), &mLightInfo);
 			// mGraphics->Draw(6, 0);
+			mGraphics->DisableAllTargets();
 		}
-		mGraphics->DisableAllTargets();
 	}
 
-	if (Graphics::Platform::InputManager::GetInstance()->IsSpecialKeyPressed(Graphics::Platform::SpecialKey::F1))
-	{
-		mDeferredDebugMode = DebugNone;
-	}
-	if (Graphics::Platform::InputManager::GetInstance()->IsSpecialKeyPressed(Graphics::Platform::SpecialKey::F2))
-	{
-		mDeferredDebugMode = DebugAlbedo;
-	}
-	if (Graphics::Platform::InputManager::GetInstance()->IsSpecialKeyPressed(Graphics::Platform::SpecialKey::F3))
-	{
-		mDeferredDebugMode = DebugNormals;
-	}
-	if (Graphics::Platform::InputManager::GetInstance()->IsSpecialKeyPressed(Graphics::Platform::SpecialKey::F4))
-	{
-		mDeferredDebugMode = DebugPositions;
-	}
+	// Atmosphere
+	mGraphics->SetTargets(1, &mLightPass, &mGBuffer.Depth);
+	mGraphics->SetGraphicsPipeline(mAtmospherePipeline);
+	mAtmosphereData.View = glm::vec4(mCamera.View,0.0f);
+	mGraphics->SetConstantBuffer(mAtmosphereDataHandle, 0, sizeof(AtmosphereData), &mAtmosphereData);
+	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
+	mGraphics->Draw(6, 0);
+	mGraphics->DisableAllTargets();
 
 	// Post processing and display
 	mGraphics->SetGraphicsPipeline(mFullScreenPipeline);
@@ -285,34 +304,12 @@ void ShowcaseScene::Draw(float dt)
 	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
 	mGraphics->Draw(6, 0);
 
-
+	// Some ImGUI 
 	ImGui::Begin("GBuffer Debug");
 	ImGui::Image((ImTextureID)mGBuffer.Normals.Handle, ImVec2(128, 128));
 	ImGui::Image((ImTextureID)mGBuffer.Color.Handle, ImVec2(128, 128));
 	ImGui::Image((ImTextureID)mGBuffer.Position.Handle, ImVec2(128, 128));
 	ImGui::End();
-	// Debug mode
-	if (mDeferredDebugMode != DebugNone)
-	{
-		Graphics::TextureHandle debugTex = Graphics::InvalidTexture;
-		switch (mDeferredDebugMode)
-		{
-		case ShowcaseScene::DebugNormals:
-			debugTex = mGBuffer.Normals;
-			break;
-		case ShowcaseScene::DebugAlbedo:
-			debugTex = mGBuffer.Color;
-			break;
-		case ShowcaseScene::DebugPositions:
-			debugTex = mGBuffer.Position;
-			break;
-		}
-
-		mGraphics->SetGraphicsPipeline(mFullScreenPipeline);
-		mGraphics->SetTexture(debugTex, 0);
-		mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
-		mGraphics->Draw(6, 0);
-	}
 }
 
 void ShowcaseScene::Resize(int w, int h)

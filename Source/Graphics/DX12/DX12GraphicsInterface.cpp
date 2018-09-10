@@ -274,6 +274,7 @@ namespace Graphics { namespace DX12 {
 		if (FAILED(D3DCompileFromFile(wpath.c_str(), nullptr, nullptr, desc.ShaderEntryPoint.c_str(), target.c_str(), flags, 0, &sblob, &error)))
 		{
 			OutputDebugStringA((char*)error->GetBufferPointer());
+			assert(false);
 			return false;
 		}
 		outShader.BytecodeLength = sblob->GetBufferSize();
@@ -666,10 +667,11 @@ namespace Graphics { namespace DX12 {
 		}
 		// Depth info
 		{
-			psoDesc.DepthStencilState				= CD3DX12_DEPTH_STENCIL_DESC::CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-			psoDesc.DepthStencilState.DepthEnable	= desc.DepthEnabled;
-			psoDesc.DepthStencilState.DepthFunc		= ToDX12DepthFunc(desc.DepthFunction);
-			psoDesc.DSVFormat						= ToDXGIFormat(desc.DepthFormat);
+			psoDesc.DepthStencilState					= CD3DX12_DEPTH_STENCIL_DESC::CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+			psoDesc.DepthStencilState.DepthEnable		= desc.DepthEnabled;
+			psoDesc.DepthStencilState.DepthFunc			= ToDX12DepthFunc(desc.DepthFunction);
+			psoDesc.DepthStencilState.DepthWriteMask	= desc.DepthWriteEnabled ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+			psoDesc.DSVFormat							= ToDXGIFormat(desc.DepthFormat);
 		}
 		// Raster info
 		{
