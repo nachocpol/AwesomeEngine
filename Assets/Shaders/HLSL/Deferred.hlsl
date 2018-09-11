@@ -1,8 +1,8 @@
 cbuffer AppData : register(b0)
 {
-	float4x4 Model;
-	float4x4 View;
-	float4x4 Projection;
+	float4x4 ModelMatrix;
+	float4x4 ViewMatrix;
+	float4x4 ProjectionMatrix;
 	float4 DebugColor;
 }
 
@@ -72,17 +72,17 @@ float4 ToSRGB(float4 base, float gamma)
 VSOutGBuffer VSGBuffer(VSInGBuffer i)
 {
 	VSOutGBuffer o;
-	o.WPos = mul(Model,float4(i.Position,1.0f));
-	o.ClipPos = mul(Projection,mul(View,o.WPos));
+	o.WPos = mul(ModelMatrix,float4(i.Position,1.0f));
+	o.ClipPos = mul(ProjectionMatrix,mul(ViewMatrix,o.WPos));
 	o.PNormal = normalize(i.Normal);
 	o.PTexcoord = float2(i.Texcoord.x,i.Texcoord.y);
 	o.PDebugCol = float3(0.0f,0.0f,0.0f);
 
 	if(UseBumpTex)
 	{
-		float3 T 	= normalize(mul(Model,float4(i.Tangent,0.0f))).xyz;
-		float3 N 	= normalize(mul(Model,float4(i.Normal,0.0f))).xyz;
-		float3 B 	= normalize(mul(Model,float4(i.Bitangent,0.0f))).xyz;
+		float3 T 	= normalize(mul(ModelMatrix,float4(i.Tangent,0.0f))).xyz;
+		float3 N 	= normalize(mul(ModelMatrix,float4(i.Normal,0.0f))).xyz;
+		float3 B 	= normalize(mul(ModelMatrix,float4(i.Bitangent,0.0f))).xyz;
 		if(dot(cross(T,N),B) < 0.0f)
 		{
 			T = T * -1.0f;

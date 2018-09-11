@@ -103,7 +103,7 @@ bool ShowcaseScene::Initialize()
 
 	// Cb
 	mAppDataHandle		= mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AppData));
-	mAppData.Projection = glm::perspective(glm::radians(85.0f), 1280.0f / 920.0f, 0.1f, 500.0f);
+	mAppData.ProjectionMatrix = glm::perspective(glm::radians(85.0f), 1280.0f / 920.0f, 0.1f, 500.0f);
 	mMaterialInfoHandle = mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(MaterialInfo));
 	mAtmosphereDataHandle = mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AtmosphereData));
 
@@ -207,7 +207,7 @@ void ShowcaseScene::Update(float dt)
 	mCamera.Right = glm::normalize(glm::cross(mCamera.View, glm::vec3(0.0f, 1.0f, 0.0f)));
 	mCamera.Up = glm::normalize(glm::cross(mCamera.Right,mCamera.View));
 
-	mAppData.View = glm::lookAt(mCamera.Position, mCamera.Position + mCamera.View, mCamera.Up);
+	mAppData.ViewMatrix = glm::lookAt(mCamera.Position, mCamera.Position + mCamera.View, mCamera.Up);
 }
 
 void ShowcaseScene::Draw(float dt)
@@ -228,8 +228,8 @@ void ShowcaseScene::Draw(float dt)
 		{
 			mGraphics->SetTopology(Graphics::TriangleList);
 			const auto curActor = mActors[i];
-			mAppData.Model = glm::mat4(1.0f);
-			mAppData.Model = glm::scale(mAppData.Model, glm::vec3(0.1f));
+			mAppData.ModelMatrix = glm::mat4(1.0f);
+			mAppData.ModelMatrix = glm::scale(mAppData.ModelMatrix, glm::vec3(0.1f));
 			//mAppData.Model = glm::rotate(mAppData.Model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 			mGraphics->SetConstantBuffer(mAppDataHandle, 0, sizeof(mAppData), &mAppData);
 
@@ -293,6 +293,9 @@ void ShowcaseScene::Draw(float dt)
 	mGraphics->SetTargets(1, &mLightPass, &mGBuffer.Depth);
 	mGraphics->SetGraphicsPipeline(mAtmospherePipeline);
 	mAtmosphereData.View = glm::vec4(mCamera.View,0.0f);
+	mAtmosphereData.ViewMatrix = mAppData.ViewMatrix;
+	mAtmosphereData.ViewPosition = glm::vec4(mCamera.Position,0.0f);
+	mAtmosphereData.SunDirection = -glm::vec3(0.5f, -0.6f, 0.5f);
 	mGraphics->SetConstantBuffer(mAtmosphereDataHandle, 0, sizeof(AtmosphereData), &mAtmosphereData);
 	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
 	mGraphics->Draw(6, 0);
