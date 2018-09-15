@@ -2,6 +2,7 @@ cbuffer AtmosphereData : register(b0)
 {
 	float4 View;			// xyz: camera view, z: not used
 	float4x4 ViewMatrix; 
+	float4x4 InvViewProj; 
 	float4 ViewPosition;
 	float3 SunDirection;
 	float EarthR;
@@ -90,13 +91,13 @@ VSOut VSAtmosphere(VSIn i)
 float4 PSAtmosphere(VSOut i): SV_Target0
 {
 	float M_PI = 3.141516f;
-	float3x3 lookAt = LookAt(float3(0.0f,0.0f,0.0f),View.xyz);
+	
     float3 ro = View;
     ro.y += EarthR;
 
     float2 tc = i.TexCoord;
     tc.x *= 1280.0f / 920.0f;
-	float3 rd = normalize(mul(float3(i.TexCoord.xy,GetProjectionPlane(radians(85.0f))),lookAt));
+    float3 rd = normalize(mul(InvViewProj,float4(tc.x,tc.y,1.0f,1.0f)));
 	
 	float atmosLenght = RaySphere(float3(0.0f,0.0f,0.0f), AtmosR, ro, rd).x;
 	float3 atmosColor = float3(0.0f,0.0f,0.0f);
@@ -112,7 +113,7 @@ float4 PSAtmosphere(VSOut i): SV_Target0
     	float opticalDepthR = 0.0f;
     	float opticalDepthM = 0.0f; 
     	
-    	float mu = dot(rd, SunDirection); // mu in the paper which is the cosine of the angle between the sun direction and the ray direction 
+    	float mu = dot(rd, normalize(SunDirection)); // mu in the paper which is the cosine of the angle between the sun direction and the ray direction 
     	float phaseR = 3.0f / (16.0f * M_PI) * (1.0f + mu * mu); 
     	float g = 0.76f; 
     	float phaseM = 3.0f / (8.0f * M_PI) * ((1.0f - g * g) * (1.0f + mu * mu)) / ((2.0f + g * g) * pow(1.0f + g * g - 2.0f * g * mu, 1.5f)); 
@@ -129,7 +130,7 @@ float4 PSAtmosphere(VSOut i): SV_Target0
         	opticalDepthM += hm; 
 
         	// light optical depth
-        	float distLight = RaySphere(float3(0.0f,0.0f,0.0f), AtmosR, curP, SunDirection).x; 
+        	float distLight = RaySphere(float3(0.0f,0.0f,0.0f), AtmosR, curP, normalize(SunDirection)).x; 
         	float segmentLengthLight = distLight / float(numLightSamples);
         	float tCurrentLight = 0.0f; 
         	float opticalDepthLightR = 0.0f;
@@ -137,7 +138,7 @@ float4 PSAtmosphere(VSOut i): SV_Target0
         	int j = 0;
         	for (j = 0; j < numLightSamples; j++) 
         	{ 
-        	    float3 samplePositionLight = curP + (tCurrentLight + segmentLengthLight * 0.5f) * SunDirection; 
+        	    float3 samplePositionLight = curP + (tCurrentLight + segmentLengthLight * 0.5f) * normalize(SunDirection); 
         	    // we had a .lenght here also above... hum
         	    float heightLight = samplePositionLight.y - EarthR; 
         	    if (heightLight < 0.0f)

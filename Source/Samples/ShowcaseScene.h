@@ -16,7 +16,7 @@ public:
 private:
 	struct Camera
 	{
-		Camera(): Position(0.0f,10.0f,-1.0f),
+		Camera(): Position(0.0f,1.0f,-1.0f),
 			View(0.0f,0.0f,1.0f),
 			Up(0.0f,1.0f,0.0f),
 			Right(1.0f,0.0,0.0f),
@@ -83,13 +83,14 @@ private:
 	{
 		glm::vec4 View;
 		glm::mat4 ViewMatrix;
+		glm::mat4 InvViewProj;
 		glm::vec4 ViewPosition;
 		glm::vec3 SunDirection;
 		float EarthR = 6360e3f;
 		float AtmosR = 6420e3f;
 		float Hr = 7994.0f;
 		float Hm = 1200.0f;
-		float SunIntensity = 30.0f;
+		float SunIntensity = 20.0f;
 		glm::vec3 BetaR = glm::vec3(3.8e-6f, 13.5e-6f, 33.1e-6f);
 		float Pad0 = 0.0f;
 		glm::vec3 BetaM = glm::vec3(21e-6f, 21e-6f, 21e-6f);

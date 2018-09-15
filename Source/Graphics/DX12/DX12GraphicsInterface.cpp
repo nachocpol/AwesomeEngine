@@ -274,7 +274,7 @@ namespace Graphics { namespace DX12 {
 		if (FAILED(D3DCompileFromFile(wpath.c_str(), nullptr, nullptr, desc.ShaderEntryPoint.c_str(), target.c_str(), flags, 0, &sblob, &error)))
 		{
 			OutputDebugStringA((char*)error->GetBufferPointer());
-			assert(false);
+ 			assert(false);
 			return false;
 		}
 		outShader.BytecodeLength = sblob->GetBufferSize();

@@ -163,5 +163,5 @@ float4 PSLightPass(VSOutLightPass i): SV_Target0
 	float4 ambient = pcol * 0.05f;
 	float4 finalColor = pcol* LightColor * ndl;
 	finalColor += ambient;
-	return ToSRGB(finalColor,2.2);
+	return finalColor;
 }

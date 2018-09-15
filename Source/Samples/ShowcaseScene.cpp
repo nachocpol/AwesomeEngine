@@ -44,7 +44,7 @@ bool ShowcaseScene::Initialize()
 		pdesc.DepthWriteEnabled				= true;
 		pdesc.DepthFunction					= Graphics::LessEqual;
 		pdesc.DepthFormat					= Graphics::Depth24_Stencil8;
-		pdesc.ColorFormats[0]				= Graphics::Format::RGBA_16_Float;
+		pdesc.ColorFormats[0]				= Graphics::Format::RGBA_8_Unorm;
 		pdesc.ColorFormats[1]				= Graphics::Format::RGBA_16_Float;
 		pdesc.ColorFormats[2]				= Graphics::Format::RGBA_16_Float;
 		mGBufferPipeline = mGraphics->CreateGraphicsPipeline(pdesc);
@@ -116,7 +116,7 @@ bool ShowcaseScene::Initialize()
 		desc.VertexShader.ShaderEntryPoint	= "VSFullScreen";
 		desc.VertexShader.ShaderPath		= "Common.hlsl";
 		desc.VertexShader.Type				= Graphics::Vertex;
-		desc.PixelShader.ShaderEntryPoint	= "PSFullScreen";
+		desc.PixelShader.ShaderEntryPoint	= "PSToneGamma";
 		desc.PixelShader.ShaderPath			= "Common.hlsl";
 		desc.PixelShader.Type				= Graphics::Pixel;
 		Graphics::VertexInputDescription::VertexInputElement eles[1] =
@@ -175,19 +175,19 @@ void ShowcaseScene::Update(float dt)
 
 	if (input->IsKeyPressed('a'))
 	{
-		mCamera.Position += mCamera.Right;
+		mCamera.Position += mCamera.Right * 10.0f;
 	}
 	else if (input->IsKeyPressed('d'))
 	{
-		mCamera.Position -= mCamera.Right;
+		mCamera.Position -= mCamera.Right * 10.0f;
 	}
 	else if (input->IsKeyPressed('w'))
 	{
-		mCamera.Position += mCamera.View;
+		mCamera.Position += mCamera.View * 10.0f;
 	}
 	else if (input->IsKeyPressed('s'))
 	{
-		mCamera.Position -= mCamera.View;
+		mCamera.Position -= mCamera.View * 10.0f;
 	}
 
 	glm::vec2 mousePos	= input->GetMousePos();
@@ -209,7 +209,7 @@ void ShowcaseScene::Update(float dt)
 
 	mAppData.ViewMatrix = glm::lookAt(mCamera.Position, mCamera.Position + mCamera.View, mCamera.Up);
 }
-
+glm::vec4 gSunDirection = glm::vec4(0.5f, -0.1f, 0.5f, 0.0f);
 void ShowcaseScene::Draw(float dt)
 {
 	float clearBlue[4] = { 0.2f,0.2f,0.3f,1.0f };
@@ -274,7 +274,7 @@ void ShowcaseScene::Draw(float dt)
 			mGraphics->SetTexture(mGBuffer.Normals, 1);
 
 			mLightInfo.LightColor = glm::vec4(1.0f, 1.0f, 1.0f,1.0f);
-			mLightInfo.LightPosition = glm::vec4(0.5f,-0.6f,0.5f,0.0f);
+			mLightInfo.LightPosition = gSunDirection;
 			mGraphics->SetConstantBuffer(mLightInfoHandle, 1, sizeof(mLightInfo), &mLightInfo);
 			mGraphics->Draw(6, 0);
 
@@ -294,8 +294,15 @@ void ShowcaseScene::Draw(float dt)
 	mGraphics->SetGraphicsPipeline(mAtmospherePipeline);
 	mAtmosphereData.View = glm::vec4(mCamera.View,0.0f);
 	mAtmosphereData.ViewMatrix = mAppData.ViewMatrix;
+	{
+		mAtmosphereData.InvViewProj = mAppData.ViewMatrix;
+		mAtmosphereData.InvViewProj[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		mAtmosphereData.InvViewProj = glm::inverse(mAtmosphereData.InvViewProj);
+
+		mAtmosphereData.InvViewProj = mAtmosphereData.InvViewProj * glm::inverse(mAppData.ProjectionMatrix);
+	}
 	mAtmosphereData.ViewPosition = glm::vec4(mCamera.Position,0.0f);
-	mAtmosphereData.SunDirection = -glm::vec3(0.5f, -0.6f, 0.5f);
+	mAtmosphereData.SunDirection = -glm::vec3(gSunDirection);
 	mGraphics->SetConstantBuffer(mAtmosphereDataHandle, 0, sizeof(AtmosphereData), &mAtmosphereData);
 	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
 	mGraphics->Draw(6, 0);
@@ -313,11 +320,17 @@ void ShowcaseScene::Draw(float dt)
 	ImGui::Image((ImTextureID)mGBuffer.Color.Handle, ImVec2(128, 128));
 	ImGui::Image((ImTextureID)mGBuffer.Position.Handle, ImVec2(128, 128));
 	ImGui::End();
+
+	// Atmosettings
+	ImGui::Begin("Atmosphere");
+	ImGui::DragFloat("Sun Intensity", &mAtmosphereData.SunIntensity, 0.1f, 1.0f, 200.0f);
+	ImGui::InputFloat3("Sun Direction", &gSunDirection.x);
+	ImGui::End();
 }
 
 void ShowcaseScene::Resize(int w, int h)
 {
-	mGBuffer.Color = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::RenderTarget);
+	mGBuffer.Color = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_8_Unorm, Graphics::TextureFlags::RenderTarget);
 	mGBuffer.Normals = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::RenderTarget);
 	mGBuffer.Position = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::RenderTarget);
 	mGBuffer.Depth = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::Depth24_Stencil8, Graphics::TextureFlags::DepthStencil);
