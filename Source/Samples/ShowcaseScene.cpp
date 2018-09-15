@@ -97,9 +97,9 @@ bool ShowcaseScene::Initialize()
 	}
 
 	// Load models
-	//mAssetImporter->LoadModel("mitsuba/mitsuba-sphere.obj", this);
-	//mAssetImporter->LoadModel("cube.obj", this);
-	mAssetImporter->LoadModel("sponza/sponza.obj", this);
+	mAssetImporter->LoadModel("mitsuba/mitsuba-sphere.obj", this);
+//	mAssetImporter->LoadModel("cube.obj", this);
+	//mAssetImporter->LoadModel("sponza/sponza.obj", this);
 
 	// Cb
 	mAppDataHandle		= mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AppData));
@@ -164,7 +164,7 @@ bool ShowcaseScene::Initialize()
 	}
 
 	// Load default sphere
-	mAssetImporter->LoadModel("sphere.obj", this);
+	//mAssetImporter->LoadModel("sphere.obj", this);
 
 	return true;
 }
@@ -173,21 +173,22 @@ void ShowcaseScene::Update(float dt)
 {
 	const auto input = Graphics::Platform::InputManager::GetInstance();
 
+	float hackSpeed = 1.0f;
 	if (input->IsKeyPressed('a'))
 	{
-		mCamera.Position += mCamera.Right * 10.0f;
+		mCamera.Position += mCamera.Right * hackSpeed;
 	}
 	else if (input->IsKeyPressed('d'))
 	{
-		mCamera.Position -= mCamera.Right * 10.0f;
+		mCamera.Position -= mCamera.Right * hackSpeed;
 	}
 	else if (input->IsKeyPressed('w'))
 	{
-		mCamera.Position += mCamera.View * 10.0f;
+		mCamera.Position += mCamera.View * hackSpeed;
 	}
 	else if (input->IsKeyPressed('s'))
 	{
-		mCamera.Position -= mCamera.View * 10.0f;
+		mCamera.Position -= mCamera.View * hackSpeed;
 	}
 
 	glm::vec2 mousePos	= input->GetMousePos();
@@ -209,7 +210,7 @@ void ShowcaseScene::Update(float dt)
 
 	mAppData.ViewMatrix = glm::lookAt(mCamera.Position, mCamera.Position + mCamera.View, mCamera.Up);
 }
-glm::vec4 gSunDirection = glm::vec4(0.5f, -0.1f, 0.5f, 0.0f);
+glm::vec4 gSunDirection = glm::vec4(0.5f, -1.0f, -0.5f, 0.0f);
 void ShowcaseScene::Draw(float dt)
 {
 	float clearBlue[4] = { 0.2f,0.2f,0.3f,1.0f };
@@ -229,7 +230,7 @@ void ShowcaseScene::Draw(float dt)
 			mGraphics->SetTopology(Graphics::TriangleList);
 			const auto curActor = mActors[i];
 			mAppData.ModelMatrix = glm::mat4(1.0f);
-			mAppData.ModelMatrix = glm::scale(mAppData.ModelMatrix, glm::vec3(0.1f));
+			mAppData.ModelMatrix = glm::scale(mAppData.ModelMatrix, glm::vec3(1.0f));
 			//mAppData.Model = glm::rotate(mAppData.Model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 			mGraphics->SetConstantBuffer(mAppDataHandle, 0, sizeof(mAppData), &mAppData);
 
