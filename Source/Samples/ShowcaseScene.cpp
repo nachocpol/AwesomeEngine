@@ -173,7 +173,7 @@ void ShowcaseScene::Update(float dt)
 {
 	const auto input = Graphics::Platform::InputManager::GetInstance();
 
-	float hackSpeed = 1.0f;
+	float hackSpeed = 0.05f * dt;
 	if (input->IsKeyPressed('a'))
 	{
 		mCamera.Position += mCamera.Right * hackSpeed;
@@ -192,7 +192,11 @@ void ShowcaseScene::Update(float dt)
 	}
 
 	glm::vec2 mousePos	= input->GetMousePos();
-	glm::vec2 mouseOff	= mousePos - mCamera.LastMouse;
+	glm::vec2 mouseOff = glm::vec2(0.0f, 0.0f);
+	if (input->IsMouseButtonPressed(Graphics::Platform::MouseButton::Right))
+	{
+		mouseOff = mousePos - mCamera.LastMouse;
+	}
 	mCamera.LastMouse	= mousePos;
 
 	mouseOff		*= 0.5f;
@@ -210,7 +214,7 @@ void ShowcaseScene::Update(float dt)
 
 	mAppData.ViewMatrix = glm::lookAt(mCamera.Position, mCamera.Position + mCamera.View, mCamera.Up);
 }
-glm::vec4 gSunDirection = glm::vec4(0.5f, -1.0f, -0.5f, 0.0f);
+glm::vec4 gSunDirection = glm::vec4(0.5f, -0.1f, -0.5f, 0.0f);
 void ShowcaseScene::Draw(float dt)
 {
 	float clearBlue[4] = { 0.2f,0.2f,0.3f,1.0f };

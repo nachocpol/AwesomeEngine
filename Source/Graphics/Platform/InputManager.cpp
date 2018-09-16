@@ -28,7 +28,8 @@ namespace Graphics {namespace Platform {
 
 	bool InputManager::IsKeyPressed(char key)
 	{
-		if (KeyStates[key] == StateDown)
+		// TO-DO: fix win input
+		if (KeyStates[key - 32] == StateDown)
 		{
 			return true;
 		}

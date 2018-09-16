@@ -418,7 +418,7 @@ namespace Graphics { namespace DX12 {
 
 		ID3D12CommandList* cmdLists[] = {context};
 		mDefaultSurface.Queue->ExecuteCommandLists(1, cmdLists);
-		mDefaultSurface.SwapChain->Present(1, 0);
+		mDefaultSurface.SwapChain->Present(0, 0);
 		mDefaultSurface.GPUFencesValues[idx]++;
 		mDefaultSurface.Queue->Signal(mDefaultSurface.GPUFences[idx], mDefaultSurface.GPUFencesValues[idx]);
 

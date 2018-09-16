@@ -88,8 +88,8 @@ private:
 		glm::vec3 SunDirection;
 		float EarthR = 6360e3f;
 		float AtmosR = 6420e3f;
-		float Hr = 7994.0f;
-		float Hm = 1200.0f;
+		float Hr = 3994.0f; //7994.0f
+		float Hm = 1200.0f; //1200.0f 
 		float SunIntensity = 20.0f;
 		glm::vec3 BetaR = glm::vec3(3.8e-6f, 13.5e-6f, 33.1e-6f);
 		float Pad0 = 0.0f;

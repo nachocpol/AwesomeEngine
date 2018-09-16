@@ -9,29 +9,34 @@ namespace Graphics { namespace Platform {namespace Windows {
 		auto inputManager = InputManager::GetInstance();
 		switch (msg)
 		{
-		case WM_KEYDOWN:
+		// KEY UP
+		case WM_KEYUP:
 			switch (wParam)
 			{
-			case VK_F1:		inputManager->SpecialKeyStates[SpecialKey::F1]	= KeyState::StateDown; break;
-			case VK_F2:		inputManager->SpecialKeyStates[SpecialKey::F2]	= KeyState::StateDown; break;
-			case VK_F3:		inputManager->SpecialKeyStates[SpecialKey::F3]	= KeyState::StateDown; break;
-			case VK_F4:		inputManager->SpecialKeyStates[SpecialKey::F4]	= KeyState::StateDown; break;
-			case VK_F5:		inputManager->SpecialKeyStates[SpecialKey::F5]	= KeyState::StateDown; break;
-			case VK_F6:		inputManager->SpecialKeyStates[SpecialKey::F6]	= KeyState::StateDown; break;
-			case VK_F7:		inputManager->SpecialKeyStates[SpecialKey::F7]	= KeyState::StateDown; break;
-			case VK_F8:		inputManager->SpecialKeyStates[SpecialKey::F8]	= KeyState::StateDown; break;
-			case VK_F9:		inputManager->SpecialKeyStates[SpecialKey::F9]	= KeyState::StateDown; break;
-			case VK_F10:	inputManager->SpecialKeyStates[SpecialKey::F10] = KeyState::StateDown; break;
-			case VK_F11:	inputManager->SpecialKeyStates[SpecialKey::F11] = KeyState::StateDown; break;
-			case VK_F12:	inputManager->SpecialKeyStates[SpecialKey::F12] = KeyState::StateDown; break;
-			case VK_ESCAPE:	inputManager->SpecialKeyStates[SpecialKey::ESC] = KeyState::StateDown; break;
-			case VK_TAB:	inputManager->SpecialKeyStates[SpecialKey::TAB]	= KeyState::StateDown; break;
-			default: break;
+			default: inputManager->KeyStates[(unsigned char)wParam] = KeyState::StateUp; printf("UP:%c\n", wParam); break;
 			}
 			break;
 
-		case WM_CHAR:
-			inputManager->KeyStates[(char)wParam] = KeyState::StateDown;
+		// KEY DOWN
+		case WM_KEYDOWN:
+			switch (wParam)
+			{
+				case VK_F1:		inputManager->SpecialKeyStates[SpecialKey::F1]	= KeyState::StateDown; break;
+				case VK_F2:		inputManager->SpecialKeyStates[SpecialKey::F2]	= KeyState::StateDown; break;
+				case VK_F3:		inputManager->SpecialKeyStates[SpecialKey::F3]	= KeyState::StateDown; break;
+				case VK_F4:		inputManager->SpecialKeyStates[SpecialKey::F4]	= KeyState::StateDown; break;
+				case VK_F5:		inputManager->SpecialKeyStates[SpecialKey::F5]	= KeyState::StateDown; break;
+				case VK_F6:		inputManager->SpecialKeyStates[SpecialKey::F6]	= KeyState::StateDown; break;
+				case VK_F7:		inputManager->SpecialKeyStates[SpecialKey::F7]	= KeyState::StateDown; break;
+				case VK_F8:		inputManager->SpecialKeyStates[SpecialKey::F8]	= KeyState::StateDown; break;
+				case VK_F9:		inputManager->SpecialKeyStates[SpecialKey::F9]	= KeyState::StateDown; break;
+				case VK_F10:	inputManager->SpecialKeyStates[SpecialKey::F10] = KeyState::StateDown; break;
+				case VK_F11:	inputManager->SpecialKeyStates[SpecialKey::F11] = KeyState::StateDown; break;
+				case VK_F12:	inputManager->SpecialKeyStates[SpecialKey::F12] = KeyState::StateDown; break;
+				case VK_ESCAPE:	inputManager->SpecialKeyStates[SpecialKey::ESC] = KeyState::StateDown; break;
+				case VK_TAB:	inputManager->SpecialKeyStates[SpecialKey::TAB]	= KeyState::StateDown; break;
+				default:		inputManager->KeyStates[(unsigned char)wParam]			= KeyState::StateDown; printf("DOWN:%c\n", wParam);  break;
+			}
 			break;
 
 		case WM_DESTROY:
@@ -160,8 +165,8 @@ namespace Graphics { namespace Platform {namespace Windows {
 	void WWindow::Update()
 	{
 		auto inputManager = InputManager::GetInstance();
-		memset(inputManager->KeyStates, 0, sizeof(inputManager->KeyStates));
-		memset(inputManager->SpecialKeyStates, 0, sizeof(inputManager->SpecialKeyStates));
+		//memset(inputManager->KeyStates, 0, sizeof(inputManager->KeyStates));
+		//memset(inputManager->SpecialKeyStates, 0, sizeof(inputManager->SpecialKeyStates));
 
 		MSG msg = {};
 		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
