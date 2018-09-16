@@ -319,18 +319,37 @@ void ShowcaseScene::Draw(float dt)
 	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
 	mGraphics->Draw(6, 0);
 
-	// Some ImGUI 
-	ImGui::Begin("GBuffer Debug");
-	ImGui::Image((ImTextureID)mGBuffer.Normals.Handle, ImVec2(128, 128));
-	ImGui::Image((ImTextureID)mGBuffer.Color.Handle, ImVec2(128, 128));
-	ImGui::Image((ImTextureID)mGBuffer.Position.Handle, ImVec2(128, 128));
-	ImGui::End();
+	// GBuffer
+	static bool showGBuffer = false;
+	if (showGBuffer)
+	{
+		ImGui::Begin("GBuffer Debug");
+		ImGui::Image((ImTextureID)mGBuffer.Normals.Handle, ImVec2(128, 128));
+		ImGui::Image((ImTextureID)mGBuffer.Color.Handle, ImVec2(128, 128));
+		ImGui::Image((ImTextureID)mGBuffer.Position.Handle, ImVec2(128, 128));
+		ImGui::End();
+	}
 
 	// Atmosettings
-	ImGui::Begin("Atmosphere");
-	ImGui::DragFloat("Sun Intensity", &mAtmosphereData.SunIntensity, 0.1f, 1.0f, 200.0f);
-	ImGui::InputFloat3("Sun Direction", &gSunDirection.x);
-	ImGui::End();
+	static bool showAtmos = false;
+	if (showAtmos)
+	{
+		ImGui::Begin("Atmosphere");
+		ImGui::DragFloat("Sun Intensity", &mAtmosphereData.SunIntensity, 0.1f, 1.0f, 200.0f);
+		ImGui::InputFloat3("Sun Direction", &gSunDirection.x);
+		ImGui::End();
+	}
+
+	// Menu bar
+	ImGui::BeginMainMenuBar();
+	if (ImGui::BeginMenu("Debug"))
+	{
+		ImGui::MenuItem("GBuffer Debug", "", &showGBuffer);
+		ImGui::MenuItem("Atmosphere Debug", "", &showAtmos);
+		ImGui::EndMenu();
+	}
+	ImGui::EndMainMenuBar();
+
 }
 
 void ShowcaseScene::Resize(int w, int h)

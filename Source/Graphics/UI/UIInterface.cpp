@@ -84,10 +84,10 @@ namespace Graphics{namespace UI{
 #pragma optimize("",off)
 	void UIInterface::EndFrame()
 	{
-		ImGui::Begin("UI Information");
-		ImGui::Text("Vertex usage:%f%c", gVtxUsage, '%');
-		ImGui::Text("Index usage:%f%c", gIdxUsage, '%');
-		ImGui::End();
+		//ImGui::Begin("UI Information");
+		//ImGui::Text("Vertex usage:%f%c", gVtxUsage, '%');
+		//ImGui::Text("Index usage:%f%c", gIdxUsage, '%');
+		//ImGui::End();
 
 		ImGui::Render();
 

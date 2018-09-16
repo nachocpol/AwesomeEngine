@@ -271,7 +271,7 @@ namespace Graphics { namespace DX12 {
 			target = "none_5_0"; break;
 		}
 		UINT flags =  D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-		if (FAILED(D3DCompileFromFile(wpath.c_str(), nullptr, nullptr, desc.ShaderEntryPoint.c_str(), target.c_str(), flags, 0, &sblob, &error)))
+		if (FAILED(D3DCompileFromFile(wpath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, desc.ShaderEntryPoint.c_str(), target.c_str(), flags, 0, &sblob, &error)))
 		{
 			OutputDebugStringA((char*)error->GetBufferPointer());
  			assert(false);

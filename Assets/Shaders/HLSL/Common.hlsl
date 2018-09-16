@@ -1,3 +1,5 @@
+#include "Utils.hlsl"
+
 cbuffer UIData : register(b0)
 {
 	float4x4 Projection;	// ImGUI ortho projection
@@ -31,25 +33,6 @@ VSOut VSFullScreen(VSIn i)
 float4 PSFullScreen(VSOut i): SV_Target0
 {
 	return MainTex.Sample(LinearWrapSampler, i.TexCoord);
-}
-
-// Generic blit with tonemap and gamma correction
-float4 ToSRGB(float4 base, float gamma)
-{
-	float grcp = 1.0f/ gamma;
-	return pow(base,float4(grcp,grcp,grcp,grcp));
-}
-
-float3 Uncharted2Tonemap(float3 x)
-{
-	float A = 0.15f;
-	float B = 0.50f;
-	float C = 0.10f;
-	float D = 0.20f;
-	float E = 0.02f;
-	float F = 0.30f;
-	float W = 11.2f;
-   return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
 }
 
 float4 PSToneGamma(VSOut i): SV_Target0

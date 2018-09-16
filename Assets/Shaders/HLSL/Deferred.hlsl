@@ -1,3 +1,5 @@
+#include "Utils.hlsl"
+
 cbuffer AppData : register(b0)
 {
 	float4x4 ModelMatrix;
@@ -57,17 +59,6 @@ struct PSOutGBuffer
 	float4 Normals  : SV_Target1;
 	float4 Position : SV_Target2;
 };
-
-float4 ToLinearRGB(float4 base,float gamma)
-{
-	return pow(base,float4(gamma,gamma,gamma,gamma));
-}
-
-float4 ToSRGB(float4 base, float gamma)
-{
-	float grcp = 1.0f/ gamma;
-	return pow(base,float4(grcp,grcp,grcp,grcp));
-}
 
 VSOutGBuffer VSGBuffer(VSInGBuffer i)
 {

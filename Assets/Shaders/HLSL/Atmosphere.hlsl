@@ -1,3 +1,5 @@
+#include "Utils.hlsl"
+
 cbuffer AtmosphereData : register(b0)
 {
 	float4 View;			// xyz: camera view, z: not used
@@ -26,59 +28,6 @@ struct VSOut
 	float4 ClipPos  : SV_Position;
 	float2 TexCoord : TEXCOORD;
 };
-
-float3x3 LookAt(float3 origin, float3 dir)
-{
- 	float3 rr = float3(0.0f,1.0f,0.0f);
- 	float3 ww = normalize(dir - origin);
- 	float3 uu = normalize(cross(ww, rr));
- 	float3 vv = normalize(cross(uu, ww));	
- 	return float3x3(uu, vv, ww);
-}
-
-/*
-	Calculates rd intersection points with the sphere 
-	defined by origin (so) and radius (sr)
-*/
-float2 RaySphere(float3 so,float sr,float3 ro,float3 rd)
-{    
-	float3 L = so - ro; 
-    float tca = dot(L,rd); 
-    float d2 = dot(L,L) - tca * tca; 
-    float radius2 = sr * sr;
-    if (d2 > radius2) 
-    {
-        return float2(-1.0f,-1.0f); 
-    }
-    float thc = sqrt(radius2 - d2); 
-    
-    float2 t;
-    t.x = tca - thc; 
-    t.y = tca + thc; 
-	if (t.x > t.y)
-    {
-        float tmp = t.x;
-        t.x = t.y;
-        t.y = tmp;
-    }
- 
-	if (t.x < 0.0f) 
-    { 
-		t.x = t.y; // If t0 is negative, let's use t1 instead 
-		if (t.x < 0.0f) 
-        {
-            // Both t0 and t1 are negative 
-            return float2(-1.0f,-1.0f); 
-        }
-	} 
-	return t; 
-}
-
-float GetProjectionPlane(float fovRad)
-{
-	float halfFov = fovRad * 0.5f;
-	return (1.0f / sin(halfFov)) * cos(halfFov);
-}
 
 VSOut VSAtmosphere(VSIn i)
 {
