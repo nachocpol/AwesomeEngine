@@ -2,6 +2,7 @@
 
 #include "Graphics/World/Scene.h"
 #include "Graphics/AssetImporter.h"
+#include "Graphics/CloudRendering.h"
 
 class ShowcaseScene : public Graphics::Scene
 {
@@ -99,4 +100,6 @@ private:
 	Graphics::BufferHandle mAtmosphereDataHandle;
 
 	Graphics::GraphicsPipeline mAtmospherePipeline;
+
+	Graphics::CloudRenderer mCloudRenderer;
 };

@@ -166,6 +166,8 @@ bool ShowcaseScene::Initialize()
 	// Load default sphere
 	//mAssetImporter->LoadModel("sphere.obj", this);
 
+	mCloudRenderer.Initialize(mGraphics);
+
 	return true;
 }
 
@@ -319,6 +321,8 @@ void ShowcaseScene::Draw(float dt)
 	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
 	mGraphics->Draw(6, 0);
 
+	mCloudRenderer.Draw(dt);
+
 	// GBuffer
 	static bool showGBuffer = false;
 	if (showGBuffer)
@@ -339,13 +343,21 @@ void ShowcaseScene::Draw(float dt)
 		ImGui::InputFloat3("Sun Direction", &gSunDirection.x);
 		ImGui::End();
 	}
+	
+	// Clouds
+	static bool showCloudsDebug = false;
+	if (showCloudsDebug)
+	{
+		mCloudRenderer.ShowDebug();
+	}
 
 	// Menu bar
 	ImGui::BeginMainMenuBar();
 	if (ImGui::BeginMenu("Debug"))
 	{
-		ImGui::MenuItem("GBuffer Debug", "", &showGBuffer);
-		ImGui::MenuItem("Atmosphere Debug", "", &showAtmos);
+		ImGui::MenuItem("GBuffer", "", &showGBuffer);
+		ImGui::MenuItem("Atmosphere", "", &showAtmos);
+		ImGui::MenuItem("Clouds", "", &showCloudsDebug);
 		ImGui::EndMenu();
 	}
 	ImGui::EndMainMenuBar();
