@@ -24,6 +24,7 @@ namespace Graphics
 		~ValueNoise2D();
 		void Initialize(uint32_t width, uint32_t height, uint32_t seed = 1);
 		float Sample(float x,float y);
+		float Fbm(float x, float y, int octaves, float lacunariry = 2.0f, float gain = 0.5f);
 
 	private:
 		float* mValues;
