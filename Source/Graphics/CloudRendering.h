@@ -15,7 +15,9 @@ namespace Graphics
 
 	private:
 		TextureHandle mTestTexture;
+		TextureHandle mTestTexture3D;
 		GraphicsInterface* mGraphicsInterface;
+		GraphicsPipeline mCloudsPipeline;
 	};
 	
 }

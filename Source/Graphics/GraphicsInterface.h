@@ -191,6 +191,7 @@ namespace Graphics
 		virtual void FlushAndWait() = 0;
 		virtual BufferHandle CreateBuffer(BufferType type, CPUAccess cpuAccess, uint64_t size,void* data = nullptr) = 0;
 		virtual TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips,uint32_t layers,Format format,TextureFlags flags = TextureFlagNone, void* data = nullptr) = 0;
+		virtual TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr) = 0;
 		virtual GraphicsPipeline CreateGraphicsPipeline(const GraphicsPipelineDescription& desc) = 0;
 		virtual ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc) = 0;
 		virtual void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data) = 0;

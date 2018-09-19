@@ -543,7 +543,7 @@ namespace Graphics { namespace DX12 {
 			height,
 			layers,
 			mips,
-			1,0,
+			1, 0,
 			dxflags
 		);
 		CD3DX12_HEAP_PROPERTIES heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
@@ -551,8 +551,8 @@ namespace Graphics { namespace DX12 {
 		state = TEXTURE_READ;
 		mDevice->CreateCommittedResource
 		(
-			&heapP,D3D12_HEAP_FLAG_NONE,
-			&texDesc,state,
+			&heapP, D3D12_HEAP_FLAG_NONE,
+			&texDesc, state,
 			nullptr,
 			IID_PPV_ARGS(&curTexEntry->Resource)
 		);
@@ -562,7 +562,7 @@ namespace Graphics { namespace DX12 {
 		D3D12_PLACED_SUBRESOURCE_FOOTPRINT* footPrints = new D3D12_PLACED_SUBRESOURCE_FOOTPRINT[mips];
 		UINT64* rowSizes = new UINT64[mips];
 		mDevice->GetCopyableFootprints(&texDesc, 0, mips, 0, footPrints, nullptr, rowSizes, &totalSize);
-		
+
 		// Upload buffer
 		// Sometimes the following CreateCommittedResource call will fail with "wrong memory preference..." 
 		// setting again fixes it. Prob because it is a static member¿??¿
@@ -584,15 +584,15 @@ namespace Graphics { namespace DX12 {
 
 				UINT64 curSliceSize = rowSizes[i] * curPrint.Footprint.Height;
 
-				D3D12_SUBRESOURCE_DATA d	= {};
-				d.pData						= (void*)(curOff + (unsigned char*)data);
-				d.RowPitch					= rowSizes[i];
-				d.SlicePitch				= curSliceSize;
+				D3D12_SUBRESOURCE_DATA d = {};
+				d.pData = (void*)(curOff + (unsigned char*)data);
+				d.RowPitch = rowSizes[i];
+				d.SlicePitch = curSliceSize;
 
-				mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, state, COPY_DST));
-				UpdateSubresources(mDefaultSurface.CmdContext, curTexEntry->Resource, curTexEntry->UploadHeap, curPrint.Offset, i,1, &d);
-				mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, COPY_DST,state));
-				
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, state, COPY_DST));
+				UpdateSubresources(mDefaultSurface.CmdContext, curTexEntry->Resource, curTexEntry->UploadHeap, curPrint.Offset, i, 1, &d);
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, COPY_DST, state));
+
 				curOff += rowSizes[i] * curPrint.Footprint.Height;
 			}
 		}
@@ -617,7 +617,114 @@ namespace Graphics { namespace DX12 {
 		mCurTexture++;
 		return handle;
 	}
-//#pragma optimize("",on)
+
+	TextureHandle DX12GraphicsInterface::CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags /* = TextureFlagNone*/, void* data /*= nullptr*/)
+	{
+		if ((width * height * layers * mips) == 0)
+		{
+			return InvalidTexture;
+		}
+		if (mTextures[mCurTexture])
+		{
+			std::cout << "Something weird is happenign! \n";
+		}
+		mTextures[mCurTexture] = new TextureEntry;
+		auto* curTexEntry = mTextures[mCurTexture];
+
+		D3D12_RESOURCE_FLAGS dxflags = D3D12_RESOURCE_FLAG_NONE;
+		if ((flags & UnorderedAccess) == UnorderedAccess)
+		{
+			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		}
+		if ((flags & RenderTarget) == RenderTarget)
+		{
+			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		}
+		if ((flags & DepthStencil) == DepthStencil)
+		{
+			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+		}
+		CD3DX12_RESOURCE_DESC texDesc;
+		texDesc = CD3DX12_RESOURCE_DESC::Tex3D
+		(
+			ToDXGIFormat(format),
+			width,
+			height,
+			layers,
+			mips,
+			dxflags
+		);
+		CD3DX12_HEAP_PROPERTIES heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+		auto& state = curTexEntry->State;
+		state = TEXTURE_READ;
+		mDevice->CreateCommittedResource
+		(
+			&heapP, D3D12_HEAP_FLAG_NONE,
+			&texDesc, state,
+			nullptr,
+			IID_PPV_ARGS(&curTexEntry->Resource)
+		);
+
+		// Here we cache a few values that we will use to upload the mips:
+		UINT64 totalSize;
+		D3D12_PLACED_SUBRESOURCE_FOOTPRINT* footPrints = new D3D12_PLACED_SUBRESOURCE_FOOTPRINT[mips];
+		UINT64* rowSizes = new UINT64[mips];
+		mDevice->GetCopyableFootprints(&texDesc, 0, mips, 0, footPrints, nullptr, rowSizes, &totalSize);
+
+		// Upload buffer
+		// Sometimes the following CreateCommittedResource call will fail with "wrong memory preference..." 
+		// setting again fixes it. Prob because it is a static member¿??¿
+		heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		mDevice->CreateCommittedResource
+		(
+			&heapP, D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(totalSize), D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&curTexEntry->UploadHeap)
+		);
+		if (data)
+		{
+			auto baseDesc = curTexEntry->Resource->GetDesc();
+			int curOff = 0;
+			for (int i = 0; i < mips; i++)
+			{
+				const D3D12_PLACED_SUBRESOURCE_FOOTPRINT& curPrint = footPrints[i];
+
+				UINT64 curSliceSize = rowSizes[i] * curPrint.Footprint.Height;
+
+				D3D12_SUBRESOURCE_DATA d = {};
+				d.pData = (void*)(curOff + (unsigned char*)data);
+				d.RowPitch = rowSizes[i];
+				d.SlicePitch = curSliceSize;
+
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, state, COPY_DST));
+				UpdateSubresources(mDefaultSurface.CmdContext, curTexEntry->Resource, curTexEntry->UploadHeap, curPrint.Offset, i, 1, &d);
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, COPY_DST, state));
+
+				curOff += rowSizes[i] * curPrint.Footprint.Height;
+			}
+		}
+
+		delete[] footPrints;
+		delete[] rowSizes;
+
+		if ((flags & RenderTarget) == RenderTarget)
+		{
+			mDevice->CreateRenderTargetView(curTexEntry->Resource, nullptr, mRenderTargetHeap->GetCPU());
+			curTexEntry->RenderTarget = mRenderTargetHeap->GetCPU();
+			mRenderTargetHeap->OffsetHandles(1);
+		}
+		if ((flags & DepthStencil) == DepthStencil)
+		{
+			mDevice->CreateDepthStencilView(curTexEntry->Resource, nullptr, mDepthStencilHeap->GetCPU());
+			curTexEntry->DepthStencil = mDepthStencilHeap->GetCPU();
+			mDepthStencilHeap->OffsetHandles(1);
+		}
+
+		TextureHandle handle = { mCurTexture };
+		mCurTexture++;
+		return handle;
+	}
 
 	GraphicsPipeline DX12GraphicsInterface::CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)
 	{

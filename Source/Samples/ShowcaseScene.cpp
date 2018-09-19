@@ -313,6 +313,11 @@ void ShowcaseScene::Draw(float dt)
 	mGraphics->SetConstantBuffer(mAtmosphereDataHandle, 0, sizeof(AtmosphereData), &mAtmosphereData);
 	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
 	mGraphics->Draw(6, 0);
+
+	// Clouds
+	// set quad buffer!
+	mCloudRenderer.Draw(dt);
+
 	mGraphics->DisableAllTargets();
 
 	// Post processing and display
@@ -320,8 +325,6 @@ void ShowcaseScene::Draw(float dt)
 	mGraphics->SetTexture(mLightPass, 0);
 	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
 	mGraphics->Draw(6, 0);
-
-	mCloudRenderer.Draw(dt);
 
 	// GBuffer
 	static bool showGBuffer = false;

@@ -31,4 +31,20 @@ namespace Graphics
 		uint32_t mWidth;
 		uint32_t mHeight;
 	};
+
+	class ValueNoise3D
+	{
+	public:
+		ValueNoise3D();
+		~ValueNoise3D();
+		void Initialize(uint32_t width, uint32_t height, uint32_t depth, uint32_t seed = 1);
+		float Sample(float x, float y,float z);
+		float Fbm(float x, float y,float z, int octaves, float lacunariry = 2.0f, float gain = 0.5f);
+
+	private:
+		float* mValues;
+		uint32_t mWidth;
+		uint32_t mHeight;
+		uint32_t mDepth;
+	};
 }
