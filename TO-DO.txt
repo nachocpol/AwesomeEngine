@@ -3,3 +3,4 @@ TO-DO:
 + Replace rand with something better (spherical distribution)
 + Combine dx12 texture creation code
 + Static shape builder class (screen quad, screen triangle, cubes spheres etc etc)
++ Start making components

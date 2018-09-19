@@ -118,12 +118,18 @@ namespace Graphics
 
 		mCloudsPipeline = mGraphicsInterface->CreateGraphicsPipeline(desc);
 
+		mCloudsDataHandle = mGraphicsInterface->CreateBuffer(Graphics::BufferType::ConstantBuffer, Graphics::CPUAccess::None, sizeof(mCloudsData));
+
 		return true;
 	}
 
-	void CloudRenderer::Draw(float dt)
+	void CloudRenderer::Draw(float dt,glm::vec3 camPos, glm::mat4 iViewProj)
 	{
+		mCloudsData.ViewPosition = glm::vec4(camPos,0.0f);
+		mCloudsData.InvViewProj = iViewProj;
+		mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData),&mCloudsData);
 		mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
+		mGraphicsInterface->SetTexture(mTestTexture3D, 0);
 		mGraphicsInterface->Draw(6, 0);
 	}
 
