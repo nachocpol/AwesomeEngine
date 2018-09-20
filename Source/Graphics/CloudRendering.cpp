@@ -51,7 +51,7 @@ namespace Graphics
 
 		// 3D test
 		{
-			int numNoiseVals = 64;
+			int numNoiseVals = 32;
 			ValueNoise3D noise3D;
 			noise3D.Initialize(numNoiseVals, numNoiseVals, numNoiseVals);
 
@@ -75,7 +75,7 @@ namespace Graphics
 						unsigned char r = unsigned char(cu * 255.0f);
 						unsigned char g = unsigned char(cv * 255.0f);
 
-						float n = noise3D.Sample(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals);
+						float n = noise3D.Fbm(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals,5);
 
 						size_t slizeOff = (slizeSize * w);
 						texData[slizeOff + (u + v * tw)] = Texel{ unsigned char(n * 255.0f),0 ,0 , 0xff };
@@ -123,10 +123,11 @@ namespace Graphics
 		return true;
 	}
 
-	void CloudRenderer::Draw(float dt,glm::vec3 camPos, glm::mat4 iViewProj)
+	void CloudRenderer::Draw(float dt,glm::vec3 camPos, glm::mat4 iViewProj,glm::vec3 SunDirection)
 	{
 		mCloudsData.ViewPosition = glm::vec4(camPos,0.0f);
 		mCloudsData.InvViewProj = iViewProj;
+		mCloudsData.SunDirection = glm::vec4(SunDirection, 0.0f);
 		mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData),&mCloudsData);
 		mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
 		mGraphicsInterface->SetTexture(mTestTexture3D, 0);
@@ -136,9 +137,13 @@ namespace Graphics
 	void CloudRenderer::ShowDebug()
 	{
 		ImGui::Begin("Clouds");
-		ImGui::Text("Base value noise");
-		ImGui::Image((ImTextureID)mTestTexture3D.Handle, ImVec2(512, 512));
-		ImGui::Separator();
+		ImGui::DragFloat("Absorption", &mCloudsData.Absorption, 0.01f, 0.0f, 100.0f);
+		ImGui::DragFloat("Cloud Base", &mCloudsData.CloudBase, 1.0f, 0.0f, 1000.0f);
+		ImGui::DragFloat("Cloud extents", &mCloudsData.CloudExtents, 1.0f, 0.0f, 2000.0f);
+
+		//ImGui::Text("Base value noise");
+		//ImGui::Image((ImTextureID)mTestTexture3D.Handle, ImVec2(512, 512));
+		//ImGui::Separator();
 		ImGui::End();
 	}
 }

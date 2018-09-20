@@ -3,7 +3,11 @@
 cbuffer AtmosphereData : register(b0)
 {
     float4 ViewPosition; 
-    float4x4 InvViewProj; 
+    float4x4 InvViewProj;
+    float4 SunDirection; 
+    float CloudBase;
+    float CloudExtents;
+    float Absorption;
 }
 
 Texture3D BaseNoiseTex : register(t0);
@@ -22,7 +26,7 @@ struct VSOut
 
 float CloudPlane(float3 p, float h)
 {
-    return abs(dot(p,float3(0.0f,-1.0f,0.0f))) + h;
+    return dot(p,float3(0.0f,-1.0f,0.0f)) + h;
 }
 
 VSOut VSClouds(VSIn i)
@@ -33,31 +37,82 @@ VSOut VSClouds(VSIn i)
 	return o;
 }
 
+float GetCloudDensity(float3 p)
+{
+    float scale = 0.0002f;
+    float s = BaseNoiseTex.Sample(LinearWrapSampler,float3(p.x,p.z,0.0f) * scale);
+    s = saturate(saturate(s - 0.5) * 10.0);
+    float detailScale = 0.001f;
+    float sampleY = (p.y - CloudBase) / CloudExtents;
+    float detail = BaseNoiseTex.Sample(LinearWrapSampler,float3(p.x* detailScale,p.z* detailScale,sampleY * 15.0f)).r;
+    //detail = saturate(detail - 0.15f);
+    //detail = pow(detail,5.0f);
+    float hfade = pow(1.0f - sampleY,5.0f);
+    return (s * pow(detail,2.0f)) * hfade;
+}
+
 float4 PSClouds(VSOut i): SV_Target0
 {
 	float M_PI = 3.141516f;
-	
+    
+    float3 toSun = normalize(-SunDirection);
     float3 ro = ViewPosition;
     float3 rd = normalize(mul(InvViewProj,float4(i.TexCoord.xy,1.0f,1.0f)));
 
-    float3 p = ro;
-    float cd = 1.0f;
     float3 cloudColor = float3(0.0f,0.0f,0.0f);
     float opacity = 0.0f;
-    for(int i=0;i<64;i++)
-    {
-        p = ro + rd * cd;
-        float cloud = CloudPlane(p,150.0f);
-        if(cloud < 0.1f)
-        {
-            opacity = BaseNoiseTex.Sample(LinearWrapSampler,float3(p.xz * 0.0005f,8.0f));
-            cloudColor = float3(1.0f,1.0f,1.0f);
-            float fade = saturate(distance(p,ViewPosition) / 1000.0f);
-            opacity *= 1.0f - fade;
-            break;
-        }
-        cd += cloud;
-    }
+    float transmitance = 1.0f;
 
+    float cloudStartDist = 0.0f;
+    if(RayPlane(float3(0.0f,1.0f,0.0f),float3(0.0f,CloudBase,0.0f),ro,rd,cloudStartDist))
+    {
+        float mu = dot(rd, normalize(SunDirection));
+        float g = -0.76f; 
+        float phaseM = 3.0f / (8.0f * M_PI) * ((1.0f - g * g) * (1.0f + mu * mu)) / ((2.0f + g * g) * pow(1.0f + g * g - 2.0f * g * mu, 1.5f)); 
+
+        float3 cloudEntry = ro + rd * cloudStartDist;
+        float cloudEndDist = 0.0f;
+        RayPlane(float3(0.0f,1.0f,0.0f),float3(0.0f,CloudBase + CloudExtents,0.0f),cloudEntry,rd,cloudEndDist);
+        float3 cloudExit = cloudEntry + rd * cloudEndDist;
+        float travelDist = distance(cloudEntry,cloudExit);
+        const int steps = 64;
+        float stepSize = CloudExtents / float(steps);
+        float3 p = cloudEntry;
+        [loop]
+        for(int i=0; i<steps; i++)
+        {
+            float density = GetCloudDensity(p);
+            float ti = exp(-Absorption * stepSize * density);
+            transmitance *= ti;
+
+            float3 lightColor = float3(0.0f,0.0f,0.0f);
+            float lightTransmitance = 1.0f;
+            float lightStepSize = 8.0f;
+            float3 lightPos = p + toSun * lightStepSize;
+            [loop]
+            for(int j=0;j<8;j++)
+            {
+                float lightDensity = GetCloudDensity(lightPos);
+                float lightCurTransmitance = exp(-Absorption * lightStepSize * lightDensity);
+                lightTransmitance *= lightCurTransmitance;
+                lightPos = lightPos + toSun * lightStepSize;
+                if(lightPos.y > CloudBase + CloudExtents || lightTransmitance < 0.001f)
+                {
+                    break;
+                }
+            }
+            float3 stepLight = float3(1.0f,1.0f,1.0f) * lightTransmitance * phaseM;
+            float3 stepColor = stepLight * density * stepSize;
+            cloudColor += stepColor;
+
+            if(transmitance < 0.0001f)
+            {
+                break;
+            }
+            p = p + rd * stepSize;
+        }
+    }
+    opacity = 1.0f - transmitance;
+    opacity *= 1.0f - saturate(cloudStartDist / 7000.0f);
     return float4(cloudColor,opacity);
 }

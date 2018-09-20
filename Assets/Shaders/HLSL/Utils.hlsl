@@ -26,6 +26,19 @@ float3 Uncharted2Tonemap(float3 x)
    return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
 }
 
+bool RayPlane(float3 n, float3 p0, float3 l0, float3 l, inout float t) 
+{ 
+    // assuming vectors are all normalized
+    float denom = dot(n, l); 
+    if (denom > 1e-6) 
+    {
+        float3 p0l0 = p0 - l0; 
+        t = dot(p0l0, n) / denom; 
+        return (t >= 0.0f); 
+    } 
+    return false; 
+} 
+
 /*
 	Calculates rd intersection points with the sphere 
 	defined by origin (so) and radius (sr)

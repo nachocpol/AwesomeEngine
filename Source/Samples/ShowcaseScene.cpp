@@ -316,7 +316,7 @@ void ShowcaseScene::Draw(float dt)
 
 	// Clouds
 	// set quad buffer!
-	mCloudRenderer.Draw(dt,mCamera.Position, mAtmosphereData.InvViewProj);
+	mCloudRenderer.Draw(dt,mCamera.Position, mAtmosphereData.InvViewProj,gSunDirection);
 
 	mGraphics->DisableAllTargets();
 
