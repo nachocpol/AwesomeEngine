@@ -16,17 +16,18 @@ namespace Graphics
 	bool CloudRenderer::Initialize(GraphicsInterface* graphicsInterface)
 	{
 		mGraphicsInterface = graphicsInterface;
-		struct Texel { unsigned char r, g, b, a; };
+		struct TexelRGBA	{ unsigned char r, g, b, a; };
+		struct TexelR		{ unsigned char r;};
 
-		// 2D test
+		// Cloud coverage (2D)
 		{
-			int numNoiseVals = 128;
+			int numNoiseVals = 64;
 			ValueNoise2D noise2D;
 			noise2D.Initialize(numNoiseVals, numNoiseVals);
 
-			const int tw = 256;
-			const int th = 256;
-			Texel* texData = new Texel[tw * th];
+			const int tw = 128;
+			const int th = 128;
+			TexelRGBA* texData = new TexelRGBA[tw * th];
 			for (int v = 0; v < th; v++)
 			{
 				for (int u = 0; u < tw; u++)
@@ -42,10 +43,10 @@ namespace Graphics
 					float cv = float(v) / float(th);
 					unsigned char n0 = unsigned char(noise2D.Fbm(cu * numNoiseVals, cv * numNoiseVals, 5) * 255.0f);
 					unsigned char n = (n0);
-					texData[u + v * tw] = Texel{ n,n,n, 255 };
+					texData[u + v * tw] = TexelRGBA{ n,n,n, 255 };
 				}
 			}
-			mTestTexture = mGraphicsInterface->CreateTexture2D(tw, th, 1, 1, Graphics::Format::RGBA_8_Unorm, Graphics::TextureFlagNone, texData);
+			mCloudCoverage = mGraphicsInterface->CreateTexture2D(tw, th, 1, 1, Graphics::Format::RGBA_8_Unorm, Graphics::TextureFlagNone, texData);
 			delete[] texData;
 		}
 
@@ -55,10 +56,10 @@ namespace Graphics
 			ValueNoise3D noise3D;
 			noise3D.Initialize(numNoiseVals, numNoiseVals, numNoiseVals);
 
-			const int tw = 256;
-			const int th = 256;
+			const int tw = 128;
+			const int th = 128;
 			const int td = 16;
-			Texel* texData = new Texel[tw * th * td];
+			TexelR* texData = new TexelR[tw * th * td];
 			// Total size of each slice
 			uint32_t slizeSize = tw * th;
 
@@ -75,15 +76,16 @@ namespace Graphics
 						unsigned char r = unsigned char(cu * 255.0f);
 						unsigned char g = unsigned char(cv * 255.0f);
 
-						float n = noise3D.Fbm(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals,5);
+						float n = noise3D.Sample(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals);
+						// float n = noise3D.Fbm(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals,5);
 
 						size_t slizeOff = (slizeSize * w);
-						texData[slizeOff + (u + v * tw)] = Texel{ unsigned char(n * 255.0f),0 ,0 , 0xff };
+						texData[slizeOff + (u + v * tw)] = TexelR{ unsigned char(n * 255.0f)};
 					}
 				}
 			}
 
-			mTestTexture3D = mGraphicsInterface->CreateTexture3D(tw,th,1,td, Graphics::Format::RGBA_8_Unorm, Graphics::TextureFlagNone, texData);
+			mTestTexture3D = mGraphicsInterface->CreateTexture3D(tw,th,1,td, Graphics::Format::R_8_Unorm, Graphics::TextureFlagNone, texData);
 			delete[] texData;
 		}
 
@@ -130,7 +132,8 @@ namespace Graphics
 		mCloudsData.SunDirection = glm::vec4(SunDirection, 0.0f);
 		mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData),&mCloudsData);
 		mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
-		mGraphicsInterface->SetTexture(mTestTexture3D, 0);
+		mGraphicsInterface->SetTexture(mCloudCoverage, 0);
+		mGraphicsInterface->SetTexture(mTestTexture3D, 1);
 		mGraphicsInterface->Draw(6, 0);
 	}
 
@@ -141,9 +144,9 @@ namespace Graphics
 		ImGui::DragFloat("Cloud Base", &mCloudsData.CloudBase, 1.0f, 0.0f, 1000.0f);
 		ImGui::DragFloat("Cloud extents", &mCloudsData.CloudExtents, 1.0f, 0.0f, 2000.0f);
 
-		//ImGui::Text("Base value noise");
-		//ImGui::Image((ImTextureID)mTestTexture3D.Handle, ImVec2(512, 512));
-		//ImGui::Separator();
+		ImGui::Text("Base value noise");
+		ImGui::Image((ImTextureID)mCloudCoverage.Handle, ImVec2(512, 512));
+		ImGui::Separator();
 		ImGui::End();
 	}
 }

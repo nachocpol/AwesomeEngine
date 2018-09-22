@@ -10,7 +10,8 @@ cbuffer AtmosphereData : register(b0)
     float Absorption;
 }
 
-Texture3D BaseNoiseTex : register(t0);
+Texture2D CloudCoverageTex : register(t0);
+Texture3D BaseNoiseTex : register(t1);
 SamplerState LinearWrapSampler : register(s0);
 
 struct VSIn
@@ -39,16 +40,18 @@ VSOut VSClouds(VSIn i)
 
 float GetCloudDensity(float3 p)
 {
+    float sampleY = saturate((p.y - CloudBase) / CloudExtents);
     float scale = 0.0002f;
-    float s = BaseNoiseTex.Sample(LinearWrapSampler,float3(p.x,p.z,0.0f) * scale);
+    float s = CloudCoverageTex.Sample(LinearWrapSampler,float2(p.x,p.z)* scale);
     s = saturate(saturate(s - 0.5) * 10.0);
-    float detailScale = 0.001f;
-    float sampleY = (p.y - CloudBase) / CloudExtents;
-    float detail = BaseNoiseTex.Sample(LinearWrapSampler,float3(p.x* detailScale,p.z* detailScale,sampleY * 15.0f)).r;
-    //detail = saturate(detail - 0.15f);
-    //detail = pow(detail,5.0f);
+
+    float detailScale = scale * 50.0f;    
+    float detail = BaseNoiseTex.Sample(LinearWrapSampler,float3(p.x* detailScale,p.z* detailScale,p.y* detailScale)).r;
+    //detail = saturate(pow(detail-0.2f,4.0f));
+
     float hfade = pow(1.0f - sampleY,5.0f);
-    return (s * pow(detail,2.0f)) * hfade;
+    
+    return s * detail;
 }
 
 float4 PSClouds(VSOut i): SV_Target0
@@ -75,8 +78,8 @@ float4 PSClouds(VSOut i): SV_Target0
         RayPlane(float3(0.0f,1.0f,0.0f),float3(0.0f,CloudBase + CloudExtents,0.0f),cloudEntry,rd,cloudEndDist);
         float3 cloudExit = cloudEntry + rd * cloudEndDist;
         float travelDist = distance(cloudEntry,cloudExit);
-        const int steps = 64;
-        float stepSize = CloudExtents / float(steps);
+        const int steps = 128;
+        float stepSize = travelDist / float(steps);
         float3 p = cloudEntry;
         [loop]
         for(int i=0; i<steps; i++)

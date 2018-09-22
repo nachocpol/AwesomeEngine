@@ -15,7 +15,7 @@ namespace Graphics
 		void ShowDebug();
 
 	private:
-		TextureHandle mTestTexture;
+		TextureHandle mCloudCoverage;
 		TextureHandle mTestTexture3D;
 		GraphicsInterface* mGraphicsInterface;
 		GraphicsPipeline mCloudsPipeline;

@@ -295,7 +295,7 @@ namespace Graphics { namespace DX12 {
 			case Format::RGBA_8_Snorm:		return DXGI_FORMAT_R8G8B8A8_SNORM;
 			case Format::R_16_Uint:			return DXGI_FORMAT_R16_UINT;
 			case Format::R_32_Uint:			return DXGI_FORMAT_R32_UINT;
-
+			case Format::R_8_Unorm:			return DXGI_FORMAT_R8_UNORM;
 			case Format::Unknown:
 			default:						return DXGI_FORMAT_UNKNOWN;
 		}

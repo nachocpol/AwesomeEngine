@@ -44,7 +44,8 @@ namespace Graphics
 		RGBA_8_Unorm = 6,
 		RGBA_8_Snorm = 7,
 		R_16_Uint = 8,
-		R_32_Uint = 9
+		R_32_Uint = 9,
+		R_8_Unorm = 10
 	};
 	enum Topology
 	{
