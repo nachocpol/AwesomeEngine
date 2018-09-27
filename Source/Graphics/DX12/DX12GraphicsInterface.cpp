@@ -270,7 +270,7 @@ namespace Graphics { namespace DX12 {
 		default:
 			target = "none_5_0"; break;
 		}
-		UINT flags =  D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+		UINT flags =  D3DCOMPILE_DEBUG | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 		if (FAILED(D3DCompileFromFile(wpath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, desc.ShaderEntryPoint.c_str(), target.c_str(), flags, 0, &sblob, &error)))
 		{
 			OutputDebugStringA((char*)error->GetBufferPointer());
@@ -296,6 +296,7 @@ namespace Graphics { namespace DX12 {
 			case Format::R_16_Uint:			return DXGI_FORMAT_R16_UINT;
 			case Format::R_32_Uint:			return DXGI_FORMAT_R32_UINT;
 			case Format::R_8_Unorm:			return DXGI_FORMAT_R8_UNORM;
+			case Format::R_32_Float:		return DXGI_FORMAT_R32_FLOAT;
 			case Format::Unknown:
 			default:						return DXGI_FORMAT_UNKNOWN;
 		}

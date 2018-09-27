@@ -348,7 +348,7 @@ void ShowcaseScene::Draw(float dt)
 	}
 	
 	// Clouds
-	static bool showCloudsDebug = true;
+	static bool showCloudsDebug = false;
 	if (showCloudsDebug)
 	{
 		mCloudRenderer.ShowDebug();

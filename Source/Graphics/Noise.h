@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "glm/glm.hpp"
 
 namespace Graphics
 {
@@ -43,6 +44,37 @@ namespace Graphics
 
 	private:
 		float* mValues;
+		uint32_t mWidth;
+		uint32_t mHeight;
+		uint32_t mDepth;
+	};
+
+	class GradientNoise2D
+	{
+	public:
+		GradientNoise2D();
+		~GradientNoise2D();
+		void Initialize(uint32_t width, uint32_t height, uint32_t seed = 1);
+		float Sample(float x, float y);
+		float Fbm(float x, float y, int octaves, float lacunariry = 2.0f, float gain = 0.5f);
+
+	private:
+		glm::vec2* mValues;
+		uint32_t mWidth;
+		uint32_t mHeight;
+	};
+
+	class GradientNoise3D
+	{
+	public:
+		GradientNoise3D();
+		~GradientNoise3D();
+		void Initialize(uint32_t width, uint32_t height, uint32_t depth, uint32_t seed = 1);
+		float Sample(float x, float y,float z);
+		float Fbm(float x, float y, float z, int octaves, float lacunariry = 2.0f, float gain = 0.5f);
+
+	private:
+		glm::vec3* mValues;
 		uint32_t mWidth;
 		uint32_t mHeight;
 		uint32_t mDepth;

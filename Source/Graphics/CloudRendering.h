@@ -27,7 +27,7 @@ namespace Graphics
 			glm::vec4 SunDirection;
 			float CloudBase = 150.0f;
 			float CloudExtents = 100.0f;
-			float Absorption = 0.25f;
+			float Absorption = 0.55f;
 		}mCloudsData;
 		BufferHandle mCloudsDataHandle;
 	};

@@ -18,15 +18,16 @@ namespace Graphics
 		mGraphicsInterface = graphicsInterface;
 		struct TexelRGBA	{ unsigned char r, g, b, a; };
 		struct TexelR		{ unsigned char r;};
+		struct TexelRF		{ float r; };
 
 		// Cloud coverage (2D)
 		{
-			int numNoiseVals = 64;
-			ValueNoise2D noise2D;
+			int numNoiseVals = 8;
+			GradientNoise2D noise2D;
 			noise2D.Initialize(numNoiseVals, numNoiseVals);
 
-			const int tw = 128;
-			const int th = 128;
+			const int tw = 64;
+			const int th = 64;
 			TexelRGBA* texData = new TexelRGBA[tw * th];
 			for (int v = 0; v < th; v++)
 			{
@@ -41,7 +42,7 @@ namespace Graphics
 					*/
 					float cu = float(u) / float(tw);
 					float cv = float(v) / float(th);
-					unsigned char n0 = unsigned char(noise2D.Fbm(cu * numNoiseVals, cv * numNoiseVals, 5) * 255.0f);
+					unsigned char n0 = unsigned char(noise2D.Sample(cu * numNoiseVals, cv * numNoiseVals) * 255.0f);
 					unsigned char n = (n0);
 					texData[u + v * tw] = TexelRGBA{ n,n,n, 255 };
 				}
@@ -56,10 +57,10 @@ namespace Graphics
 			ValueNoise3D noise3D;
 			noise3D.Initialize(numNoiseVals, numNoiseVals, numNoiseVals);
 
-			const int tw = 128;
-			const int th = 128;
-			const int td = 16;
-			TexelR* texData = new TexelR[tw * th * td];
+			const int tw = 256;
+			const int th = 256;
+			const int td = 32;
+			TexelRF* texData = new TexelRF[tw * th * td];
 			// Total size of each slice
 			uint32_t slizeSize = tw * th;
 
@@ -76,16 +77,16 @@ namespace Graphics
 						unsigned char r = unsigned char(cu * 255.0f);
 						unsigned char g = unsigned char(cv * 255.0f);
 
-						float n = noise3D.Sample(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals);
-						// float n = noise3D.Fbm(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals,5);
+						//float n = noise3D.Sample(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals);
+						float n = noise3D.Fbm(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals,5,2.2f,0.55f);
 
 						size_t slizeOff = (slizeSize * w);
-						texData[slizeOff + (u + v * tw)] = TexelR{ unsigned char(n * 255.0f)};
+						texData[slizeOff + (u + v * tw)] = TexelRF{n};
 					}
 				}
 			}
 
-			mTestTexture3D = mGraphicsInterface->CreateTexture3D(tw,th,1,td, Graphics::Format::R_8_Unorm, Graphics::TextureFlagNone, texData);
+			mTestTexture3D = mGraphicsInterface->CreateTexture3D(tw,th,1,td, Graphics::Format::R_32_Float, Graphics::TextureFlagNone, texData);
 			delete[] texData;
 		}
 
@@ -144,9 +145,9 @@ namespace Graphics
 		ImGui::DragFloat("Cloud Base", &mCloudsData.CloudBase, 1.0f, 0.0f, 1000.0f);
 		ImGui::DragFloat("Cloud extents", &mCloudsData.CloudExtents, 1.0f, 0.0f, 2000.0f);
 
-		ImGui::Text("Base value noise");
-		ImGui::Image((ImTextureID)mCloudCoverage.Handle, ImVec2(512, 512));
-		ImGui::Separator();
+		//ImGui::Text("Base value noise");
+		//ImGui::Image((ImTextureID)mCloudCoverage.Handle, ImVec2(512, 512));
+		//ImGui::Separator();
 		ImGui::End();
 	}
 }

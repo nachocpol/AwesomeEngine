@@ -1,6 +1,6 @@
 /*
 	Utils.hlsl
-	A bunch of utility methods like tonemapping, intersections etc.
+	Just a bunch of functions
 */
 
 float4 ToSRGB(float4 base, float gamma)
@@ -90,4 +90,60 @@ float GetProjectionPlane(float fovRad)
 {
 	float halfFov = fovRad * 0.5f;
 	return (1.0f / sin(halfFov)) * cos(halfFov);
+}
+
+float Remap(float value,float oldMin,float oldMax,float newMin,float newMax)
+{
+	return newMin + (value - oldMin) / (oldMax - oldMin) * (newMax - newMin);
+}
+
+float Hash1D(float p)
+{
+	p = 25.0f * frac(p * 0.012f + 0.71f);
+	return frac(p * p);
+}
+
+float Hash2D(float2 p)
+{
+	p = 25.0f * frac(p * 0.012f + float2(0.71f,0.12f));
+	return frac(p.x * p.y * (p.x + p.y));
+}
+
+float Hash3D(float3 p)
+{
+	p = 25.0f * frac(p * 0.012f + float3(0.71f,0.12f,0.53f));
+	return frac(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+float ValueNoiseSlow2D(float2 p)
+{
+	int2 ip = floor(p);
+	float2 fp = frac(p);
+
+	float v00 = Hash2D(float2(ip + int2(0,0)));
+	float v10 = Hash2D(float2(ip + int2(1,0)));
+	float v01 = Hash2D(float2(ip + int2(0,1)));
+	float v11 = Hash2D(float2(ip + int2(1,1)));
+
+	return lerp(lerp(v00,v10,fp.x),lerp(v01,v11,fp.x),fp.y);
+}
+
+float ValueNoiseSlow3D(float3 p)
+{
+	int3 ip = floor(p);
+	float3 fp = frac(p);
+
+	float v000 = Hash3D(float3(ip + int3(0,0,0)));
+	float v100 = Hash3D(float3(ip + int3(1,0,0)));
+	float v010 = Hash3D(float3(ip + int3(0,1,0)));
+	float v110 = Hash3D(float3(ip + int3(1,1,0)));
+
+	float v001 = Hash3D(float3(ip + int3(0,0,1)));
+	float v101 = Hash3D(float3(ip + int3(1,0,1)));
+	float v011 = Hash3D(float3(ip + int3(0,1,1)));
+	float v111 = Hash3D(float3(ip + int3(1,1,1)));
+
+	float d0 = lerp(lerp(v000,v100,fp.x),lerp(v010,v110,fp.x),fp.y);
+	float d1 = lerp(lerp(v001,v101,fp.x),lerp(v011,v111,fp.x),fp.y);
+	return lerp(d0,d1,fp.z);
 }

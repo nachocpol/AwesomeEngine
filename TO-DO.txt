@@ -4,3 +4,4 @@ TO-DO:
 + Combine dx12 texture creation code
 + Static shape builder class (screen quad, screen triangle, cubes spheres etc etc)
 + Start making components
++ Implement gradient noise	
