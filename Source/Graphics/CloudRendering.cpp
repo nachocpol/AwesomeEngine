@@ -13,11 +13,12 @@ namespace Graphics
 	{
 	}
 
+#pragma optimize("",off)
 	bool CloudRenderer::Initialize(GraphicsInterface* graphicsInterface)
 	{
 		mGraphicsInterface = graphicsInterface;
-		struct TexelRGBA	{ unsigned char r, g, b, a; };
-		struct TexelR		{ unsigned char r;};
+		struct TexelRGBA	{ uint8_t r, g, b, a; };
+		struct TexelR		{ uint8_t r;};
 		struct TexelRF		{ float r; };
 
 		// Cloud coverage (2D)
@@ -33,13 +34,6 @@ namespace Graphics
 			{
 				for (int u = 0; u < tw; u++)
 				{
-					/*
-						We want to use all the values within our noise object.
-						This way we make sure we make a tileable texture.
-						To do this we sample FBM using range [0,1] and offsetting by the numbers of 
-						values the noise object holds.
-						The size of the texture does not matter!
-					*/
 					float cu = float(u) / float(tw);
 					float cv = float(v) / float(th);
 					unsigned char n0 = unsigned char(noise2D.Sample(cu * numNoiseVals, cv * numNoiseVals) * 255.0f);
@@ -51,16 +45,16 @@ namespace Graphics
 			delete[] texData;
 		}
 
-		// 3D test
+		// 3D base noise
 		{
-			int numNoiseVals = 32;
+			int numNoiseVals = 16;
 			ValueNoise3D noise3D;
 			noise3D.Initialize(numNoiseVals, numNoiseVals, numNoiseVals);
 
-			const int tw = 256;
-			const int th = 256;
-			const int td = 32;
-			TexelRF* texData = new TexelRF[tw * th * td];
+			const int tw = 64;
+			const int th = 64;
+			const int td = 64;
+			TexelR* texData = new TexelR[tw * th * td];
 			// Total size of each slice
 			uint32_t slizeSize = tw * th;
 
@@ -77,16 +71,50 @@ namespace Graphics
 						unsigned char r = unsigned char(cu * 255.0f);
 						unsigned char g = unsigned char(cv * 255.0f);
 
-						//float n = noise3D.Sample(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals);
-						float n = noise3D.Fbm(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals,5,2.2f,0.55f);
+						float n = noise3D.Fbm(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals, 5, 2.2f, 0.55f);
 
 						size_t slizeOff = (slizeSize * w);
-						texData[slizeOff + (u + v * tw)] = TexelRF{n};
+						texData[slizeOff + (u + v * tw)] = TexelR{unsigned char(n * 255.0f)};
 					}
 				}
 			}
 
-			mTestTexture3D = mGraphicsInterface->CreateTexture3D(tw,th,1,td, Graphics::Format::R_32_Float, Graphics::TextureFlagNone, texData);
+			mBaseNoise = mGraphicsInterface->CreateTexture3D(tw,th,1,td, Graphics::Format::R_8_Unorm, Graphics::TextureFlagNone, texData);
+			delete[] texData;
+		}
+
+		// 3D detail noise
+		{
+			int numNoiseVals = 256;
+			ValueNoise3D noise3D;
+			noise3D.Initialize(numNoiseVals, numNoiseVals, numNoiseVals);
+
+			const int tw = 128;
+			const int th = 128;
+			const int td = 128;
+			TexelRF* texData = new TexelRF[tw * th * td];
+			// Total size of each slice
+			uint32_t slizeSize = tw * th;
+
+			for (int w = 0; w < td; w++)			// Iterate over slices
+			{
+				for (int v = 0; v < th; v++)		// Top to bottom
+				{
+					for (int u = 0; u < tw; u++)	// Left to right
+					{
+						float cu = float(u) / float(tw);
+						float cv = float(v) / float(th);
+						float cw = float(w) / float(td);
+
+						float n = noise3D.Fbm(cu * float(numNoiseVals), cv * float(numNoiseVals), cw * float(numNoiseVals), 5, 2.2f, 0.55f);
+
+						size_t slizeOff = (slizeSize * w);
+						texData[slizeOff + (u + v * tw)] = TexelRF{ n };
+					}
+				}
+			}
+
+			mDetailNoise = mGraphicsInterface->CreateTexture3D(tw, th, 1, td, Graphics::Format::R_32_Float, Graphics::TextureFlagNone, texData);
 			delete[] texData;
 		}
 
@@ -134,7 +162,8 @@ namespace Graphics
 		mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData),&mCloudsData);
 		mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
 		mGraphicsInterface->SetTexture(mCloudCoverage, 0);
-		mGraphicsInterface->SetTexture(mTestTexture3D, 1);
+		mGraphicsInterface->SetTexture(mBaseNoise, 1);
+		mGraphicsInterface->SetTexture(mDetailNoise, 2);
 		mGraphicsInterface->Draw(6, 0);
 	}
 
@@ -144,6 +173,12 @@ namespace Graphics
 		ImGui::DragFloat("Absorption", &mCloudsData.Absorption, 0.01f, 0.0f, 100.0f);
 		ImGui::DragFloat("Cloud Base", &mCloudsData.CloudBase, 1.0f, 0.0f, 1000.0f);
 		ImGui::DragFloat("Cloud extents", &mCloudsData.CloudExtents, 1.0f, 0.0f, 2000.0f);
+		// Scales:
+		{
+			ImGui::InputFloat("Coverage Scale", &mCloudsData.CoverageScale);				
+			ImGui::InputFloat("Base Noise Scale", &mCloudsData.BaseNoiseScale);
+			ImGui::InputFloat("Detail Noise Scale", &mCloudsData.DetailNoiseScale);
+		}
 
 		//ImGui::Text("Base value noise");
 		//ImGui::Image((ImTextureID)mCloudCoverage.Handle, ImVec2(512, 512));

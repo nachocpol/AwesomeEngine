@@ -8,10 +8,14 @@ cbuffer AtmosphereData : register(b0)
     float CloudBase;
     float CloudExtents;
     float Absorption;
+    float CoverageScale;
+    float BaseNoiseScale;
+    float DetailNoiseScale;
 }
 
 Texture2D CloudCoverageTex : register(t0);
-Texture3D DetailNoise : register(t1);
+Texture3D BaseNoise : register(t1);
+Texture3D DetailNoise : register(t2);
 SamplerState LinearWrapSampler : register(s0);
 
 struct VSIn
@@ -58,25 +62,34 @@ float FMB5(float3 p, float lacunariy, float gain)
 float GetCloudDensity(float3 p)
 {
     float sampleY = saturate((p.y - CloudBase) / CloudExtents); // 0-1
-    float scale = 0.002f;
-    //float baseShape = CloudCoverageTex.Sample(LinearWrapSampler,float2(p.x,p.z)* scale);
-    float baseShape = ValueNoiseSlow2D(p.xz * scale);
+    float fbot = lerp(0.0f,1.0f,clamp(sampleY,0.0f,0.45f) / 0.45f);
+    
+    // Coverage
+    float coverage = CloudCoverageTex.Sample(LinearWrapSampler,float2(p.x,p.z) * CoverageScale);
 
-    // Fade at top and bottom
-    float ftop = smoothstep(0.0f,1.0f,clamp(sampleY,0.65f,1.0f) / 0.65f);
-    float fbot = smoothstep(0.0f,1.0f,clamp(sampleY,0.0f,0.45f) / 0.45f);
+    // Base noise
+    float baseNoise = BaseNoise.Sample(LinearWrapSampler, p * BaseNoiseScale);
+    float baseShape = saturate(baseNoise - pow(coverage,1.5f)) * fbot; 
+    
+    // Detail noise
+    float detailNoise = DetailNoise.Sample(LinearWrapSampler, p * DetailNoiseScale);
 
-    // Detail
-    float detailScale = 0.0005f;
-    float det = DetailNoise.Sample(LinearWrapSampler, float3(p.xz,p.y*5.0f)*detailScale);
+    return saturate(baseShape - detailNoise * 0.2f);
+}
 
-    baseShape = saturate(baseShape - 0.5f);
-    baseShape *= fbot * ftop;
+float GetCloudDensityCheap(float3 p)
+{
+    float sampleY = saturate((p.y - CloudBase) / CloudExtents); // 0-1
+    float fbot = lerp(0.0f,1.0f,clamp(sampleY,0.0f,0.45f) / 0.45f);
+    
+    // Coverage
+    float coverage = CloudCoverageTex.Sample(LinearWrapSampler,float2(p.x,p.z) * CoverageScale);
 
-    det = saturate(det - 0.45f);
- 
-    return det * baseShape;
-    //return saturate(Remap(baseShape,det*0.2f,1.0f,0.0f,1.0f));
+    // Base noise
+    float baseNoise = BaseNoise.Sample(LinearWrapSampler, p * BaseNoiseScale);
+    float baseShape = saturate(baseNoise - pow(coverage,1.5f)) * fbot; 
+
+    return baseShape;
 }
 
 float4 PSClouds(VSOut i): SV_Target0
@@ -105,7 +118,7 @@ float4 PSClouds(VSOut i): SV_Target0
         float3 cloudExit = cloudEntry + rd * cloudEndDist;
         float travelDist = distance(cloudEntry,cloudExit);
         
-        const int steps = 32;
+        const int steps = 64;
         float stepSize = travelDist / float(steps);
         float lightStepSize = 8.0f;
         float3 p = cloudEntry;
@@ -130,9 +143,10 @@ float4 PSClouds(VSOut i): SV_Target0
             float3 lightColor = float3(0.0f,0.0f,0.0f);
             float lightTransmitance = 1.0f;
             float3 lightPos = p + toSunScaled;
+            [loop]
             for(int j=0;j<8;j++)
             {
-                float lightDensity = GetCloudDensity(lightPos);
+                float lightDensity = GetCloudDensityCheap(lightPos);
                 float lightCurTransmitance = exp(-absorptionScaledLight * lightDensity);
                 lightTransmitance *= lightCurTransmitance;
                 lightPos = lightPos + toSun * lightStepSize;

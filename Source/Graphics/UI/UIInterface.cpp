@@ -81,7 +81,6 @@ namespace Graphics{namespace UI{
 		ImGui::NewFrame();
 	}
 
-#pragma optimize("",off)
 	void UIInterface::EndFrame()
 	{
 		//ImGui::Begin("UI Information");

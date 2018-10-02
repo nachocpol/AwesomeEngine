@@ -16,7 +16,8 @@ namespace Graphics
 
 	private:
 		TextureHandle mCloudCoverage;
-		TextureHandle mTestTexture3D;
+		TextureHandle mBaseNoise;
+		TextureHandle mDetailNoise;
 		GraphicsInterface* mGraphicsInterface;
 		GraphicsPipeline mCloudsPipeline;
 
@@ -28,6 +29,9 @@ namespace Graphics
 			float CloudBase = 150.0f;
 			float CloudExtents = 100.0f;
 			float Absorption = 0.55f;
+			float CoverageScale = 0.0002f;
+			float BaseNoiseScale = 0.0005f;
+			float DetailNoiseScale = 0.0005f;
 		}mCloudsData;
 		BufferHandle mCloudsDataHandle;
 	};

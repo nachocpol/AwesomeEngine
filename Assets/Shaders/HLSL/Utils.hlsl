@@ -92,9 +92,19 @@ float GetProjectionPlane(float fovRad)
 	return (1.0f / sin(halfFov)) * cos(halfFov);
 }
 
-float Remap(float value,float oldMin,float oldMax,float newMin,float newMax)
+float Remap (float from, float fromMin, float fromMax, float toMin,  float toMax)
 {
-	return newMin + (value - oldMin) / (oldMax - oldMin) * (newMax - newMin);
+    float fromAbs  =  from - fromMin;
+    float fromMaxAbs = fromMax - fromMin;      
+   
+    float normal = fromAbs / fromMaxAbs;
+
+    float toMaxAbs = toMax - toMin;
+    float toAbs = toMaxAbs * normal;
+
+    float to = toAbs + toMin;
+       
+    return to;
 }
 
 float Hash1D(float p)

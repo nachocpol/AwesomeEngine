@@ -189,11 +189,11 @@ namespace Graphics { namespace DX12 {
 			p1.InitAsConstantBufferView(1);
 			params.push_back(p1);
 		}
-		// param 2 (TEX0) 2x textures
+		// param 2 (TEX0) 3x textures
 		{
 			CD3DX12_ROOT_PARAMETER p2;
 			CD3DX12_DESCRIPTOR_RANGE range;
-			range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0);
+			range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0);
 			p2.InitAsDescriptorTable(1, &range);
 			params.push_back(p2);
 		}
@@ -270,7 +270,7 @@ namespace Graphics { namespace DX12 {
 		default:
 			target = "none_5_0"; break;
 		}
-		UINT flags =  D3DCOMPILE_DEBUG | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+		UINT flags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_VALIDATION;// | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 		if (FAILED(D3DCompileFromFile(wpath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, desc.ShaderEntryPoint.c_str(), target.c_str(), flags, 0, &sblob, &error)))
 		{
 			OutputDebugStringA((char*)error->GetBufferPointer());
@@ -899,7 +899,7 @@ namespace Graphics { namespace DX12 {
 		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
 		// Offset it for nex draw call
 		// TO-DO: we should only do this if the state changed
-		mFrameHeap[idx]->OffsetHandles(2);
+		mFrameHeap[idx]->OffsetHandles(3);
 
 		mDefaultSurface.CmdContext->DrawInstanced(numvtx, 1, vtxOffset, 0);
 
@@ -912,7 +912,7 @@ namespace Graphics { namespace DX12 {
 		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
 		// Offset it for nex draw call
 		// TO-DO: we should only do this if the state changed
-		mFrameHeap[idx]->OffsetHandles(2);
+		mFrameHeap[idx]->OffsetHandles(3);
 
 		mDefaultSurface.CmdContext->DrawIndexedInstanced(numIdx, 1, idxOff, vtxOff, 0);
 
