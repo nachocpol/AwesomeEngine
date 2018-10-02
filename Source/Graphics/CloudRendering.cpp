@@ -13,7 +13,6 @@ namespace Graphics
 	{
 	}
 
-#pragma optimize("",off)
 	bool CloudRenderer::Initialize(GraphicsInterface* graphicsInterface)
 	{
 		mGraphicsInterface = graphicsInterface;
@@ -126,10 +125,10 @@ namespace Graphics
 		desc.DepthFormat = Graphics::Format::Depth24_Stencil8;
 		desc.VertexShader.ShaderEntryPoint = "VSClouds";
 		desc.VertexShader.ShaderPath = "Clouds.hlsl";
-		desc.VertexShader.Type = Graphics::Vertex;
+		desc.VertexShader.Type = Graphics::ShaderType::Vertex;
 		desc.PixelShader.ShaderEntryPoint = "PSClouds";
 		desc.PixelShader.ShaderPath = "Clouds.hlsl";
-		desc.PixelShader.Type = Graphics::Pixel;
+		desc.PixelShader.Type = Graphics::ShaderType::Pixel;
 		Graphics::VertexInputDescription::VertexInputElement eles[1] =
 		{
 			"POSITION",0, Graphics::Format::RGB_32_Float,0
@@ -151,6 +150,16 @@ namespace Graphics
 
 		mCloudsDataHandle = mGraphicsInterface->CreateBuffer(Graphics::BufferType::ConstantBuffer, Graphics::CPUAccess::None, sizeof(mCloudsData));
 
+
+		{
+			ComputePipelineDescription computeCloudsDesc = {};
+			computeCloudsDesc.ComputeShader.ShaderEntryPoint = "CSClouds";
+			computeCloudsDesc.ComputeShader.ShaderPath = "Clouds.hlsl";
+			computeCloudsDesc.ComputeShader.Type = ShaderType::Compute;
+
+			mCloudsPipelineCompute = mGraphicsInterface->CreateComputePipeline(computeCloudsDesc);
+		}
+
 		return true;
 	}
 
@@ -165,6 +174,9 @@ namespace Graphics
 		mGraphicsInterface->SetTexture(mBaseNoise, 1);
 		mGraphicsInterface->SetTexture(mDetailNoise, 2);
 		mGraphicsInterface->Draw(6, 0);
+
+		mGraphicsInterface->SetComputePipeline(mCloudsPipelineCompute);
+		mGraphicsInterface->Dispatch(8, 8, 1);
 	}
 
 	void CloudRenderer::ShowDebug()

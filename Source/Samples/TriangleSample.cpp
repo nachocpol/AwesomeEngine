@@ -29,7 +29,7 @@ int main()
 		window->Update();
 
 		gGraphicsInterface->StartFrame();
-		gGraphicsInterface->SetScissor(0.0f, 0.0f, window->GetWidth(), window->GetHeight());
+		gGraphicsInterface->SetScissor(0.0f, 0.0f, (float)window->GetWidth(), (float)window->GetHeight());
 		gGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
 		gGraphicsInterface->SetGraphicsPipeline(pipeline);
 		gGraphicsInterface->SetVertexBuffer(vertexBuffer, sizeof(Vertex) * 3, sizeof(Vertex));
@@ -61,11 +61,11 @@ void InitResources()
 		Graphics::GraphicsPipelineDescription pdesc = {};
 		pdesc.PixelShader.ShaderEntryPoint = "PSSimple";
 		pdesc.PixelShader.ShaderPath = "TriangleSample.hlsl";
-		pdesc.PixelShader.Type = Graphics::Pixel;
+		pdesc.PixelShader.Type = Graphics::ShaderType::Pixel;
 
 		pdesc.VertexShader.ShaderEntryPoint = "VSSimple";
 		pdesc.VertexShader.ShaderPath = "TriangleSample.hlsl";
-		pdesc.VertexShader.Type = Graphics::Vertex;
+		pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
 
 		Graphics::VertexInputDescription::VertexInputElement eles[2];
 		eles[0].Semantic = "POSITION";

@@ -21,6 +21,8 @@ namespace Graphics
 		GraphicsInterface* mGraphicsInterface;
 		GraphicsPipeline mCloudsPipeline;
 
+		ComputePipeline mCloudsPipelineCompute;
+
 		struct CloudsData
 		{
 			glm::vec4 ViewPosition;

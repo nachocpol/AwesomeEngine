@@ -14,16 +14,16 @@ namespace Graphics { namespace DX12 {
 		mCurTexture(0),
 		mGraphicsRootSignature(nullptr),
 		mCurGraphicsPipeline(0),
+		mCurComputePipeline(0),
 		mFrameHeap(nullptr),
 		mFrame(0),
 		mCurBackBuffer(0),
 		mNumDrawCalls(0)
 	{
-		memset(mBuffers, 0, sizeof(BufferEntry*) * MAX_BUFFERS);
-
-		memset(mTextures, 0, sizeof(TextureEntry*) * MAX_TEXTURES);
-
-		memset(mGraphicsPipelines, 0, sizeof(ID3D12PipelineState*) * MAX_GRAPHICS_PIPELINES);
+		memset(mBuffers, 0, sizeof(mBuffers));
+		memset(mTextures, 0, sizeof(mTextures));
+		memset(mGraphicsPipelines, 0, sizeof(mGraphicsPipelines));
+		memset(mComputePipelines, 0, sizeof(mComputePipelines));
 	}
 	
 	DX12GraphicsInterface::~DX12GraphicsInterface()
@@ -263,12 +263,10 @@ namespace Graphics { namespace DX12 {
 		std::string target;
 		switch (desc.Type)
 		{
-		case ShaderType::Vertex:
-			target = "vs_5_0"; break;
-		case ShaderType::Pixel:
-			target = "ps_5_0"; break;
-		default:
-			target = "none_5_0"; break;
+		case ShaderType::Vertex:	target = "vs_5_0"; break;
+		case ShaderType::Pixel:		target = "ps_5_0"; break;
+		case ShaderType::Compute:	target = "cs_5_0"; break;
+		default:					target = "none_5_0"; break;
 		}
 		UINT flags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_VALIDATION;// | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 		if (FAILED(D3DCompileFromFile(wpath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, desc.ShaderEntryPoint.c_str(), target.c_str(), flags, 0, &sblob, &error)))
@@ -815,7 +813,15 @@ namespace Graphics { namespace DX12 {
 
 	ComputePipeline DX12GraphicsInterface::CreateComputePipeline(const ComputePipelineDescription& desc)
 	{
-		return InvalidComputePipeline;
+		D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
+		psoDesc.pRootSignature = mGraphicsRootSignature;
+		LoadShader(desc.ComputeShader, psoDesc.CS);
+		mDevice->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&mComputePipelines[mCurComputePipeline]));
+	
+		ComputePipeline handle = { mCurComputePipeline };
+		mCurComputePipeline++;
+
+		return handle;
 	}
 
 	void DX12GraphicsInterface::SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)
@@ -883,6 +889,16 @@ namespace Graphics { namespace DX12 {
 		mDefaultSurface.CmdContext->IASetPrimitiveTopology(ToDXGITopology(topology));
 	}
 
+	void DX12GraphicsInterface::SetComputePipeline(const ComputePipeline & pipeline)
+	{
+		const auto& pso = mComputePipelines[pipeline.Handle];
+		if (pipeline.Handle != InvalidComputePipeline.Handle && pso != nullptr)
+		{
+			mDefaultSurface.CmdContext->SetComputeRootSignature(mGraphicsRootSignature);
+			mDefaultSurface.CmdContext->SetPipelineState(mComputePipelines[pipeline.Handle]);
+		}
+	}
+
 	void DX12GraphicsInterface::SetGraphicsPipeline(const GraphicsPipeline& pipeline)
 	{
 		auto pso = mGraphicsPipelines[pipeline.Handle];
@@ -891,6 +907,19 @@ namespace Graphics { namespace DX12 {
 			mDefaultSurface.CmdContext->SetGraphicsRootSignature(mGraphicsRootSignature);
 			mDefaultSurface.CmdContext->SetPipelineState(pso);
 		}
+	}
+
+	void DX12GraphicsInterface::Dispatch(int x, int y, int z)
+	{
+		assert((x * y * z) > 0);
+
+		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
+		mDefaultSurface.CmdContext->SetComputeRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
+		// Offset it for nex draw call
+		// TO-DO: we should only do this if the state changed
+		mFrameHeap[idx]->OffsetHandles(3);
+
+		mDefaultSurface.CmdContext->Dispatch((UINT)x, (UINT)y, (UINT)z);
 	}
 
 	void DX12GraphicsInterface::Draw(uint32_t numvtx, uint32_t vtxOffset)
@@ -1032,7 +1061,7 @@ namespace Graphics { namespace DX12 {
 		mDefaultSurface.CmdContext->OMSetRenderTargets(num, colHandles, false, depthHandle);
 	}
 
-	void DX12GraphicsInterface::ClearTargets(uint8_t num, TextureHandle* colorTargets, float clear[4], TextureHandle* depth, float d, uint16_t stencil)
+	void DX12GraphicsInterface::ClearTargets(uint8_t num, TextureHandle* colorTargets, float clear[4], TextureHandle* depth, float d, uint8_t stencil)
 	{
 		for (int i = 0; i < num; i++)
 		{

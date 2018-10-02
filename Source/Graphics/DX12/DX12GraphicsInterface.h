@@ -92,7 +92,9 @@ namespace Graphics{ namespace DX12
 		void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize)final override;
 		void SetIndexBuffer(const BufferHandle& buffer,int size, Format idxFormat)final override;
 		void SetTopology(const Topology& topology)final override;
+		void SetComputePipeline(const ComputePipeline& pipeline)final override;
 		void SetGraphicsPipeline(const GraphicsPipeline& pipeline)final override;
+		void Dispatch(int x, int y, int z)final override;
 		void Draw(uint32_t numvtx, uint32_t vtxOffset)final override;
 		void DrawIndexed(uint32_t numIdx, uint32_t idxOff = 0,uint32_t vtxOff = 0)final override;
 		void SetViewport(float x, float y, float w, float h, float zmin = 0.0f, float zmax = 1.0f)final override;
@@ -100,7 +102,7 @@ namespace Graphics{ namespace DX12
 		void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data)final override;
 		void SetTexture(const TextureHandle& texture, uint8_t slot)final override;
 		void SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth) final override;
-		void ClearTargets(uint8_t num, TextureHandle* colorTargets, float clear[4], TextureHandle* depth, float d, uint16_t stencil)final override;
+		void ClearTargets(uint8_t num, TextureHandle* colorTargets, float clear[4], TextureHandle* depth, float d, uint8_t stencil)final override;
 		void DisableAllTargets()final override;
 		Format GetOutputFormat()final override;
 		bool MapBuffer(BufferHandle buffer, unsigned char** outPtr, bool writeOnly = true)final override;
@@ -132,6 +134,8 @@ namespace Graphics{ namespace DX12
 		// PSO pools
 		ID3D12PipelineState* mGraphicsPipelines[MAX_GRAPHICS_PIPELINES];
 		uint64_t mCurGraphicsPipeline;
+		ID3D12PipelineState* mComputePipelines[MAX_COMPUTE_PIPELINES];
+		uint64_t mCurComputePipeline;
 
 		// Heaps
 		DX12Heap** mFrameHeap;

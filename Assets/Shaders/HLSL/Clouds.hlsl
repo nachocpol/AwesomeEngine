@@ -92,6 +92,12 @@ float GetCloudDensityCheap(float3 p)
     return baseShape;
 }
 
+[numthreads(16,16,1)]
+void CSClouds()
+{
+    
+}
+
 float4 PSClouds(VSOut i): SV_Target0
 {
 	float M_PI = 3.141516f;
@@ -120,7 +126,7 @@ float4 PSClouds(VSOut i): SV_Target0
         
         const int steps = 64;
         float stepSize = travelDist / float(steps);
-        float lightStepSize = 8.0f;
+        float lightStepSize = 16.0f;
         float3 p = cloudEntry;
         
         // Precalculate the dir * lenght:
@@ -144,9 +150,9 @@ float4 PSClouds(VSOut i): SV_Target0
             float lightTransmitance = 1.0f;
             float3 lightPos = p + toSunScaled;
             [loop]
-            for(int j=0;j<8;j++)
+            for(int j=0;j<6;j++)
             {
-                float lightDensity = GetCloudDensityCheap(lightPos);
+                float lightDensity = GetCloudDensity(lightPos);
                 float lightCurTransmitance = exp(-absorptionScaledLight * lightDensity);
                 lightTransmitance *= lightCurTransmitance;
                 lightPos = lightPos + toSun * lightStepSize;

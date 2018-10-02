@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include "glm/glm.hpp"
+#include "glm/gtc/random.hpp"
 
 #define SAFE_RELEASE(p)		if(p){ delete p;		p=nullptr; }
 #define SAFE_RELEASE_ARR(a) if(a){ delete[] a;		a=nullptr; }

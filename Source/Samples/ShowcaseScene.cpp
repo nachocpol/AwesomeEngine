@@ -25,10 +25,10 @@ bool ShowcaseScene::Initialize()
 		Graphics::GraphicsPipelineDescription pdesc = {};
 		pdesc.PixelShader.ShaderEntryPoint	= "PSGBuffer";
 		pdesc.PixelShader.ShaderPath		= "Deferred.hlsl";
-		pdesc.PixelShader.Type				= Graphics::Pixel;
+		pdesc.PixelShader.Type				= Graphics::ShaderType::Pixel;
 		pdesc.VertexShader.ShaderEntryPoint = "VSGBuffer";
 		pdesc.VertexShader.ShaderPath		= "Deferred.hlsl";
-		pdesc.VertexShader.Type				= Graphics::Vertex;
+		pdesc.VertexShader.Type				= Graphics::ShaderType::Vertex;
 		const size_t v3Size = sizeof(glm::vec3);
 		Graphics::VertexInputDescription::VertexInputElement eles[5] =
 		{
@@ -54,11 +54,11 @@ bool ShowcaseScene::Initialize()
 		Graphics::GraphicsPipelineDescription desc;
 		desc.VertexShader.ShaderEntryPoint	= "VSLightPass";
 		desc.VertexShader.ShaderPath		= "Deferred.hlsl";
-		desc.VertexShader.Type				= Graphics::Vertex;
+		desc.VertexShader.Type				= Graphics::ShaderType::Vertex;
 
 		desc.PixelShader.ShaderEntryPoint	= "PSLightPass";
 		desc.PixelShader.ShaderPath		= "Deferred.hlsl";
-		desc.PixelShader.Type				= Graphics::Pixel;
+		desc.PixelShader.Type				= Graphics::ShaderType::Pixel;
 
 		Graphics::VertexInputDescription::VertexInputElement eles[1] =
 		{
@@ -115,10 +115,10 @@ bool ShowcaseScene::Initialize()
 		desc.DepthFunction					= Graphics::Always;
 		desc.VertexShader.ShaderEntryPoint	= "VSFullScreen";
 		desc.VertexShader.ShaderPath		= "Common.hlsl";
-		desc.VertexShader.Type				= Graphics::Vertex;
+		desc.VertexShader.Type				= Graphics::ShaderType::Vertex;
 		desc.PixelShader.ShaderEntryPoint	= "PSToneGamma";
 		desc.PixelShader.ShaderPath			= "Common.hlsl";
-		desc.PixelShader.Type				= Graphics::Pixel;
+		desc.PixelShader.Type				= Graphics::ShaderType::Pixel;
 		Graphics::VertexInputDescription::VertexInputElement eles[1] =
 		{
 			"POSITION",0, Graphics::Format::RGB_32_Float,0
@@ -148,10 +148,10 @@ bool ShowcaseScene::Initialize()
 		desc.DepthFormat = Graphics::Format::Depth24_Stencil8;
 		desc.VertexShader.ShaderEntryPoint = "VSAtmosphere";
 		desc.VertexShader.ShaderPath = "Atmosphere.hlsl";
-		desc.VertexShader.Type = Graphics::Vertex;
+		desc.VertexShader.Type = Graphics::ShaderType::Vertex;
 		desc.PixelShader.ShaderEntryPoint = "PSAtmosphere";
 		desc.PixelShader.ShaderPath = "Atmosphere.hlsl";
-		desc.PixelShader.Type = Graphics::Pixel;
+		desc.PixelShader.Type = Graphics::ShaderType::Pixel;
 		Graphics::VertexInputDescription::VertexInputElement eles[1] =
 		{
 			"POSITION",0, Graphics::Format::RGB_32_Float,0
@@ -216,7 +216,7 @@ void ShowcaseScene::Update(float dt)
 
 	mAppData.ViewMatrix = glm::lookAt(mCamera.Position, mCamera.Position + mCamera.View, mCamera.Up);
 }
-glm::vec4 gSunDirection = glm::vec4(0.5f, -0.1f, -0.5f, 0.0f);
+glm::vec4 gSunDirection = glm::vec4(0.5f, -0.5f, -0.5f, 0.0f);
 void ShowcaseScene::Draw(float dt)
 {
 	float clearBlue[4] = { 0.2f,0.2f,0.3f,1.0f };

@@ -15,11 +15,16 @@ namespace Graphics
 		class BaseWindow;
 	}
 
-	enum ShaderType
+	struct ShaderType
 	{
-		Vertex = 1,
-		Pixel = 2
+		enum T
+		{
+			Vertex = 1,
+			Pixel = 2,
+			Compute = 3
+		};
 	};
+
 	enum BufferType
 	{
 		VertexBuffer = 0,
@@ -53,7 +58,7 @@ namespace Graphics
 		InvalidTopology = 0,
 		TriangleList = 1
 	};
-	typedef enum TextureFlags
+	enum TextureFlags
 	{
 		TextureFlagNone = 0,
 		RenderTarget = 1,
@@ -109,7 +114,7 @@ namespace Graphics
 
 	struct ShaderDescription
 	{
-		ShaderType Type;
+		ShaderType::T Type;
 		std::string ShaderPath;
 		std::string ShaderEntryPoint;
 	};
@@ -156,7 +161,7 @@ namespace Graphics
 	};
 	struct ComputePipelineDescription
 	{
-		std::string ComputeShaderSource;
+		ShaderDescription ComputeShader;
 	};
 	struct BoundingSphere
 	{
@@ -201,6 +206,8 @@ namespace Graphics
 		virtual void SetIndexBuffer(const BufferHandle& buffer, int size, Format idxFormat) = 0;
 		virtual void SetTopology(const Topology& topology) = 0;
 		virtual void SetGraphicsPipeline(const GraphicsPipeline& pipeline) = 0;
+		virtual void SetComputePipeline(const ComputePipeline& pipeline) = 0;
+		virtual void Dispatch(int x, int y, int z) = 0;
 		virtual void Draw(uint32_t numvtx,uint32_t vtxOffset) = 0;
 		virtual void DrawIndexed(uint32_t numIdx, uint32_t idxOff = 0, uint32_t vtxOff = 0) = 0;
 		virtual void SetViewport(float x, float y, float w, float h, float zmin = 0.0f, float zmax = 1.0f) = 0;
@@ -208,7 +215,7 @@ namespace Graphics
 		virtual void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data) = 0;
 		virtual void SetTexture(const TextureHandle& texture, uint8_t slot) = 0;
 		virtual void SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth) = 0;
-		virtual void ClearTargets(uint8_t num, TextureHandle* colorTargets,float clear[4], TextureHandle* depth,float d,uint16_t stencil) = 0;
+		virtual void ClearTargets(uint8_t num, TextureHandle* colorTargets,float clear[4], TextureHandle* depth,float d, uint8_t stencil) = 0;
 		virtual void DisableAllTargets() = 0;
 		virtual Format GetOutputFormat() = 0;
 		virtual bool MapBuffer(BufferHandle buffer, unsigned char** outPtr,bool writeOnly = true) = 0;

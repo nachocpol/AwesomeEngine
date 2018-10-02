@@ -142,11 +142,11 @@ void InitResources()
 		Graphics::GraphicsPipelineDescription pdesc = {};
 		pdesc.PixelShader.ShaderEntryPoint = "PSFordwardSimple";
 		pdesc.PixelShader.ShaderPath = "Fordward.hlsl";
-		pdesc.PixelShader.Type = Graphics::Pixel;
+		pdesc.PixelShader.Type = Graphics::ShaderType::Pixel;
 
 		pdesc.VertexShader.ShaderEntryPoint = "VSFordwardSimple";
 		pdesc.VertexShader.ShaderPath = "Fordward.hlsl";
-		pdesc.VertexShader.Type = Graphics::Vertex;
+		pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
 
 		Graphics::VertexInputDescription::VertexInputElement eles[1];
 		eles[0].Semantic = "POSITION";
@@ -167,10 +167,10 @@ void InitResources()
 		desc.DepthFunction = Graphics::Always;
 		desc.VertexShader.ShaderEntryPoint = "VSFullScreen";
 		desc.VertexShader.ShaderPath = "Common.hlsl";
-		desc.VertexShader.Type = Graphics::Vertex;
+		desc.VertexShader.Type = Graphics::ShaderType::Vertex;
 		desc.PixelShader.ShaderEntryPoint = "PSFullScreen";
 		desc.PixelShader.ShaderPath = "Common.hlsl";
-		desc.PixelShader.Type = Graphics::Pixel;
+		desc.PixelShader.Type = Graphics::ShaderType::Pixel;
 
 		Graphics::VertexInputDescription::VertexInputElement eles[1] =
 		{
