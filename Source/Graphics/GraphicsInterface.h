@@ -201,6 +201,8 @@ namespace Graphics
 		virtual TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr) = 0;
 		virtual GraphicsPipeline CreateGraphicsPipeline(const GraphicsPipelineDescription& desc) = 0;
 		virtual ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc) = 0;
+		virtual void ReleaseGraphicsPipeline(GraphicsPipeline& pipeline) = 0;
+		virtual void ReleaseComputePipeline(ComputePipeline& pipeline) = 0;
 		virtual void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data) = 0;
 		virtual void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize) = 0;
 		virtual void SetIndexBuffer(const BufferHandle& buffer, int size, Format idxFormat) = 0;

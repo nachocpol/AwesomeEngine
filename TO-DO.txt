@@ -5,3 +5,5 @@ TO-DO:
 + Static shape builder class (screen quad, screen triangle, cubes spheres etc etc)
 + Start making components
 + Implement gradient noise	
++ Recompile shaders runtime 
++ Precompile shaders offline

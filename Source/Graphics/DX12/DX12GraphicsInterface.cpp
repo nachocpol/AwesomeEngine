@@ -4,8 +4,6 @@
 #include <iostream>
 #include <vector>
 
-#pragma optimize("",off)
-
 namespace Graphics { namespace DX12 {
 
 	DX12GraphicsInterface::DX12GraphicsInterface():
@@ -18,7 +16,8 @@ namespace Graphics { namespace DX12 {
 		mFrameHeap(nullptr),
 		mFrame(0),
 		mCurBackBuffer(0),
-		mNumDrawCalls(0)
+		mNumDrawCalls(0),
+		mReleaseManager(this)
 	{
 		memset(mBuffers, 0, sizeof(mBuffers));
 		memset(mTextures, 0, sizeof(mTextures));
@@ -189,13 +188,21 @@ namespace Graphics { namespace DX12 {
 			p1.InitAsConstantBufferView(1);
 			params.push_back(p1);
 		}
-		// param 2 (TEX0) 3x textures
+		// param 2 (TEX0) 
 		{
 			CD3DX12_ROOT_PARAMETER p2;
 			CD3DX12_DESCRIPTOR_RANGE range;
-			range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0);
+			range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, NUM_SRVS, 0);
 			p2.InitAsDescriptorTable(1, &range);
 			params.push_back(p2);
+		}
+		// param 3 (UAV0)
+		{
+			CD3DX12_ROOT_PARAMETER p3;
+			CD3DX12_DESCRIPTOR_RANGE range;
+			range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, NUM_UAVS, 0);
+			p3.InitAsDescriptorTable(1, &range);
+			params.push_back(p3);
 		}
 		// LineaWrapSampler (s0)
 		{
@@ -370,6 +377,10 @@ namespace Graphics { namespace DX12 {
 			mDefaultSurface.GPUFences[idx]->SetEventOnCompletion(mDefaultSurface.GPUFencesValues[idx], mDefaultSurface.GPUFenceEvent);
 			WaitForSingleObject(mDefaultSurface.GPUFenceEvent, INFINITE);
 		}
+
+		// Now its a good time to update the release manager:
+		mReleaseManager.Update();
+
 		// Reset allocator and get the default context ready
 		mDefaultSurface.Allocators[idx]->Reset();
 		auto context = mDefaultSurface.CmdContext;
@@ -824,6 +835,27 @@ namespace Graphics { namespace DX12 {
 		return handle;
 	}
 
+	void DX12GraphicsInterface::ReleaseGraphicsPipeline(GraphicsPipeline& pipeline)
+	{
+		if (pipeline.Handle == InvalidGraphicsPipeline.Handle || pipeline.Handle > MAX_GRAPHICS_PIPELINES)
+		{
+			assert(false);
+			return;
+		}
+		ID3D12PipelineState* pso = mGraphicsPipelines[pipeline.Handle];
+		IUnknown* psoI = (IUnknown*)pso;
+
+		psoI->Release();
+
+		// Reset data
+		mGraphicsPipelines[pipeline.Handle] = nullptr;
+		pipeline.Handle = 0;
+	}
+
+	void DX12GraphicsInterface::ReleaseComputePipeline(ComputePipeline& pipeline)
+	{
+	}
+
 	void DX12GraphicsInterface::SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)
 	{
 		const auto bufferEntry = mBuffers[buffer.Handle];
@@ -915,9 +947,9 @@ namespace Graphics { namespace DX12 {
 
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 		mDefaultSurface.CmdContext->SetComputeRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
-		// Offset it for nex draw call
-		// TO-DO: we should only do this if the state changed
-		mFrameHeap[idx]->OffsetHandles(3);
+		mDefaultSurface.CmdContext->SetComputeRootDescriptorTable(3, mFrameHeap[idx]->GetGPU());
+
+		mFrameHeap[idx]->OffsetHandles(NUM_SRVS);
 
 		mDefaultSurface.CmdContext->Dispatch((UINT)x, (UINT)y, (UINT)z);
 	}
@@ -926,9 +958,9 @@ namespace Graphics { namespace DX12 {
 	{
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
-		// Offset it for nex draw call
-		// TO-DO: we should only do this if the state changed
-		mFrameHeap[idx]->OffsetHandles(3);
+		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(3, mFrameHeap[idx]->GetGPU());
+
+		mFrameHeap[idx]->OffsetHandles(NUM_SRVS);
 
 		mDefaultSurface.CmdContext->DrawInstanced(numvtx, 1, vtxOffset, 0);
 
@@ -939,9 +971,9 @@ namespace Graphics { namespace DX12 {
 	{
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
-		// Offset it for nex draw call
-		// TO-DO: we should only do this if the state changed
-		mFrameHeap[idx]->OffsetHandles(3);
+		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(3, mFrameHeap[idx]->GetGPU());
+
+		mFrameHeap[idx]->OffsetHandles(NUM_SRVS);
 
 		mDefaultSurface.CmdContext->DrawIndexedInstanced(numIdx, 1, idxOff, vtxOff, 0);
 

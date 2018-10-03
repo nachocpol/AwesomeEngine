@@ -3,6 +3,7 @@
 #include "Graphics/GraphicsInterface.h"
 #include "DX12Common.h"
 #include "DX12Heap.h"
+#include "DX12ReleaseMananger.h"
 
 namespace Graphics
 {
@@ -76,6 +77,8 @@ namespace Graphics{ namespace DX12
 	
 	class DX12GraphicsInterface : public GraphicsInterface
 	{
+		friend class DX12ReleaseManager;
+
 	public:
 		DX12GraphicsInterface();
 		~DX12GraphicsInterface();
@@ -88,6 +91,8 @@ namespace Graphics{ namespace DX12
 		TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
 		GraphicsPipeline CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)final override;
 		ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc)final override;
+		void ReleaseGraphicsPipeline(GraphicsPipeline& pipeline)final override;
+		void ReleaseComputePipeline(ComputePipeline& pipeline)final override;
 		void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)final override;
 		void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize)final override;
 		void SetIndexBuffer(const BufferHandle& buffer,int size, Format idxFormat)final override;
@@ -150,6 +155,8 @@ namespace Graphics{ namespace DX12
 		uint64_t mCurBackBuffer;
 
 		uint64_t mNumDrawCalls;
+
+		DX12ReleaseManager mReleaseManager;
 	};
 
 }}
