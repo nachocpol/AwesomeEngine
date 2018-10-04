@@ -188,21 +188,14 @@ namespace Graphics { namespace DX12 {
 			p1.InitAsConstantBufferView(1);
 			params.push_back(p1);
 		}
-		// param 2 (TEX0) 
+		// param 2 (TEX) & (UAV)
+		CD3DX12_DESCRIPTOR_RANGE texRanges[2];
 		{
 			CD3DX12_ROOT_PARAMETER p2;
-			CD3DX12_DESCRIPTOR_RANGE range;
-			range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, NUM_SRVS, 0);
-			p2.InitAsDescriptorTable(1, &range);
+			texRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, NUM_SRVS, 0);
+			texRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, NUM_UAVS, 0,0,NUM_SRVS);
+			p2.InitAsDescriptorTable(sizeof(texRanges) / sizeof(CD3DX12_DESCRIPTOR_RANGE), texRanges);
 			params.push_back(p2);
-		}
-		// param 3 (UAV0)
-		{
-			CD3DX12_ROOT_PARAMETER p3;
-			CD3DX12_DESCRIPTOR_RANGE range;
-			range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, NUM_UAVS, 0);
-			p3.InitAsDescriptorTable(1, &range);
-			params.push_back(p3);
 		}
 		// LineaWrapSampler (s0)
 		{
@@ -228,9 +221,12 @@ namespace Graphics { namespace DX12 {
 		rsDesc.Init((UINT)params.size(), params.data(), (UINT)samplers.size(),samplers.data());
 		rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-		ID3D10Blob* rsBlob;
-		ID3D10Blob* rsErrorBlob;
-		D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, &rsBlob, &rsErrorBlob);
+		ID3D10Blob* rsBlob = nullptr;
+		ID3D10Blob* rsErrorBlob = nullptr;
+		if (FAILED(D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, &rsBlob, &rsErrorBlob)))
+		{
+			OutputDebugStringA((char*)rsErrorBlob->GetBufferPointer());
+		}
 		mDevice->CreateRootSignature(0, rsBlob->GetBufferPointer(), rsBlob->GetBufferSize(), IID_PPV_ARGS(&mGraphicsRootSignature));
 
 		// Lets init the shader visible heap
@@ -814,7 +810,10 @@ namespace Graphics { namespace DX12 {
 		psoDesc.SampleDesc.Quality		= 0;
 		psoDesc.SampleMask				= 0xffffffff;
 
-		mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mGraphicsPipelines[mCurGraphicsPipeline]));
+		GraphicsPipelineEntry* entry = mGraphicsPipelines[mCurGraphicsPipeline];
+		mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&entry->Pso));
+		
+		memcpy(&entry->Desc, &psoDesc, sizeof(psoDesc));
 
 		GraphicsPipeline handle = { mCurGraphicsPipeline };
 		mCurGraphicsPipeline++;
@@ -835,6 +834,22 @@ namespace Graphics { namespace DX12 {
 		return handle;
 	}
 
+	void DX12GraphicsInterface::ReleaseTexture(TextureHandle& handle)
+	{
+		if (handle.Handle == InvalidTexture.Handle || handle.Handle > MAX_TEXTURES)
+		{
+			assert(false);
+			return;
+		}
+
+		mReleaseManager.ReleaseItem(mTextures[handle.Handle]->Resource);
+		mReleaseManager.ReleaseItem(mTextures[handle.Handle]->Resource);
+
+		// Reset data:
+		mTextures[handle.Handle] = nullptr;
+		handle.Handle = 0;
+	}
+
 	void DX12GraphicsInterface::ReleaseGraphicsPipeline(GraphicsPipeline& pipeline)
 	{
 		if (pipeline.Handle == InvalidGraphicsPipeline.Handle || pipeline.Handle > MAX_GRAPHICS_PIPELINES)
@@ -842,10 +857,8 @@ namespace Graphics { namespace DX12 {
 			assert(false);
 			return;
 		}
-		ID3D12PipelineState* pso = mGraphicsPipelines[pipeline.Handle];
-		IUnknown* psoI = (IUnknown*)pso;
 
-		psoI->Release();
+		mReleaseManager.ReleaseItem(mGraphicsPipelines[pipeline.Handle]->Pso);
 
 		// Reset data
 		mGraphicsPipelines[pipeline.Handle] = nullptr;
@@ -933,11 +946,11 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetGraphicsPipeline(const GraphicsPipeline& pipeline)
 	{
-		auto pso = mGraphicsPipelines[pipeline.Handle];
-		if (pipeline.Handle != InvalidGraphicsPipeline.Handle && pso != nullptr)
+		auto psoEntry = mGraphicsPipelines[pipeline.Handle];
+		if (pipeline.Handle != InvalidGraphicsPipeline.Handle && psoEntry != nullptr)
 		{
 			mDefaultSurface.CmdContext->SetGraphicsRootSignature(mGraphicsRootSignature);
-			mDefaultSurface.CmdContext->SetPipelineState(pso);
+			mDefaultSurface.CmdContext->SetPipelineState(psoEntry->Pso);
 		}
 	}
 
@@ -946,10 +959,9 @@ namespace Graphics { namespace DX12 {
 		assert((x * y * z) > 0);
 
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
-		mDefaultSurface.CmdContext->SetComputeRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
-		mDefaultSurface.CmdContext->SetComputeRootDescriptorTable(3, mFrameHeap[idx]->GetGPU());
 
-		mFrameHeap[idx]->OffsetHandles(NUM_SRVS);
+		mDefaultSurface.CmdContext->SetComputeRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
+		mFrameHeap[idx]->OffsetHandles(NUM_SRVS + NUM_UAVS);
 
 		mDefaultSurface.CmdContext->Dispatch((UINT)x, (UINT)y, (UINT)z);
 	}
@@ -957,10 +969,9 @@ namespace Graphics { namespace DX12 {
 	void DX12GraphicsInterface::Draw(uint32_t numvtx, uint32_t vtxOffset)
 	{
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
-		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
-		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(3, mFrameHeap[idx]->GetGPU());
 
-		mFrameHeap[idx]->OffsetHandles(NUM_SRVS);
+		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
+		mFrameHeap[idx]->OffsetHandles(NUM_SRVS + NUM_UAVS);
 
 		mDefaultSurface.CmdContext->DrawInstanced(numvtx, 1, vtxOffset, 0);
 
@@ -970,10 +981,9 @@ namespace Graphics { namespace DX12 {
 	void DX12GraphicsInterface::DrawIndexed(uint32_t numIdx, uint32_t idxOff /*= 0*/, uint32_t vtxOff /*= 0*/)
 	{
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
-		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
-		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(3, mFrameHeap[idx]->GetGPU());
 
-		mFrameHeap[idx]->OffsetHandles(NUM_SRVS);
+		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
+		mFrameHeap[idx]->OffsetHandles(NUM_SRVS + NUM_UAVS);
 
 		mDefaultSurface.CmdContext->DrawIndexedInstanced(numIdx, 1, idxOff, vtxOff, 0);
 

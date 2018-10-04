@@ -75,6 +75,16 @@ namespace Graphics{ namespace DX12
 		uint64_t CopyCount; 
 	};
 	
+	struct GraphicsPipelineEntry
+	{
+		GraphicsPipelineEntry() :
+			Pso(nullptr)
+		{
+		}
+		ID3D12PipelineState* Pso;
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC Desc;
+	};
+
 	class DX12GraphicsInterface : public GraphicsInterface
 	{
 		friend class DX12ReleaseManager;
@@ -91,6 +101,7 @@ namespace Graphics{ namespace DX12
 		TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
 		GraphicsPipeline CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)final override;
 		ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc)final override;
+		void ReleaseTexture(TextureHandle& handle)final override;
 		void ReleaseGraphicsPipeline(GraphicsPipeline& pipeline)final override;
 		void ReleaseComputePipeline(ComputePipeline& pipeline)final override;
 		void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)final override;
@@ -137,7 +148,7 @@ namespace Graphics{ namespace DX12
 		uint64_t mCurTexture;
 
 		// PSO pools
-		ID3D12PipelineState* mGraphicsPipelines[MAX_GRAPHICS_PIPELINES];
+		GraphicsPipelineEntry* mGraphicsPipelines[MAX_GRAPHICS_PIPELINES];
 		uint64_t mCurGraphicsPipeline;
 		ID3D12PipelineState* mComputePipelines[MAX_COMPUTE_PIPELINES];
 		uint64_t mCurComputePipeline;

@@ -17,6 +17,7 @@ namespace Graphics{ namespace DX12{
 	private:
 		struct ReleaseEntry
 		{
+			uint8_t FenceValue;
 			ID3D12Fence* Fence;
 			IUnknown* Resource;
 		};

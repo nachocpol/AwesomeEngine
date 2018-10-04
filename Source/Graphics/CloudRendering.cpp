@@ -16,107 +16,8 @@ namespace Graphics
 	bool CloudRenderer::Initialize(GraphicsInterface* graphicsInterface)
 	{
 		mGraphicsInterface = graphicsInterface;
-		struct TexelRGBA	{ uint8_t r, g, b, a; };
-		struct TexelR		{ uint8_t r;};
-		struct TexelRF		{ float r; };
-
-		// Cloud coverage (2D)
-		{
-			int numNoiseVals = 8;
-			GradientNoise2D noise2D;
-			noise2D.Initialize(numNoiseVals, numNoiseVals);
-
-			const int tw = 64;
-			const int th = 64;
-			TexelRGBA* texData = new TexelRGBA[tw * th];
-			for (int v = 0; v < th; v++)
-			{
-				for (int u = 0; u < tw; u++)
-				{
-					float cu = float(u) / float(tw);
-					float cv = float(v) / float(th);
-					unsigned char n0 = unsigned char(noise2D.Sample(cu * numNoiseVals, cv * numNoiseVals) * 255.0f);
-					unsigned char n = (n0);
-					texData[u + v * tw] = TexelRGBA{ n,n,n, 255 };
-				}
-			}
-			mCloudCoverage = mGraphicsInterface->CreateTexture2D(tw, th, 1, 1, Graphics::Format::RGBA_8_Unorm, Graphics::TextureFlagNone, texData);
-			delete[] texData;
-		}
-
-		// 3D base noise
-		{
-			int numNoiseVals = 16;
-			ValueNoise3D noise3D;
-			noise3D.Initialize(numNoiseVals, numNoiseVals, numNoiseVals);
-
-			const int tw = 64;
-			const int th = 64;
-			const int td = 64;
-			TexelR* texData = new TexelR[tw * th * td];
-			// Total size of each slice
-			uint32_t slizeSize = tw * th;
-
-			for (int w = 0; w < td; w++)			// Iterate over slices
-			{
-				for (int v = 0; v < th; v++)		// Top to bottom
-				{
-					for (int u = 0; u < tw; u++)	// Left to right
-					{
-						float cu = float(u) / float(tw);
-						float cv = float(v) / float(th);
-						float cw = float(w) / float(td);
-
-						unsigned char r = unsigned char(cu * 255.0f);
-						unsigned char g = unsigned char(cv * 255.0f);
-
-						float n = noise3D.Fbm(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals, 5, 2.2f, 0.55f);
-
-						size_t slizeOff = (slizeSize * w);
-						texData[slizeOff + (u + v * tw)] = TexelR{unsigned char(n * 255.0f)};
-					}
-				}
-			}
-
-			mBaseNoise = mGraphicsInterface->CreateTexture3D(tw,th,1,td, Graphics::Format::R_8_Unorm, Graphics::TextureFlagNone, texData);
-			delete[] texData;
-		}
-
-		// 3D detail noise
-		{
-			int numNoiseVals = 256;
-			ValueNoise3D noise3D;
-			noise3D.Initialize(numNoiseVals, numNoiseVals, numNoiseVals);
-
-			const int tw = 128;
-			const int th = 128;
-			const int td = 128;
-			TexelRF* texData = new TexelRF[tw * th * td];
-			// Total size of each slice
-			uint32_t slizeSize = tw * th;
-
-			for (int w = 0; w < td; w++)			// Iterate over slices
-			{
-				for (int v = 0; v < th; v++)		// Top to bottom
-				{
-					for (int u = 0; u < tw; u++)	// Left to right
-					{
-						float cu = float(u) / float(tw);
-						float cv = float(v) / float(th);
-						float cw = float(w) / float(td);
-
-						float n = noise3D.Fbm(cu * float(numNoiseVals), cv * float(numNoiseVals), cw * float(numNoiseVals), 5, 2.2f, 0.55f);
-
-						size_t slizeOff = (slizeSize * w);
-						texData[slizeOff + (u + v * tw)] = TexelRF{ n };
-					}
-				}
-			}
-
-			mDetailNoise = mGraphicsInterface->CreateTexture3D(tw, th, 1, td, Graphics::Format::R_32_Float, Graphics::TextureFlagNone, texData);
-			delete[] texData;
-		}
-
+		
+		CreateTextures();
 
 		Graphics::GraphicsPipelineDescription desc;
 		desc.DepthEnabled = true;
@@ -191,10 +92,126 @@ namespace Graphics
 			ImGui::InputFloat("Base Noise Scale", &mCloudsData.BaseNoiseScale);
 			ImGui::InputFloat("Detail Noise Scale", &mCloudsData.DetailNoiseScale);
 		}
+		if (ImGui::Button("Create Textures"))
+		{
+			DestroyTextures();
+			CreateTextures();
+		}
 
 		//ImGui::Text("Base value noise");
 		//ImGui::Image((ImTextureID)mCloudCoverage.Handle, ImVec2(512, 512));
 		//ImGui::Separator();
 		ImGui::End();
+	}
+
+	void CloudRenderer::DestroyTextures()
+	{
+		mGraphicsInterface->ReleaseTexture(mCloudCoverage);
+		mGraphicsInterface->ReleaseTexture(mBaseNoise);
+		mGraphicsInterface->ReleaseTexture(mDetailNoise);
+	}
+
+	void CloudRenderer::CreateTextures()
+	{
+		struct TexelRGBA	{ uint8_t r, g, b, a; };
+		struct TexelR		{ uint8_t r; };
+		struct TexelRF		{ float r; };
+
+		// Cloud coverage (2D)
+		{
+			int numNoiseVals = 8;
+			GradientNoise2D noise2D;
+			noise2D.Initialize(numNoiseVals, numNoiseVals);
+
+			const int tw = 64;
+			const int th = 64;
+			TexelRGBA* texData = new TexelRGBA[tw * th];
+			for (int v = 0; v < th; v++)
+			{
+				for (int u = 0; u < tw; u++)
+				{
+					float cu = float(u) / float(tw);
+					float cv = float(v) / float(th);
+					unsigned char n0 = unsigned char(noise2D.Sample(cu * numNoiseVals, cv * numNoiseVals) * 255.0f);
+					unsigned char n = (n0);
+					texData[u + v * tw] = TexelRGBA{ n,n,n, 255 };
+				}
+			}
+			mCloudCoverage = mGraphicsInterface->CreateTexture2D(tw, th, 1, 1, Graphics::Format::RGBA_8_Unorm, Graphics::TextureFlagNone, texData);
+			delete[] texData;
+		}
+
+		// 3D base noise
+		{
+			int numNoiseVals = 16;
+			ValueNoise3D noise3D;
+			noise3D.Initialize(numNoiseVals, numNoiseVals, numNoiseVals);
+
+			const int tw = 64;
+			const int th = 64;
+			const int td = 64;
+			TexelR* texData = new TexelR[tw * th * td];
+			// Total size of each slice
+			uint32_t slizeSize = tw * th;
+
+			for (int w = 0; w < td; w++)			// Iterate over slices
+			{
+				for (int v = 0; v < th; v++)		// Top to bottom
+				{
+					for (int u = 0; u < tw; u++)	// Left to right
+					{
+						float cu = float(u) / float(tw);
+						float cv = float(v) / float(th);
+						float cw = float(w) / float(td);
+
+						unsigned char r = unsigned char(cu * 255.0f);
+						unsigned char g = unsigned char(cv * 255.0f);
+
+						float n = noise3D.Fbm(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals, 5, 2.2f, 0.55f);
+
+						size_t slizeOff = (slizeSize * w);
+						texData[slizeOff + (u + v * tw)] = TexelR{ unsigned char(n * 255.0f) };
+					}
+				}
+			}
+
+			mBaseNoise = mGraphicsInterface->CreateTexture3D(tw, th, 1, td, Graphics::Format::R_8_Unorm, Graphics::TextureFlagNone, texData);
+			delete[] texData;
+		}
+
+		// 3D detail noise
+		{
+			int numNoiseVals = 256;
+			ValueNoise3D noise3D;
+			noise3D.Initialize(numNoiseVals, numNoiseVals, numNoiseVals);
+
+			const int tw = 128;
+			const int th = 128;
+			const int td = 128;
+			TexelRF* texData = new TexelRF[tw * th * td];
+			// Total size of each slice
+			uint32_t slizeSize = tw * th;
+
+			for (int w = 0; w < td; w++)			// Iterate over slices
+			{
+				for (int v = 0; v < th; v++)		// Top to bottom
+				{
+					for (int u = 0; u < tw; u++)	// Left to right
+					{
+						float cu = float(u) / float(tw);
+						float cv = float(v) / float(th);
+						float cw = float(w) / float(td);
+
+						float n = noise3D.Fbm(cu * float(numNoiseVals), cv * float(numNoiseVals), cw * float(numNoiseVals), 5, 2.2f, 0.55f);
+
+						size_t slizeOff = (slizeSize * w);
+						texData[slizeOff + (u + v * tw)] = TexelRF{ n };
+					}
+				}
+			}
+
+			mDetailNoise = mGraphicsInterface->CreateTexture3D(tw, th, 1, td, Graphics::Format::R_32_Float, Graphics::TextureFlagNone, texData);
+			delete[] texData;
+		}
 	}
 }

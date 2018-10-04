@@ -15,6 +15,9 @@ namespace Graphics
 		void ShowDebug();
 
 	private:
+		void DestroyTextures();
+		void CreateTextures();
+
 		TextureHandle mCloudCoverage;
 		TextureHandle mBaseNoise;
 		TextureHandle mDetailNoise;
