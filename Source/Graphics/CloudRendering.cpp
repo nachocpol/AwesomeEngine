@@ -97,6 +97,10 @@ namespace Graphics
 			DestroyTextures();
 			CreateTextures();
 		}
+		if (ImGui::Button("Reload Shaders"))
+		{
+			mGraphicsInterface->ReloadGraphicsPipeline(mCloudsPipeline);
+		}
 
 		//ImGui::Text("Base value noise");
 		//ImGui::Image((ImTextureID)mCloudCoverage.Handle, ImVec2(512, 512));

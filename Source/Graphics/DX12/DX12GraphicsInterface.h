@@ -82,7 +82,8 @@ namespace Graphics{ namespace DX12
 		{
 		}
 		ID3D12PipelineState* Pso;
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC Desc;
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC D3DDesc;
+		GraphicsPipelineDescription Desc;
 	};
 
 	class DX12GraphicsInterface : public GraphicsInterface
@@ -101,6 +102,8 @@ namespace Graphics{ namespace DX12
 		TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
 		GraphicsPipeline CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)final override;
 		ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc)final override;
+		void ReloadGraphicsPipeline(GraphicsPipeline& pipeline)final override;
+		void ReloadComputePipeline(ComputePipeline& pipeline)final override;
 		void ReleaseTexture(TextureHandle& handle)final override;
 		void ReleaseGraphicsPipeline(GraphicsPipeline& pipeline)final override;
 		void ReleaseComputePipeline(ComputePipeline& pipeline)final override;

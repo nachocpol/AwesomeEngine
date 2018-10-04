@@ -811,7 +811,10 @@ namespace Graphics { namespace DX12 {
 		GraphicsPipelineEntry& entry = mGraphicsPipelines[mCurGraphicsPipeline];
 		mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
 		
-		memcpy(&entry.Desc, &psoDesc, sizeof(psoDesc));
+		// Cache the descriptions, I dont really like this, lots of memory ?
+		size_t tot = sizeof(desc) + sizeof(psoDesc);
+		memcpy(&entry.Desc, &desc, sizeof(desc));
+		memcpy(&entry.D3DDesc, &psoDesc, sizeof(psoDesc));
 
 		GraphicsPipeline handle = { mCurGraphicsPipeline };
 		mCurGraphicsPipeline++;
@@ -830,6 +833,29 @@ namespace Graphics { namespace DX12 {
 		mCurComputePipeline++;
 
 		return handle;
+	}
+
+	void DX12GraphicsInterface::ReloadGraphicsPipeline(GraphicsPipeline& pipeline)
+	{
+		GraphicsPipelineEntry& entry = mGraphicsPipelines[pipeline.Handle];
+		
+		uint64_t cachedPipelineNum = mCurGraphicsPipeline;
+		uint64_t cachedPipelineHandle = pipeline.Handle;
+
+		// mmm.........
+		mCurGraphicsPipeline = pipeline.Handle;
+		CreateGraphicsPipeline(entry.Desc);
+		mCurGraphicsPipeline = cachedPipelineNum;
+		// mMMMMM.........
+
+		ReloadGraphicsPipeline(pipeline);
+
+		pipeline.Handle = cachedPipelineHandle;
+	}
+
+	void DX12GraphicsInterface::ReloadComputePipeline(ComputePipeline & pipeline)
+	{
+		
 	}
 
 	void DX12GraphicsInterface::ReleaseTexture(TextureHandle& handle)
@@ -909,7 +935,7 @@ namespace Graphics { namespace DX12 {
 			mDefaultSurface.CmdContext->IASetVertexBuffers(0, 1, &view);
 		}
 	}
-// #pragma optimize("",off)
+
 	void DX12GraphicsInterface::SetIndexBuffer(const BufferHandle& buffer,int size, Format idxFormat)
 	{
 		BufferEntry& buffeEntry = mBuffers[buffer.Handle];
@@ -1075,7 +1101,7 @@ namespace Graphics { namespace DX12 {
 		D3D12_CPU_DESCRIPTOR_HANDLE colHandles[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
 		for (int i = 0; i < num; i++)
 		{
-			auto& curTex = mTextures[colorTargets[i].Handle];
+			TextureEntry& curTex = mTextures[colorTargets[i].Handle];
 			if (curTex.State != D3D12_RESOURCE_STATE_RENDER_TARGET)
 			{
 				mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTex.Resource, curTex.State, D3D12_RESOURCE_STATE_RENDER_TARGET));
@@ -1086,7 +1112,7 @@ namespace Graphics { namespace DX12 {
 		D3D12_CPU_DESCRIPTOR_HANDLE* depthHandle = nullptr;
 		if (depth)
 		{
-			auto curTex = mTextures[depth->Handle];
+			TextureEntry& curTex = mTextures[depth->Handle];
 			if (curTex.State != D3D12_RESOURCE_STATE_DEPTH_WRITE)
 			{
 				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTex.Resource, curTex.State, D3D12_RESOURCE_STATE_DEPTH_WRITE));
@@ -1101,12 +1127,12 @@ namespace Graphics { namespace DX12 {
 	{
 		for (int i = 0; i < num; i++)
 		{
-			auto& texEntry = mTextures[colorTargets[i].Handle];
+			TextureEntry& texEntry = mTextures[colorTargets[i].Handle];
 			mDefaultSurface.CmdContext->ClearRenderTargetView(texEntry.RenderTarget, clear, 0, nullptr);
 		}
 		if (depth)
 		{
-			auto& texEntry = mTextures[depth->Handle];
+			TextureEntry& texEntry = mTextures[depth->Handle];
 			D3D12_CLEAR_FLAGS flags = D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL;
 			mDefaultSurface.CmdContext->ClearDepthStencilView(texEntry.DepthStencil, flags, d, stencil, 0, nullptr);
 		}
