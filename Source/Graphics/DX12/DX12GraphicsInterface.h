@@ -140,16 +140,17 @@ namespace Graphics{ namespace DX12
 		Graphics::Format mOutputFormat;
 
 		// Buffer pools
-		BufferEntry* mBuffers[MAX_BUFFERS];
+		BufferEntry mBuffers[MAX_BUFFERS];
 		uint64_t mCurBuffer;
 
 		// Texture pool
-		TextureEntry* mTextures[MAX_TEXTURES];
+		TextureEntry mTextures[MAX_TEXTURES];
 		uint64_t mCurTexture;
 
 		// PSO pools
-		GraphicsPipelineEntry* mGraphicsPipelines[MAX_GRAPHICS_PIPELINES];
+		GraphicsPipelineEntry mGraphicsPipelines[MAX_GRAPHICS_PIPELINES];
 		uint64_t mCurGraphicsPipeline;
+
 		ID3D12PipelineState* mComputePipelines[MAX_COMPUTE_PIPELINES];
 		uint64_t mCurComputePipeline;
 

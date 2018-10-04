@@ -462,12 +462,11 @@ namespace Graphics { namespace DX12 {
 		bool isIndex = type == BufferType::IndexBuffer;
 		bool isWrite = cpuAccess == CPUAccess::Write;
 
-		mBuffers[mCurBuffer] = new BufferEntry;
-		auto bufferEntry = mBuffers[mCurBuffer];
-		bufferEntry->Type = type;
-		bufferEntry->Access = cpuAccess;
-		bufferEntry->LastFrame = mFrame;
-		bufferEntry->State = isIndex ? INDEX_READ : VERTEX_CB_READ;
+		BufferEntry& bufferEntry = mBuffers[mCurBuffer];
+		bufferEntry.Type = type;
+		bufferEntry.Access = cpuAccess;
+		bufferEntry.LastFrame = mFrame;
+		bufferEntry.State = isIndex ? INDEX_READ : VERTEX_CB_READ;
 
 		// GPU resource
 		D3D12_HEAP_PROPERTIES heapDesc = {};
@@ -478,9 +477,9 @@ namespace Graphics { namespace DX12 {
 			&heapProp, 
 			D3D12_HEAP_FLAG_NONE, 
 			&desc, 
-			bufferEntry->State,
+			bufferEntry.State,
 			nullptr, 
-			IID_PPV_ARGS(&bufferEntry->Buffer)
+			IID_PPV_ARGS(&bufferEntry.Buffer)
 		);
 
 		// Upload resource
@@ -503,7 +502,7 @@ namespace Graphics { namespace DX12 {
 			&desc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
-			IID_PPV_ARGS(&bufferEntry->UploadHeap)
+			IID_PPV_ARGS(&bufferEntry.UploadHeap)
 		);
 		
 		BufferHandle handle = { mCurBuffer };
@@ -521,12 +520,12 @@ namespace Graphics { namespace DX12 {
 		{
 			return InvalidTexture;
 		}
-		if (mTextures[mCurTexture])
+		if (mTextures[mCurTexture].Resource)
 		{
-			std::cout << "Something weird is happenign! \n";
+			std::cout << "Something weird is happening! \n";
 		}
-		mTextures[mCurTexture] = new TextureEntry;
-		auto* curTexEntry = mTextures[mCurTexture];
+
+		auto& curTexEntry = mTextures[mCurTexture];
 
 		D3D12_RESOURCE_FLAGS dxflags = D3D12_RESOURCE_FLAG_NONE;
 		if ((flags & UnorderedAccess) == UnorderedAccess)
@@ -553,14 +552,14 @@ namespace Graphics { namespace DX12 {
 			dxflags
 		);
 		CD3DX12_HEAP_PROPERTIES heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		auto& state = curTexEntry->State;
+		auto& state = curTexEntry.State;
 		state = TEXTURE_READ;
 		mDevice->CreateCommittedResource
 		(
 			&heapP, D3D12_HEAP_FLAG_NONE,
 			&texDesc, state,
 			nullptr,
-			IID_PPV_ARGS(&curTexEntry->Resource)
+			IID_PPV_ARGS(&curTexEntry.Resource)
 		);
 
 		// Here we cache a few values that we will use to upload the mips:
@@ -578,11 +577,11 @@ namespace Graphics { namespace DX12 {
 			&heapP, D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(totalSize), D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
-			IID_PPV_ARGS(&curTexEntry->UploadHeap)
+			IID_PPV_ARGS(&curTexEntry.UploadHeap)
 		);
 		if (data)
 		{
-			auto baseDesc = curTexEntry->Resource->GetDesc();
+			auto baseDesc = curTexEntry.Resource->GetDesc();
 			int curOff = 0;
 			for (int i = 0; i < mips; i++)
 			{
@@ -595,9 +594,9 @@ namespace Graphics { namespace DX12 {
 				d.RowPitch = rowSizes[i];
 				d.SlicePitch = curSliceSize;
 
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, state, COPY_DST));
-				UpdateSubresources(mDefaultSurface.CmdContext, curTexEntry->Resource, curTexEntry->UploadHeap, curPrint.Offset, i, 1, &d);
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, COPY_DST, state));
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry.Resource, state, COPY_DST));
+				UpdateSubresources(mDefaultSurface.CmdContext, curTexEntry.Resource, curTexEntry.UploadHeap, curPrint.Offset, i, 1, &d);
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry.Resource, COPY_DST, state));
 
 				curOff += rowSizes[i] * curPrint.Footprint.Height;
 			}
@@ -608,14 +607,14 @@ namespace Graphics { namespace DX12 {
 
 		if ((flags & RenderTarget) == RenderTarget)
 		{
-			mDevice->CreateRenderTargetView(curTexEntry->Resource, nullptr, mRenderTargetHeap->GetCPU());
-			curTexEntry->RenderTarget = mRenderTargetHeap->GetCPU();
+			mDevice->CreateRenderTargetView(curTexEntry.Resource, nullptr, mRenderTargetHeap->GetCPU());
+			curTexEntry.RenderTarget = mRenderTargetHeap->GetCPU();
 			mRenderTargetHeap->OffsetHandles(1);
 		}
 		if ((flags & DepthStencil) == DepthStencil)
 		{
-			mDevice->CreateDepthStencilView(curTexEntry->Resource, nullptr, mDepthStencilHeap->GetCPU());
-			curTexEntry->DepthStencil = mDepthStencilHeap->GetCPU();
+			mDevice->CreateDepthStencilView(curTexEntry.Resource, nullptr, mDepthStencilHeap->GetCPU());
+			curTexEntry.DepthStencil = mDepthStencilHeap->GetCPU();
 			mDepthStencilHeap->OffsetHandles(1);
 		}
 
@@ -630,12 +629,11 @@ namespace Graphics { namespace DX12 {
 		{
 			return InvalidTexture;
 		}
-		if (mTextures[mCurTexture])
+		if (mTextures[mCurTexture].Resource)
 		{
-			std::cout << "Something weird is happenign! \n";
+			std::cout << "Something weird is happening! \n";
 		}
-		mTextures[mCurTexture] = new TextureEntry;
-		auto* curTexEntry = mTextures[mCurTexture];
+		auto& curTexEntry = mTextures[mCurTexture];
 
 		D3D12_RESOURCE_FLAGS dxflags = D3D12_RESOURCE_FLAG_NONE;
 		if ((flags & UnorderedAccess) == UnorderedAccess)
@@ -661,14 +659,14 @@ namespace Graphics { namespace DX12 {
 			dxflags
 		);
 		CD3DX12_HEAP_PROPERTIES heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		auto& state = curTexEntry->State;
+		auto& state = curTexEntry.State;
 		state = TEXTURE_READ;
 		mDevice->CreateCommittedResource
 		(
 			&heapP, D3D12_HEAP_FLAG_NONE,
 			&texDesc, state,
 			nullptr,
-			IID_PPV_ARGS(&curTexEntry->Resource)
+			IID_PPV_ARGS(&curTexEntry.Resource)
 		);
 
 		// Here we cache a few values that we will use to upload the mips:
@@ -686,11 +684,11 @@ namespace Graphics { namespace DX12 {
 			&heapP, D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(totalSize), D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
-			IID_PPV_ARGS(&curTexEntry->UploadHeap)
+			IID_PPV_ARGS(&curTexEntry.UploadHeap)
 		);
 		if (data)
 		{
-			auto baseDesc = curTexEntry->Resource->GetDesc();
+			auto baseDesc = curTexEntry.Resource->GetDesc();
 			int curOff = 0;
 			for (int i = 0; i < mips; i++)
 			{
@@ -703,9 +701,9 @@ namespace Graphics { namespace DX12 {
 				d.RowPitch = rowSizes[i];
 				d.SlicePitch = curSliceSize;
 
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, state, COPY_DST));
-				UpdateSubresources(mDefaultSurface.CmdContext, curTexEntry->Resource, curTexEntry->UploadHeap, curPrint.Offset, i, 1, &d);
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry->Resource, COPY_DST, state));
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry.Resource, state, COPY_DST));
+				UpdateSubresources(mDefaultSurface.CmdContext, curTexEntry.Resource, curTexEntry.UploadHeap, curPrint.Offset, i, 1, &d);
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry.Resource, COPY_DST, state));
 
 				curOff += rowSizes[i] * curPrint.Footprint.Height;
 			}
@@ -716,14 +714,14 @@ namespace Graphics { namespace DX12 {
 
 		if ((flags & RenderTarget) == RenderTarget)
 		{
-			mDevice->CreateRenderTargetView(curTexEntry->Resource, nullptr, mRenderTargetHeap->GetCPU());
-			curTexEntry->RenderTarget = mRenderTargetHeap->GetCPU();
+			mDevice->CreateRenderTargetView(curTexEntry.Resource, nullptr, mRenderTargetHeap->GetCPU());
+			curTexEntry.RenderTarget = mRenderTargetHeap->GetCPU();
 			mRenderTargetHeap->OffsetHandles(1);
 		}
 		if ((flags & DepthStencil) == DepthStencil)
 		{
-			mDevice->CreateDepthStencilView(curTexEntry->Resource, nullptr, mDepthStencilHeap->GetCPU());
-			curTexEntry->DepthStencil = mDepthStencilHeap->GetCPU();
+			mDevice->CreateDepthStencilView(curTexEntry.Resource, nullptr, mDepthStencilHeap->GetCPU());
+			curTexEntry.DepthStencil = mDepthStencilHeap->GetCPU();
 			mDepthStencilHeap->OffsetHandles(1);
 		}
 
@@ -810,10 +808,10 @@ namespace Graphics { namespace DX12 {
 		psoDesc.SampleDesc.Quality		= 0;
 		psoDesc.SampleMask				= 0xffffffff;
 
-		GraphicsPipelineEntry* entry = mGraphicsPipelines[mCurGraphicsPipeline];
-		mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&entry->Pso));
+		GraphicsPipelineEntry& entry = mGraphicsPipelines[mCurGraphicsPipeline];
+		mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
 		
-		memcpy(&entry->Desc, &psoDesc, sizeof(psoDesc));
+		memcpy(&entry.Desc, &psoDesc, sizeof(psoDesc));
 
 		GraphicsPipeline handle = { mCurGraphicsPipeline };
 		mCurGraphicsPipeline++;
@@ -841,13 +839,10 @@ namespace Graphics { namespace DX12 {
 			assert(false);
 			return;
 		}
+		mReleaseManager.ReleaseItem(mTextures[handle.Handle].Resource);
+		mReleaseManager.ReleaseItem(mTextures[handle.Handle].Resource);
 
-		mReleaseManager.ReleaseItem(mTextures[handle.Handle]->Resource);
-		mReleaseManager.ReleaseItem(mTextures[handle.Handle]->Resource);
-
-		// Reset data:
-		mTextures[handle.Handle] = nullptr;
-		handle.Handle = 0;
+		handle.Handle = InvalidTexture.Handle;
 	}
 
 	void DX12GraphicsInterface::ReleaseGraphicsPipeline(GraphicsPipeline& pipeline)
@@ -858,11 +853,10 @@ namespace Graphics { namespace DX12 {
 			return;
 		}
 
-		mReleaseManager.ReleaseItem(mGraphicsPipelines[pipeline.Handle]->Pso);
+		mReleaseManager.ReleaseItem(mGraphicsPipelines[pipeline.Handle].Pso);
 
 		// Reset data
-		mGraphicsPipelines[pipeline.Handle] = nullptr;
-		pipeline.Handle = 0;
+		pipeline.Handle = InvalidGraphicsPipeline.Handle;
 	}
 
 	void DX12GraphicsInterface::ReleaseComputePipeline(ComputePipeline& pipeline)
@@ -871,30 +865,30 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)
 	{
-		const auto bufferEntry = mBuffers[buffer.Handle];
-		if (bufferEntry->Type == ConstantBuffer)
+		BufferEntry& bufferEntry = mBuffers[buffer.Handle];
+		if (bufferEntry.Type == ConstantBuffer)
 		{
 			std::cout << "Do not call SetBufferData on a Constant buffer, just use the SetConstantBuffer method. \n";
 			return;
 		}
-		auto dstDesc = bufferEntry->Buffer->GetDesc();
-		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && bufferEntry != nullptr && size <= dstDesc.Width)
+		auto dstDesc = bufferEntry.Buffer->GetDesc();
+		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && bufferEntry.Buffer != nullptr && size <= dstDesc.Width)
 		{
 			D3D12_SUBRESOURCE_DATA sdata = {};
 			sdata.pData	= data;
 			sdata.RowPitch = size;
 			sdata.SlicePitch = 0;
-			auto& state = bufferEntry->State;
+			auto& state = bufferEntry.State;
 			bool changed = false;
 			if (state != (COPY_DST))
 			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry->Buffer, state, COPY_DST));
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry.Buffer, state, COPY_DST));
 				changed = true;
 			}
-			UpdateSubresources(mDefaultSurface.CmdContext, bufferEntry->Buffer, bufferEntry->UploadHeap, offset, 0, 1, &sdata);
+			UpdateSubresources(mDefaultSurface.CmdContext, bufferEntry.Buffer, bufferEntry.UploadHeap, offset, 0, 1, &sdata);
 			if (changed)
 			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry->Buffer, COPY_DST, state));
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry.Buffer, COPY_DST, state));
 			}
 		}
 		else
@@ -905,11 +899,11 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetVertexBuffer(const BufferHandle& buffer,int size, int eleSize)
 	{
-		const auto buffeEntry = mBuffers[buffer.Handle];
-		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && buffeEntry != nullptr)
+		BufferEntry& buffeEntry = mBuffers[buffer.Handle];
+		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && buffeEntry.Buffer != nullptr)
 		{
 			D3D12_VERTEX_BUFFER_VIEW view	= {};
-			view.BufferLocation				= buffeEntry->Buffer->GetGPUVirtualAddress();
+			view.BufferLocation				= buffeEntry.Buffer->GetGPUVirtualAddress();
 			view.SizeInBytes				= size;
 			view.StrideInBytes				= eleSize;
 			mDefaultSurface.CmdContext->IASetVertexBuffers(0, 1, &view);
@@ -918,11 +912,11 @@ namespace Graphics { namespace DX12 {
 // #pragma optimize("",off)
 	void DX12GraphicsInterface::SetIndexBuffer(const BufferHandle& buffer,int size, Format idxFormat)
 	{
-		const auto buffeEntry = mBuffers[buffer.Handle];
-		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && buffeEntry != nullptr)
+		BufferEntry& buffeEntry = mBuffers[buffer.Handle];
+		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && buffeEntry.Buffer != nullptr)
 		{
 			D3D12_INDEX_BUFFER_VIEW view = {};
-			view.BufferLocation = buffeEntry->Buffer->GetGPUVirtualAddress();
+			view.BufferLocation = buffeEntry.Buffer->GetGPUVirtualAddress();
 			view.SizeInBytes = size;
 			view.Format = ToDXGIFormat(idxFormat);
 			mDefaultSurface.CmdContext->IASetIndexBuffer(&view);
@@ -946,11 +940,11 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetGraphicsPipeline(const GraphicsPipeline& pipeline)
 	{
-		auto psoEntry = mGraphicsPipelines[pipeline.Handle];
-		if (pipeline.Handle != InvalidGraphicsPipeline.Handle && psoEntry != nullptr)
+		GraphicsPipelineEntry& psoEntry = mGraphicsPipelines[pipeline.Handle];
+		if (pipeline.Handle != InvalidGraphicsPipeline.Handle && psoEntry.Pso != nullptr)
 		{
 			mDefaultSurface.CmdContext->SetGraphicsRootSignature(mGraphicsRootSignature);
-			mDefaultSurface.CmdContext->SetPipelineState(psoEntry->Pso);
+			mDefaultSurface.CmdContext->SetPipelineState(psoEntry.Pso);
 		}
 	}
 
@@ -1014,43 +1008,43 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data)
 	{
-		const auto bufferEntry = mBuffers[buffer.Handle];
-		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && bufferEntry != nullptr)
+		BufferEntry& bufferEntry = mBuffers[buffer.Handle];
+		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && bufferEntry.UploadHeap != nullptr)
 		{
 			if (data)
 			{
-				if (mFrame != bufferEntry->LastFrame)
+				if (mFrame != bufferEntry.LastFrame)
 				{
-					bufferEntry->LastFrame = mFrame;
-					bufferEntry->CopyCount = 0;
+					bufferEntry.LastFrame = mFrame;
+					bufferEntry.CopyCount = 0;
 				}
 				const CD3DX12_RANGE  read(0, 0);
 				uint8_t* pData = nullptr;
 				uint32_t intermediateOffset = 0;
-				bufferEntry->UploadHeap->Map(0, &read, reinterpret_cast<void**>(&pData));
+				bufferEntry.UploadHeap->Map(0, &read, reinterpret_cast<void**>(&pData));
 				{
 					intermediateOffset	+= ((CB_INTERMIDIATE_SIZE) / NUM_BACK_BUFFERS) * mCurBackBuffer;
-					intermediateOffset	+= ((size + 255) & ~255) * bufferEntry->CopyCount;
+					intermediateOffset	+= ((size + 255) & ~255) * bufferEntry.CopyCount;
 					pData				= pData + intermediateOffset;
 					memcpy(pData, data, size);
 				}
-				bufferEntry->UploadHeap->Unmap(0, nullptr);
+				bufferEntry.UploadHeap->Unmap(0, nullptr);
 
 				bool changed = false;
-				if (bufferEntry->State != (COPY_DST))
+				if (bufferEntry.State != (COPY_DST))
 				{
-					mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry->Buffer, bufferEntry->State, COPY_DST));
+					mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry.Buffer, bufferEntry.State, COPY_DST));
 					changed = true;
 				}
-				mDefaultSurface.CmdContext->CopyBufferRegion(bufferEntry->Buffer, 0, bufferEntry->UploadHeap, intermediateOffset, size);
+				mDefaultSurface.CmdContext->CopyBufferRegion(bufferEntry.Buffer, 0, bufferEntry.UploadHeap, intermediateOffset, size);
 				if (changed)
 				{
-					mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry->Buffer, COPY_DST, bufferEntry->State));
+					mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry.Buffer, COPY_DST, bufferEntry.State));
 				}
 
-				bufferEntry->CopyCount++;
+				bufferEntry.CopyCount++;
 			}
-			mDefaultSurface.CmdContext->SetGraphicsRootConstantBufferView(slot, bufferEntry->Buffer->GetGPUVirtualAddress());
+			mDefaultSurface.CmdContext->SetGraphicsRootConstantBufferView(slot, bufferEntry.Buffer->GetGPUVirtualAddress());
 		}
 	}
 
@@ -1062,14 +1056,14 @@ namespace Graphics { namespace DX12 {
 			return;
 		}
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
-		const auto res = mTextures[texture.Handle]->Resource;
+		const auto res = mTextures[texture.Handle].Resource;
 		if (texture.Handle != InvalidTexture.Handle && res != nullptr)
 		{
-			if (mTextures[texture.Handle]->State != (TEXTURE_READ))
+			if (mTextures[texture.Handle].State != (TEXTURE_READ))
 			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, mTextures[texture.Handle]->State, TEXTURE_READ));
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, mTextures[texture.Handle].State, TEXTURE_READ));
 			}
-			mTextures[texture.Handle]->State = TEXTURE_READ;
+			mTextures[texture.Handle].State = TEXTURE_READ;
 			auto slotHandle = mFrameHeap[idx]->GetCPU();
 			slotHandle.Offset(slot,mFrameHeap[idx]->GetIncrementSize());
 			mDevice->CreateShaderResourceView(res, nullptr, slotHandle);
@@ -1081,24 +1075,24 @@ namespace Graphics { namespace DX12 {
 		D3D12_CPU_DESCRIPTOR_HANDLE colHandles[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
 		for (int i = 0; i < num; i++)
 		{
-			const auto curTex = mTextures[colorTargets[i].Handle];
-			if (curTex->State != D3D12_RESOURCE_STATE_RENDER_TARGET)
+			auto& curTex = mTextures[colorTargets[i].Handle];
+			if (curTex.State != D3D12_RESOURCE_STATE_RENDER_TARGET)
 			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTex->Resource, curTex->State, D3D12_RESOURCE_STATE_RENDER_TARGET));
-				curTex->State = D3D12_RESOURCE_STATE_RENDER_TARGET;
+				mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTex.Resource, curTex.State, D3D12_RESOURCE_STATE_RENDER_TARGET));
+				curTex.State = D3D12_RESOURCE_STATE_RENDER_TARGET;
 			}
-			colHandles[i] = curTex->RenderTarget;
+			colHandles[i] = curTex.RenderTarget;
 		}
 		D3D12_CPU_DESCRIPTOR_HANDLE* depthHandle = nullptr;
 		if (depth)
 		{
-			const auto curTex = mTextures[depth->Handle];
-			if (curTex->State != D3D12_RESOURCE_STATE_DEPTH_WRITE)
+			auto curTex = mTextures[depth->Handle];
+			if (curTex.State != D3D12_RESOURCE_STATE_DEPTH_WRITE)
 			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTex->Resource, curTex->State, D3D12_RESOURCE_STATE_DEPTH_WRITE));
-				curTex->State = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTex.Resource, curTex.State, D3D12_RESOURCE_STATE_DEPTH_WRITE));
+				curTex.State = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 			}
-			depthHandle = &curTex->DepthStencil;
+			depthHandle = &curTex.DepthStencil;
 		}
 		mDefaultSurface.CmdContext->OMSetRenderTargets(num, colHandles, false, depthHandle);
 	}
@@ -1107,14 +1101,14 @@ namespace Graphics { namespace DX12 {
 	{
 		for (int i = 0; i < num; i++)
 		{
-			const auto texEntry = mTextures[colorTargets[i].Handle];
-			mDefaultSurface.CmdContext->ClearRenderTargetView(texEntry->RenderTarget, clear, 0, nullptr);
+			auto& texEntry = mTextures[colorTargets[i].Handle];
+			mDefaultSurface.CmdContext->ClearRenderTargetView(texEntry.RenderTarget, clear, 0, nullptr);
 		}
 		if (depth)
 		{
-			const auto texEntry = mTextures[depth->Handle];
+			auto& texEntry = mTextures[depth->Handle];
 			D3D12_CLEAR_FLAGS flags = D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL;
-			mDefaultSurface.CmdContext->ClearDepthStencilView(texEntry->DepthStencil, flags, d, stencil, 0, nullptr);
+			mDefaultSurface.CmdContext->ClearDepthStencilView(texEntry.DepthStencil, flags, d, stencil, 0, nullptr);
 		}
 	}
 
@@ -1132,26 +1126,26 @@ namespace Graphics { namespace DX12 {
 	bool DX12GraphicsInterface::MapBuffer(BufferHandle buffer, unsigned char** outPtr, bool writeOnly /*=true*/)
 	{
 		D3D12_RANGE range = CD3DX12_RANGE(0, 0);
-		BufferEntry* bentry = mBuffers[buffer.Handle];
-		if (!bentry || (bentry->Access != CPUAccess::Write && bentry->Access != CPUAccess::ReadWrite))
+		BufferEntry& bentry = mBuffers[buffer.Handle];
+		if ((bentry.Access != CPUAccess::Write && bentry.Access != CPUAccess::ReadWrite))
 		{
 			outPtr = nullptr;
 			assert(false);
 			return false;
 		}
-		if (bentry->UploadHeap)
+		if (bentry.UploadHeap)
 		{
 			HRESULT res = S_OK;
-			res = bentry->UploadHeap->Map(0, writeOnly ? &range : nullptr, (void**)outPtr);
+			res = bentry.UploadHeap->Map(0, writeOnly ? &range : nullptr, (void**)outPtr);
 			if (FAILED(res))
 			{
 				outPtr = nullptr;
 				return false;
 			}
 			// Return the current portion of the upload buffer
-			size_t off = (mFrame % NUM_BACK_BUFFERS) * bentry->Buffer->GetDesc().Width;
+			size_t off = (mFrame % NUM_BACK_BUFFERS) * bentry.Buffer->GetDesc().Width;
 			*outPtr += off;
-			bentry->LastFrame = mFrame;
+			bentry.LastFrame = mFrame;
 			return true;
 		}
 		return false;
@@ -1159,24 +1153,24 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::UnMapBuffer(BufferHandle buffer, bool writeOnly/*=true*/)
 	{
-		BufferEntry* bentry = mBuffers[buffer.Handle];
-		if (bentry && bentry->UploadHeap)
+		BufferEntry& bentry = mBuffers[buffer.Handle];
+		if (bentry.UploadHeap)
 		{
 			HRESULT res = S_OK;
-			bentry->UploadHeap->Unmap(0, nullptr);
-			size_t off = (bentry->LastFrame % NUM_BACK_BUFFERS) * bentry->Buffer->GetDesc().Width;
-			bentry->LastFrame = 0;
+			bentry.UploadHeap->Unmap(0, nullptr);
+			size_t off = (bentry.LastFrame % NUM_BACK_BUFFERS) * bentry.Buffer->GetDesc().Width;
+			bentry.LastFrame = 0;
 			// Lets make sure the data is ready to be used by the GPU:
 			bool changed = false;
-			if (bentry->State != COPY_DST)
+			if (bentry.State != COPY_DST)
 			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bentry->Buffer, bentry->State, COPY_DST));
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bentry.Buffer, bentry.State, COPY_DST));
 				changed = true;
 			}			
-			mDefaultSurface.CmdContext->CopyBufferRegion(bentry->Buffer, 0, bentry->UploadHeap, off, bentry->UploadHeap->GetDesc().Width / NUM_BACK_BUFFERS);
+			mDefaultSurface.CmdContext->CopyBufferRegion(bentry.Buffer, 0, bentry.UploadHeap, off, bentry.UploadHeap->GetDesc().Width / NUM_BACK_BUFFERS);
 			if (changed)
 			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bentry->Buffer,COPY_DST, bentry->State));
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bentry.Buffer,COPY_DST, bentry.State));
 			}
 		}
 	}
