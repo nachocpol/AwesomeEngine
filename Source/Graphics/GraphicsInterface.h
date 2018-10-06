@@ -114,12 +114,33 @@ namespace Graphics
 
 	struct ShaderDescription
 	{
+		ShaderDescription()
+		{
+		}
+		ShaderDescription(const ShaderDescription& other)
+		{
+			Type = other.Type;
+			ShaderPath.copy((char*)other.ShaderPath.data(), other.ShaderPath.size());
+			ShaderEntryPoint.copy((char*)other.ShaderEntryPoint.data(), other.ShaderEntryPoint.size());
+		}
 		ShaderType::T Type;
 		std::string ShaderPath;
 		std::string ShaderEntryPoint;
 	};
+#pragma optimize("",off)
 	struct VertexInputDescription
 	{
+		VertexInputDescription():
+			NeedRelease(false)
+		{
+		}
+		~VertexInputDescription()
+		{
+			if (NeedRelease && Elements)
+			{
+				delete[] Elements;
+			}
+		}
 		uint8_t NumElements;
 		struct VertexInputElement
 		{
@@ -128,6 +149,7 @@ namespace Graphics
 			Format EleFormat;
 			uint32_t Offset;
 		}*Elements;
+		bool NeedRelease;
 	};
 	struct GraphicsPipelineDescription
 	{

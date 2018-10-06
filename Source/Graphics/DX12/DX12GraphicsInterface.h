@@ -82,7 +82,6 @@ namespace Graphics{ namespace DX12
 		{
 		}
 		ID3D12PipelineState* Pso;
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC D3DDesc;
 		GraphicsPipelineDescription Desc;
 	};
 

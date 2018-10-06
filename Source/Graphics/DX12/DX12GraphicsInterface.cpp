@@ -83,6 +83,38 @@ namespace Graphics { namespace DX12 {
 			std::cerr << "Could not create the device! \n";
 			return false;
 		}
+		// Mute some annoyances:
+		ID3D12InfoQueue* infoQueue = nullptr;
+		mDevice->QueryInterface(IID_PPV_ARGS(&infoQueue));
+		if (infoQueue)
+		{
+			D3D12_INFO_QUEUE_FILTER filter = {};
+			D3D12_MESSAGE_CATEGORY catList[] =
+			{
+				D3D12_MESSAGE_CATEGORY_EXECUTION
+			};
+			filter.DenyList.NumCategories = sizeof(catList) / sizeof(D3D12_MESSAGE_CATEGORY);
+			filter.DenyList.pCategoryList = catList;
+
+			D3D12_MESSAGE_ID idList[] =
+			{
+				D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
+				D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE
+			};
+			filter.DenyList.NumIDs = sizeof(idList) / sizeof(D3D12_MESSAGE_ID);
+			filter.DenyList.pIDList = idList;
+
+			D3D12_MESSAGE_SEVERITY sevList[] =
+			{
+				D3D12_MESSAGE_SEVERITY_WARNING
+			};
+			filter.DenyList.NumSeverities = sizeof(sevList) / sizeof(D3D12_MESSAGE_SEVERITY);
+			filter.DenyList.pSeverityList = sevList;
+
+			infoQueue->AddStorageFilterEntries(&filter);
+			infoQueue->Release();
+		}
+
 		// Initialize the display surface:
 		InitSurface(&mDefaultSurface);
 
@@ -811,11 +843,22 @@ namespace Graphics { namespace DX12 {
 		GraphicsPipelineEntry& entry = mGraphicsPipelines[mCurGraphicsPipeline];
 		mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
 		
-		// Cache the descriptions, I dont really like this, lots of memory ?
-		size_t tot = sizeof(desc) + sizeof(psoDesc);
-		memcpy(&entry.Desc, &desc, sizeof(desc));
-		memcpy(&entry.D3DDesc, &psoDesc, sizeof(psoDesc));
-
+		// Cache it so we can recompile at runtime
+		entry.Desc = desc;
+		entry.Desc.VertexShader = desc.VertexShader;
+		entry.Desc.PixelShader = desc.PixelShader;
+		{
+			entry.Desc.VertexDescription.NeedRelease = true;
+			entry.Desc.VertexDescription.NumElements = desc.VertexDescription.NumElements;
+			entry.Desc.VertexDescription.Elements = new Graphics::VertexInputDescription::VertexInputElement[desc.VertexDescription.NumElements];
+			for (unsigned int i = 0; i < desc.VertexDescription.NumElements; i++)
+			{
+				entry.Desc.VertexDescription.Elements[i].Semantic.assign(desc.VertexDescription.Elements[i].Semantic);
+				entry.Desc.VertexDescription.Elements[i].Idx = desc.VertexDescription.Elements[i].Idx;
+				entry.Desc.VertexDescription.Elements[i].EleFormat = desc.VertexDescription.Elements[i].EleFormat;
+				entry.Desc.VertexDescription.Elements[i].Offset = desc.VertexDescription.Elements[i].Offset;
+			}
+		}
 		GraphicsPipeline handle = { mCurGraphicsPipeline };
 		mCurGraphicsPipeline++;
 
@@ -847,8 +890,6 @@ namespace Graphics { namespace DX12 {
 		CreateGraphicsPipeline(entry.Desc);
 		mCurGraphicsPipeline = cachedPipelineNum;
 		// mMMMMM.........
-
-		ReloadGraphicsPipeline(pipeline);
 
 		pipeline.Handle = cachedPipelineHandle;
 	}
