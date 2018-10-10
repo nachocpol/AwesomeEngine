@@ -99,7 +99,7 @@ int main()
 		// Output to the screen
 		gGraphicsInterface->SetGraphicsPipeline(fullScreenPipeline);
 		gGraphicsInterface->SetVertexBuffer(fullScreenBuffer, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
-		gGraphicsInterface->SetTexture(mainTarget, 0);
+		gGraphicsInterface->SetResource(mainTarget, 0);
 		gGraphicsInterface->Draw(6, 0);
 		gGraphicsInterface->EndFrame();
 

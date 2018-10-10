@@ -25,7 +25,8 @@ int main()
 	gScene = new ShowcaseScene(gGraphics, gAssetImporter);
 	gScene->Initialize();
 
-	Resize(1280, 920);
+	Resize(gWindow->GetWidth(), gWindow->GetHeight());
+
 	gGraphics->FlushAndWait();
 
 	float curDeltaMs = 16.0f;
@@ -54,8 +55,11 @@ int main()
 
 bool InitSystems()
 {
+	int sysW = GetSystemMetrics(SM_CXSCREEN);
+	int sysH = GetSystemMetrics(SM_CYSCREEN);
+
 	gWindow = new Graphics::Platform::Windows::WWindow();
-	gWindow->Initialize("Awesome Showcase", false, 1280, 920);
+	gWindow->Initialize("Awesome Showcase", false, sysW, sysH);
 
 	gGraphics = new Graphics::DX12::DX12GraphicsInterface();
 	gGraphics->Initialize(gWindow);

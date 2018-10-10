@@ -2,6 +2,8 @@
 #include "Graphics/UI/IMGUI/imgui.h"
 #include "Graphics/Noise.h"
 
+#include "glm/gtc/packing.hpp"
+
 namespace Graphics
 {
 	CloudRenderer::CloudRenderer():
@@ -66,18 +68,29 @@ namespace Graphics
 
 	void CloudRenderer::Draw(float dt,glm::vec3 camPos, glm::mat4 iViewProj,glm::vec3 SunDirection)
 	{
+		mCloudsData.Time += dt;
 		mCloudsData.ViewPosition = glm::vec4(camPos,0.0f);
 		mCloudsData.InvViewProj = iViewProj;
 		mCloudsData.SunDirection = glm::vec4(SunDirection, 0.0f);
-		mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData),&mCloudsData);
-		mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
-		mGraphicsInterface->SetTexture(mCloudCoverage, 0);
-		mGraphicsInterface->SetTexture(mBaseNoise, 1);
-		mGraphicsInterface->SetTexture(mDetailNoise, 2);
-		mGraphicsInterface->Draw(6, 0);
+		//mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData),&mCloudsData);
+		//mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
+		//mGraphicsInterface->SetResource(mCloudCoverage, 0);
+		//mGraphicsInterface->SetResource(mBaseNoise, 1);
+		//mGraphicsInterface->SetResource(mDetailNoise, 2);
+		//mGraphicsInterface->Draw(6, 0);
 
-		mGraphicsInterface->SetComputePipeline(mCloudsPipelineCompute);
-		mGraphicsInterface->Dispatch(8, 8, 1);
+		{
+			mGraphicsInterface->SetComputePipeline(mCloudsPipelineCompute);
+			mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData), &mCloudsData);
+			mGraphicsInterface->SetResource(mCloudCoverage, 0);
+			mGraphicsInterface->SetResource(mBaseNoise, 1);
+			mGraphicsInterface->SetResource(mDetailNoise, 2);
+			mGraphicsInterface->SetRWResource(mCloudsIntermediate, 0);
+			int tx = ceil((float)mCurRenderSize.x / (float)32);
+			int ty = ceil((float)mCurRenderSize.y / (float)32);
+			int tz = 1;
+			mGraphicsInterface->Dispatch(ceil(tx),ty,tz);
+		}
 	}
 
 	void CloudRenderer::ShowDebug()
@@ -117,9 +130,13 @@ namespace Graphics
 
 	void CloudRenderer::CreateTextures()
 	{
-		struct TexelRGBA	{ uint8_t r, g, b, a; };
-		struct TexelR		{ uint8_t r; };
-		struct TexelRF		{ float r; };
+		mCurRenderSize = mGraphicsInterface->GetCurrentRenderingSize();
+		mCloudsIntermediate = mGraphicsInterface->CreateTexture2D(mCurRenderSize.x, mCurRenderSize.y,1,1,Graphics::Format::RGBA_16_Float,Graphics::TextureFlags::UnorderedAccess);
+
+		struct TexelRGBA		{ uint8_t r, g, b, a; };
+		struct TexelR			{ uint8_t r; };
+		struct TexelRF			{ float r; };
+		struct TexelR11G11B10	{uint32_t r;}; // packed!
 
 		// Cloud coverage (2D)
 		{
@@ -185,14 +202,20 @@ namespace Graphics
 
 		// 3D detail noise
 		{
-			int numNoiseVals = 256;
-			ValueNoise3D noise3D;
-			noise3D.Initialize(numNoiseVals, numNoiseVals, numNoiseVals);
+			int numNoiseVals0 = 16;
+			ValueNoise3D noise3D0;
+			noise3D0.Initialize(numNoiseVals0, numNoiseVals0, numNoiseVals0);
+			int numNoiseVals1 = 32;
+			ValueNoise3D noise3D1;
+			noise3D1.Initialize(numNoiseVals1, numNoiseVals1, numNoiseVals1);
+			int numNoiseVals2 = 64;
+			ValueNoise3D noise3D2;
+			noise3D2.Initialize(numNoiseVals2, numNoiseVals2, numNoiseVals2);
 
 			const int tw = 128;
 			const int th = 128;
 			const int td = 128;
-			TexelRF* texData = new TexelRF[tw * th * td];
+			TexelR11G11B10* texData = new TexelR11G11B10[tw * th * td];
 			// Total size of each slice
 			uint32_t slizeSize = tw * th;
 
@@ -206,15 +229,19 @@ namespace Graphics
 						float cv = float(v) / float(th);
 						float cw = float(w) / float(td);
 
-						float n = noise3D.Fbm(cu * float(numNoiseVals), cv * float(numNoiseVals), cw * float(numNoiseVals), 5, 2.2f, 0.55f);
+						float n0 = noise3D0.Fbm(cu * float(numNoiseVals0), cv * float(numNoiseVals0), cw * float(numNoiseVals0), 4, 2.2f, 0.55f);
+						float n1 = noise3D1.Fbm(cu * float(numNoiseVals1), cv * float(numNoiseVals1), cw * float(numNoiseVals1), 5, 2.2f, 0.55f);
+						float n2 = noise3D2.Fbm(cu * float(numNoiseVals2), cv * float(numNoiseVals2), cw * float(numNoiseVals2), 5, 2.2f, 0.55f);
 
 						size_t slizeOff = (slizeSize * w);
-						texData[slizeOff + (u + v * tw)] = TexelRF{ n };
+
+						uint32_t packedValue = glm::packF2x11_1x10(glm::vec3(n0, n1, n2));
+						texData[slizeOff + (u + v * tw)] = TexelR11G11B10 { packedValue };
 					}
 				}
 			}
 
-			mDetailNoise = mGraphicsInterface->CreateTexture3D(tw, th, 1, td, Graphics::Format::R_32_Float, Graphics::TextureFlagNone, texData);
+			mDetailNoise = mGraphicsInterface->CreateTexture3D(tw, th, 1, td, Graphics::Format::R_11_G_11_B_10_Float, Graphics::TextureFlagNone, texData);
 			delete[] texData;
 		}
 	}

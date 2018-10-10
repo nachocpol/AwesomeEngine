@@ -128,7 +128,7 @@ namespace Graphics { namespace Platform {namespace Windows {
 			NULL,
 			wtitle.c_str(),
 			wtitle.c_str(),
-			WS_OVERLAPPEDWINDOW,
+			WS_OVERLAPPEDWINDOW | WS_MAXIMIZE,
 			CW_USEDEFAULT, CW_USEDEFAULT,
 			mWidth, mHeight,
 			NULL,

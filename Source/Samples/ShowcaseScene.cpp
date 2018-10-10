@@ -103,7 +103,6 @@ bool ShowcaseScene::Initialize()
 
 	// Cb
 	mAppDataHandle		= mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AppData));
-	mAppData.ProjectionMatrix = glm::perspective(glm::radians(85.0f), 1280.0f / 920.0f, 0.1f, 500.0f);
 	mMaterialInfoHandle = mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(MaterialInfo));
 	mAtmosphereDataHandle = mGraphics->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AtmosphereData));
 
@@ -216,20 +215,21 @@ void ShowcaseScene::Update(float dt)
 
 	mAppData.ViewMatrix = glm::lookAt(mCamera.Position, mCamera.Position + mCamera.View, mCamera.Up);
 }
-glm::vec4 gSunDirection = glm::vec4(0.5f, -0.5f, -0.5f, 0.0f);
+glm::vec4 gSunDirection = glm::vec4(0.5f, -0.1f, -0.5f, 0.0f);
 void ShowcaseScene::Draw(float dt)
 {
 	float clearBlue[4] = { 0.2f,0.2f,0.3f,1.0f };
 	float clearBlack[4] = { 0.0f,0.0f,0.0f,1.0f };
+	const glm::vec2 curRenderSize = mGraphics->GetCurrentRenderingSize();
 
 	// GBuffer pass
 	{
 		Graphics::TextureHandle gbuffer[3] = { mGBuffer.Color,mGBuffer.Normals,mGBuffer.Position };
 		mGraphics->SetTargets(3, gbuffer, &mGBuffer.Depth);
 		mGraphics->ClearTargets(3, gbuffer, clearBlack, &mGBuffer.Depth, 1.0f, 0);
-	
+		
 		mGraphics->SetGraphicsPipeline(mGBufferPipeline);
-		mGraphics->SetScissor(0.0f, 0.0f, 1280.0f, 920.0f); // dont like this
+		mGraphics->SetScissor(0.0f, 0.0f, curRenderSize.x, curRenderSize.y); // dont like this
 
 		for (int i = 0; i < mActors.size(); i++)
 		{
@@ -245,16 +245,16 @@ void ShowcaseScene::Draw(float dt)
 			// Albedo texture
 			if (CHECK_TEXTURE(curActor->ShadeInfo.AlbedoTexture))
 			{
-				mGraphics->SetTexture(curActor->ShadeInfo.AlbedoTexture, 0);
+				mGraphics->SetResource(curActor->ShadeInfo.AlbedoTexture, 0);
 			}
 			else
 			{
-				mGraphics->SetTexture(mWhiteTexture, 0);
+				mGraphics->SetResource(mWhiteTexture, 0);
 			}
 			// Bump texture
 			if (CHECK_TEXTURE(curActor->ShadeInfo.BumpMapTexture))
 			{
-				mGraphics->SetTexture(curActor->ShadeInfo.BumpMapTexture, 1);
+				mGraphics->SetResource(curActor->ShadeInfo.BumpMapTexture, 1);
 				mMaterialInfo.UseBumpTex = 1;
 			}
 			else
@@ -277,16 +277,16 @@ void ShowcaseScene::Draw(float dt)
 		mGraphics->SetGraphicsPipeline(mLightPassPipeline);
 		mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
 		{
-			mGraphics->SetTexture(mGBuffer.Color, 0);
-			mGraphics->SetTexture(mGBuffer.Normals, 1);
+			mGraphics->SetResource(mGBuffer.Color, 0);
+			mGraphics->SetResource(mGBuffer.Normals, 1);
 
 			mLightInfo.LightColor = glm::vec4(1.0f, 1.0f, 1.0f,1.0f);
 			mLightInfo.LightPosition = gSunDirection;
 			mGraphics->SetConstantBuffer(mLightInfoHandle, 1, sizeof(mLightInfo), &mLightInfo);
 			mGraphics->Draw(6, 0);
 
-			// mGraphics->SetTexture(mGBuffer.Color, 0);
-			// mGraphics->SetTexture(mGBuffer.Normals, 1);
+			// mGraphics->SetResource(mGBuffer.Color, 0);
+			// mGraphics->SetResource(mGBuffer.Normals, 1);
 			// 
 			// mLightInfo.LightColor = glm::vec4(0.8f, 0.3f, 0.3f, 1.0f);
 			// mLightInfo.LightPosition = glm::vec4( 0.5f,  -0.25f, -1.0f, 0.0f);
@@ -322,7 +322,7 @@ void ShowcaseScene::Draw(float dt)
 
 	// Post processing and display
 	mGraphics->SetGraphicsPipeline(mFullScreenPipeline);
-	mGraphics->SetTexture(mLightPass, 0);
+	mGraphics->SetResource(mLightPass, 0);
 	mGraphics->SetVertexBuffer(mFullScreenQuad, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
 	mGraphics->Draw(6, 0);
 
@@ -369,6 +369,8 @@ void ShowcaseScene::Draw(float dt)
 
 void ShowcaseScene::Resize(int w, int h)
 {
+	mAppData.ProjectionMatrix = glm::perspective(glm::radians(85.0f), (float)w / (float)h, 0.1f, 500.0f);
+
 	mGBuffer.Color = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_8_Unorm, Graphics::TextureFlags::RenderTarget);
 	mGBuffer.Normals = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::RenderTarget);
 	mGBuffer.Position = mGraphics->CreateTexture2D(w, h, 1, 1, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::RenderTarget);

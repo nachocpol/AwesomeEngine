@@ -153,7 +153,7 @@ namespace Graphics{namespace UI{
 								curCmd->ClipRect.x - displayPos.x, curCmd->ClipRect.y - displayPos.y, 
 								curCmd->ClipRect.z - displayPos.x, curCmd->ClipRect.w - displayPos.y
 							);
-							mGraphicsInterface->SetTexture(iTex,0);
+							mGraphicsInterface->SetResource(iTex,0);
 							mGraphicsInterface->DrawIndexed(curCmd->ElemCount, idxOffset, vtxOffset);
 						}
 						else

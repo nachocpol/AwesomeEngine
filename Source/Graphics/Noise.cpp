@@ -17,6 +17,11 @@ inline float quintic(float a, float b, float t)
 	return glm::mix(a, b, t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f));
 }
 
+glm::vec2 rand2(glm::vec2 p)
+{
+	return glm::fract(glm::sin(glm::vec2(glm::dot(p, glm::vec2(127.1f, 311.7f)), glm::dot(p, glm::vec2(269.5f, 183.3f))))*43758.5453f);
+}
+
 //////////////////////////////////
 // Value Noise 1D/////////////////
 Graphics::ValueNoise1D::ValueNoise1D():
@@ -450,3 +455,53 @@ float Graphics::GradientNoise3D::Fbm(float x, float y,float z, int octaves, floa
 	assert(ret >= 0.0f && ret <= 1.0f);
 	return ret;
 }
+
+//////////////////////////////////
+// Worley Noise 2D//////////////
+Graphics::WorleyNoise2D::WorleyNoise2D():
+	mWidth(0),
+	mHeight(0)
+{
+}
+
+Graphics::WorleyNoise2D::~WorleyNoise2D()
+{
+}
+
+void Graphics::WorleyNoise2D::Initialize(uint32_t width, uint32_t height, uint32_t seed)
+{
+	mWidth = width;
+	mHeight = height;
+}
+
+float Graphics::WorleyNoise2D::Sample(float x, float y)
+{
+	// Scale it 
+	x *= (float)mWidth;
+	y *= (float)mHeight;
+
+	int ix = floor(x);
+	int iy = floor(y);
+	
+	float fx = x - float(ix);
+	float fy = y - float(iy);
+
+	float d = 9999999.0f;
+	for (int i = -1; i <= 1; i++)
+	{
+		for (int j = -1; j <= 1; j++)
+		{
+			int tmpi = i == -1 ? mWidth - 1 : i;
+			int tmpy = y == -1 ? mHeight - 1 : y;
+			glm::vec2 p = glm::vec2((ix + i) % mWidth, (iy + j) % mHeight);
+			glm::vec2 feature = rand2(p);
+			glm::vec2 diff = p - glm::vec2(fx, fy);
+			float dist = glm::length(diff);
+			d = glm::min(d, dist);
+		}
+	}
+
+	return d;
+}
+
+

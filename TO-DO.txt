@@ -6,3 +6,8 @@ TO-DO:
 + Start making components
 + Implement gradient noise	
 + Precompile shaders offline
++ Clouds to compute shader
++ Add worley noise
++ Add curl noise
++ Resize screen, resize textures
++ Begin end compute pipeline?

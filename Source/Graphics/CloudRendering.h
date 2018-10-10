@@ -25,18 +25,22 @@ namespace Graphics
 		GraphicsPipeline mCloudsPipeline;
 
 		ComputePipeline mCloudsPipelineCompute;
+		TextureHandle mCloudsIntermediate;
+		glm::vec2 mCurRenderSize;
 
 		struct CloudsData
 		{
 			glm::vec4 ViewPosition;
 			glm::mat4 InvViewProj;
 			glm::vec4 SunDirection;
-			float CloudBase = 150.0f;
+			float CloudBase = 240.0f;
 			float CloudExtents = 100.0f;
 			float Absorption = 0.55f;
-			float CoverageScale = 0.0002f;
-			float BaseNoiseScale = 0.0005f;
-			float DetailNoiseScale = 0.0005f;
+			float CoverageScale = 0.00015f;
+			float BaseNoiseScale = 0.0004f;
+			float DetailNoiseScale = 0.0004f;
+			float EarthR = 6360e3f;
+			float Time = 0.0f;
 		}mCloudsData;
 		BufferHandle mCloudsDataHandle;
 	};

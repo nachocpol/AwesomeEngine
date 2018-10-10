@@ -1,11 +1,11 @@
 #pragma once
 
-#include "d3dx12.h"
-#include <d3d12.h>
-#include <dxgi1_4.h>
-#include <d3dcompiler.h>
-
 #ifdef _WIN32
+	#include "d3dx12.h"
+	#include <d3d12.h>
+	#include <dxgi1_4.h>
+	#include <d3dcompiler.h>
+	
 	#pragma comment(lib,"d3d12")
 	#pragma comment(lib,"dxgi")
 	#pragma comment(lib,"d3dcompiler")
@@ -23,7 +23,8 @@
 	#define COPY_DST				D3D12_RESOURCE_STATE_COPY_DEST
 	#define COPY_SRC				D3D12_RESOURCE_STATE_COPY_SOURCE
 	#define TEXTURE_READ			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE 
-	
+	#define UNORDERED_ACCESS		D3D12_RESOURCE_STATE_UNORDERED_ACCESS	
+
 	#define NUM_SRVS 8
 	#define NUM_UAVS 8
 

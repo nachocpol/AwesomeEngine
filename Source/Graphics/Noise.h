@@ -79,4 +79,16 @@ namespace Graphics
 		uint32_t mHeight;
 		uint32_t mDepth;
 	};
+
+	class WorleyNoise2D
+	{
+		WorleyNoise2D();
+		~WorleyNoise2D();
+		void Initialize(uint32_t width, uint32_t height,uint32_t seed = 1);
+		float Sample(float x, float y);
+
+	private:
+		uint32_t mWidth;
+		uint32_t mHeight;
+	};
 }

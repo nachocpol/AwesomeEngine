@@ -51,7 +51,8 @@ namespace Graphics
 		R_16_Uint = 8,
 		R_32_Uint = 9,
 		R_8_Unorm = 10,
-		R_32_Float = 11
+		R_32_Float = 11,
+		R_11_G_11_B_10_Float = 12
 	};
 	enum Topology
 	{
@@ -61,9 +62,9 @@ namespace Graphics
 	enum TextureFlags
 	{
 		TextureFlagNone = 0,
-		RenderTarget = 1,
-		DepthStencil = 2,
-		UnorderedAccess = 3
+		RenderTarget = 1 << 1,
+		DepthStencil = 1 << 2,
+		UnorderedAccess = 1 << 3
 	};
 	enum DepthFunc
 	{
@@ -240,7 +241,8 @@ namespace Graphics
 		virtual void SetViewport(float x, float y, float w, float h, float zmin = 0.0f, float zmax = 1.0f) = 0;
 		virtual void SetScissor(float x, float y, float w, float h) = 0;
 		virtual void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data) = 0;
-		virtual void SetTexture(const TextureHandle& texture, uint8_t slot) = 0;
+		virtual void SetResource(const TextureHandle& texture, uint8_t slot) = 0;
+		virtual void SetRWResource(const TextureHandle& texture, uint8_t slot) = 0;
 		virtual void SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth) = 0;
 		virtual void ClearTargets(uint8_t num, TextureHandle* colorTargets,float clear[4], TextureHandle* depth,float d, uint8_t stencil) = 0;
 		virtual void DisableAllTargets() = 0;
@@ -248,5 +250,6 @@ namespace Graphics
 		virtual bool MapBuffer(BufferHandle buffer, unsigned char** outPtr,bool writeOnly = true) = 0;
 		virtual void UnMapBuffer(BufferHandle buffer, bool writeOnly = true) = 0;
 		virtual void SetBlendFactors(float blend[4]) {}
+		virtual glm::vec2 GetCurrentRenderingSize() = 0;
 	};
 }

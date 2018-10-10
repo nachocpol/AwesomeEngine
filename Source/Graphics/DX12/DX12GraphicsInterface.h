@@ -118,7 +118,8 @@ namespace Graphics{ namespace DX12
 		void SetViewport(float x, float y, float w, float h, float zmin = 0.0f, float zmax = 1.0f)final override;
 		void SetScissor(float x, float y, float w, float h)final override;
 		void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data)final override;
-		void SetTexture(const TextureHandle& texture, uint8_t slot)final override;
+		void SetResource(const TextureHandle& texture, uint8_t slot)final override;
+		void SetRWResource(const TextureHandle& texture, uint8_t slot)final override;
 		void SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth) final override;
 		void ClearTargets(uint8_t num, TextureHandle* colorTargets, float clear[4], TextureHandle* depth, float d, uint8_t stencil)final override;
 		void DisableAllTargets()final override;
@@ -126,6 +127,7 @@ namespace Graphics{ namespace DX12
 		bool MapBuffer(BufferHandle buffer, unsigned char** outPtr, bool writeOnly = true)final override;
 		void UnMapBuffer(BufferHandle buffer, bool writeOnly = true)final override;
 		void SetBlendFactors(float blend[4])override;;
+		glm::vec2 GetCurrentRenderingSize()final override;
 
 	private:
 		void InitSurface(DisplaySurface* surface);
@@ -171,6 +173,8 @@ namespace Graphics{ namespace DX12
 		uint64_t mNumDrawCalls;
 
 		DX12ReleaseManager mReleaseManager;
+
+		bool mCurrentIsCompute = false;
 	};
 
 }}

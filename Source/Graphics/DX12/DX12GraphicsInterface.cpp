@@ -38,7 +38,8 @@ namespace Graphics { namespace DX12 {
 
 		UINT factoryFlags = 0;
 		ID3D12Debug* debugController = nullptr;
-		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+		static bool enableDebug = false;
+		if (enableDebug && SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 		{
 			debugController->EnableDebugLayer();
 			factoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
@@ -303,7 +304,8 @@ namespace Graphics { namespace DX12 {
 		case ShaderType::Compute:	target = "cs_5_0"; break;
 		default:					target = "none_5_0"; break;
 		}
-		UINT flags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_VALIDATION;// | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+		//UINT flags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_VALIDATION;// | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+		UINT flags = D3DCOMPILE_DEBUG | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 		if (FAILED(D3DCompileFromFile(wpath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, desc.ShaderEntryPoint.c_str(), target.c_str(), flags, 0, &sblob, &error)))
 		{
 			OutputDebugStringA((char*)error->GetBufferPointer());
@@ -319,19 +321,20 @@ namespace Graphics { namespace DX12 {
 	{
 		switch (format)
 		{
-			case Format::RG_32_Float:		return DXGI_FORMAT_R32G32_FLOAT;
-			case Format::RGB_32_Float:		return DXGI_FORMAT_R32G32B32_FLOAT; 
-			case Format::RGBA_32_Float:		return DXGI_FORMAT_R32G32B32A32_FLOAT;
-			case Format::Depth24_Stencil8:	return DXGI_FORMAT_D24_UNORM_S8_UINT;
-			case Format::RGBA_8_Unorm:		return DXGI_FORMAT_R8G8B8A8_UNORM;
-			case Format::RGBA_16_Float:		return DXGI_FORMAT_R16G16B16A16_FLOAT;
-			case Format::RGBA_8_Snorm:		return DXGI_FORMAT_R8G8B8A8_SNORM;
-			case Format::R_16_Uint:			return DXGI_FORMAT_R16_UINT;
-			case Format::R_32_Uint:			return DXGI_FORMAT_R32_UINT;
-			case Format::R_8_Unorm:			return DXGI_FORMAT_R8_UNORM;
-			case Format::R_32_Float:		return DXGI_FORMAT_R32_FLOAT;
+			case Format::RG_32_Float:			return DXGI_FORMAT_R32G32_FLOAT;
+			case Format::RGB_32_Float:			return DXGI_FORMAT_R32G32B32_FLOAT; 
+			case Format::RGBA_32_Float:			return DXGI_FORMAT_R32G32B32A32_FLOAT;
+			case Format::Depth24_Stencil8:		return DXGI_FORMAT_D24_UNORM_S8_UINT;
+			case Format::RGBA_8_Unorm:			return DXGI_FORMAT_R8G8B8A8_UNORM;
+			case Format::RGBA_16_Float:			return DXGI_FORMAT_R16G16B16A16_FLOAT;
+			case Format::RGBA_8_Snorm:			return DXGI_FORMAT_R8G8B8A8_SNORM;
+			case Format::R_16_Uint:				return DXGI_FORMAT_R16_UINT;
+			case Format::R_32_Uint:				return DXGI_FORMAT_R32_UINT;
+			case Format::R_8_Unorm:				return DXGI_FORMAT_R8_UNORM;
+			case Format::R_32_Float:			return DXGI_FORMAT_R32_FLOAT;
+			case Format::R_11_G_11_B_10_Float:	return DXGI_FORMAT_R11G11B10_FLOAT;
 			case Format::Unknown:
-			default:						return DXGI_FORMAT_UNKNOWN;
+			default:							return DXGI_FORMAT_UNKNOWN;
 		}
 	}
 
@@ -557,11 +560,13 @@ namespace Graphics { namespace DX12 {
 			std::cout << "Something weird is happening! \n";
 		}
 
-		auto& curTexEntry = mTextures[mCurTexture];
+		TextureEntry& curTexEntry = mTextures[mCurTexture];
+		bool isUav = false;
 
 		D3D12_RESOURCE_FLAGS dxflags = D3D12_RESOURCE_FLAG_NONE;
 		if ((flags & UnorderedAccess) == UnorderedAccess)
 		{
+			isUav = true;
 			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 		}
 		if ((flags & RenderTarget) == RenderTarget)
@@ -585,7 +590,7 @@ namespace Graphics { namespace DX12 {
 		);
 		CD3DX12_HEAP_PROPERTIES heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 		auto& state = curTexEntry.State;
-		state = TEXTURE_READ;
+		state = isUav ? UNORDERED_ACCESS : TEXTURE_READ;
 		mDevice->CreateCommittedResource
 		(
 			&heapP, D3D12_HEAP_FLAG_NONE,
@@ -997,6 +1002,7 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetComputePipeline(const ComputePipeline & pipeline)
 	{
+		mCurrentIsCompute = true;
 		const auto& pso = mComputePipelines[pipeline.Handle];
 		if (pipeline.Handle != InvalidComputePipeline.Handle && pso != nullptr)
 		{
@@ -1007,6 +1013,7 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetGraphicsPipeline(const GraphicsPipeline& pipeline)
 	{
+		mCurrentIsCompute = false;
 		GraphicsPipelineEntry& psoEntry = mGraphicsPipelines[pipeline.Handle];
 		if (pipeline.Handle != InvalidGraphicsPipeline.Handle && psoEntry.Pso != nullptr)
 		{
@@ -1111,11 +1118,18 @@ namespace Graphics { namespace DX12 {
 
 				bufferEntry.CopyCount++;
 			}
-			mDefaultSurface.CmdContext->SetGraphicsRootConstantBufferView(slot, bufferEntry.Buffer->GetGPUVirtualAddress());
+			if (mCurrentIsCompute)
+			{
+				mDefaultSurface.CmdContext->SetComputeRootConstantBufferView(slot, bufferEntry.Buffer->GetGPUVirtualAddress());
+			}
+			else
+			{
+				mDefaultSurface.CmdContext->SetGraphicsRootConstantBufferView(slot, bufferEntry.Buffer->GetGPUVirtualAddress());
+			}
 		}
 	}
 
-	void DX12GraphicsInterface::SetTexture(const TextureHandle& texture, uint8_t slot)
+	void DX12GraphicsInterface::SetResource(const TextureHandle& texture, uint8_t slot)
 	{
 		if (!CHECK_TEXTURE(texture))
 		{
@@ -1134,6 +1148,28 @@ namespace Graphics { namespace DX12 {
 			auto slotHandle = mFrameHeap[idx]->GetCPU();
 			slotHandle.Offset(slot,mFrameHeap[idx]->GetIncrementSize());
 			mDevice->CreateShaderResourceView(res, nullptr, slotHandle);
+		}
+	}
+
+	void DX12GraphicsInterface::SetRWResource(const TextureHandle& texture, uint8_t slot)
+	{
+		if (!CHECK_TEXTURE(texture))
+		{
+			std::cout << "Trying to set an invalid texture! \n";
+			return;
+		}
+		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
+		const auto res = mTextures[texture.Handle].Resource;
+		if (texture.Handle != InvalidTexture.Handle && res != nullptr)
+		{
+			if (mTextures[texture.Handle].State != (UNORDERED_ACCESS))
+			{
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, mTextures[texture.Handle].State, UNORDERED_ACCESS));
+			}
+			mTextures[texture.Handle].State = UNORDERED_ACCESS;
+			auto slotHandle = mFrameHeap[idx]->GetCPU();
+			slotHandle.Offset(slot + NUM_SRVS, mFrameHeap[idx]->GetIncrementSize());
+			mDevice->CreateUnorderedAccessView(res,nullptr, nullptr, slotHandle);
 		}
 	}
 
@@ -1245,5 +1281,10 @@ namespace Graphics { namespace DX12 {
 	void DX12GraphicsInterface::SetBlendFactors(float blend[4])
 	{
 		mDefaultSurface.CmdContext->OMSetBlendFactor(blend);
+	}
+
+	glm::vec2 DX12GraphicsInterface::GetCurrentRenderingSize()
+	{
+		return glm::vec2(mDefaultSurface.Window->GetWidth(), mDefaultSurface.Window->GetHeight());
 	}
 }}
