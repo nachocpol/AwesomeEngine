@@ -72,24 +72,24 @@ namespace Graphics
 		mCloudsData.ViewPosition = glm::vec4(camPos,0.0f);
 		mCloudsData.InvViewProj = iViewProj;
 		mCloudsData.SunDirection = glm::vec4(SunDirection, 0.0f);
-		//mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData),&mCloudsData);
-		//mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
-		//mGraphicsInterface->SetResource(mCloudCoverage, 0);
-		//mGraphicsInterface->SetResource(mBaseNoise, 1);
-		//mGraphicsInterface->SetResource(mDetailNoise, 2);
-		//mGraphicsInterface->Draw(6, 0);
+		mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData),&mCloudsData);
+		mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
+		mGraphicsInterface->SetResource(mCloudCoverage, 0);
+		mGraphicsInterface->SetResource(mBaseNoise, 1);
+		mGraphicsInterface->SetResource(mDetailNoise, 2);
+		mGraphicsInterface->Draw(6, 0);
 
 		{
-			mGraphicsInterface->SetComputePipeline(mCloudsPipelineCompute);
-			mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData), &mCloudsData);
-			mGraphicsInterface->SetResource(mCloudCoverage, 0);
-			mGraphicsInterface->SetResource(mBaseNoise, 1);
-			mGraphicsInterface->SetResource(mDetailNoise, 2);
-			mGraphicsInterface->SetRWResource(mCloudsIntermediate, 0);
-			int tx = ceil((float)mCurRenderSize.x / (float)32);
-			int ty = ceil((float)mCurRenderSize.y / (float)32);
-			int tz = 1;
-			mGraphicsInterface->Dispatch(ceil(tx),ty,tz);
+			//mGraphicsInterface->SetComputePipeline(mCloudsPipelineCompute);
+			//mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData), &mCloudsData);
+			//mGraphicsInterface->SetResource(mCloudCoverage, 0);
+			//mGraphicsInterface->SetResource(mBaseNoise, 1);
+			//mGraphicsInterface->SetResource(mDetailNoise, 2);
+			//mGraphicsInterface->SetRWResource(mCloudsIntermediate, 0);
+			//int tx = ceil((float)mCurRenderSize.x / (float)32);
+			//int ty = ceil((float)mCurRenderSize.y / (float)32);
+			//int tz = 1;
+			//mGraphicsInterface->Dispatch(ceil(tx),ty,tz);
 		}
 	}
 
@@ -116,7 +116,7 @@ namespace Graphics
 		}
 
 		//ImGui::Text("Base value noise");
-		//ImGui::Image((ImTextureID)mCloudCoverage.Handle, ImVec2(512, 512));
+		//ImGui::Image((ImTextureID)mTestWorley.Handle, ImVec2(512, 512));
 		//ImGui::Separator();
 		ImGui::End();
 	}
@@ -168,6 +168,10 @@ namespace Graphics
 			ValueNoise3D noise3D;
 			noise3D.Initialize(numNoiseVals, numNoiseVals, numNoiseVals);
 
+			int numNoiseValsWor = 16;
+			WorleyNoise3D noise3DWorley;
+			noise3DWorley.Initialize(numNoiseValsWor, numNoiseValsWor, numNoiseValsWor);
+
 			const int tw = 64;
 			const int th = 64;
 			const int td = 64;
@@ -189,9 +193,11 @@ namespace Graphics
 						unsigned char g = unsigned char(cv * 255.0f);
 
 						float n = noise3D.Fbm(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals, 5, 2.2f, 0.55f);
+						//float wn = noise3DWorley.Fbm(cu, cv, cw, 5, 2.2f, 0.55f) * 0.25f;
+						float mixedNoise = (n);
 
 						size_t slizeOff = (slizeSize * w);
-						texData[slizeOff + (u + v * tw)] = TexelR{ unsigned char(n * 255.0f) };
+						texData[slizeOff + (u + v * tw)] = TexelR{ unsigned char(mixedNoise * 255.0f) };
 					}
 				}
 			}
@@ -202,19 +208,31 @@ namespace Graphics
 
 		// 3D detail noise
 		{
-			int numNoiseVals0 = 16;
+#if 0
+			int numNoiseVals0 = 8;
 			ValueNoise3D noise3D0;
 			noise3D0.Initialize(numNoiseVals0, numNoiseVals0, numNoiseVals0);
-			int numNoiseVals1 = 32;
+			int numNoiseVals1 = 16;
 			ValueNoise3D noise3D1;
 			noise3D1.Initialize(numNoiseVals1, numNoiseVals1, numNoiseVals1);
-			int numNoiseVals2 = 64;
+			int numNoiseVals2 = 32;
 			ValueNoise3D noise3D2;
 			noise3D2.Initialize(numNoiseVals2, numNoiseVals2, numNoiseVals2);
+#else
+			int numNoiseVals0 = 8;
+			WorleyNoise3D noise3D0;
+			noise3D0.Initialize(numNoiseVals0, numNoiseVals0, numNoiseVals0);
+			int numNoiseVals1 = 16;
+			WorleyNoise3D noise3D1;
+			noise3D1.Initialize(numNoiseVals1, numNoiseVals1, numNoiseVals1);
+			int numNoiseVals2 = 32;
+			WorleyNoise3D noise3D2;
+			noise3D2.Initialize(numNoiseVals2, numNoiseVals2, numNoiseVals2);
+#endif
 
-			const int tw = 128;
-			const int th = 128;
-			const int td = 128;
+			const int tw = 64;
+			const int th = 64;
+			const int td = 64;
 			TexelR11G11B10* texData = new TexelR11G11B10[tw * th * td];
 			// Total size of each slice
 			uint32_t slizeSize = tw * th;
@@ -229,9 +247,15 @@ namespace Graphics
 						float cv = float(v) / float(th);
 						float cw = float(w) / float(td);
 
+#if 0
 						float n0 = noise3D0.Fbm(cu * float(numNoiseVals0), cv * float(numNoiseVals0), cw * float(numNoiseVals0), 4, 2.2f, 0.55f);
 						float n1 = noise3D1.Fbm(cu * float(numNoiseVals1), cv * float(numNoiseVals1), cw * float(numNoiseVals1), 5, 2.2f, 0.55f);
 						float n2 = noise3D2.Fbm(cu * float(numNoiseVals2), cv * float(numNoiseVals2), cw * float(numNoiseVals2), 5, 2.2f, 0.55f);
+#else
+						float n0 = noise3D0.Fbm(cu, cv, cw, 4, 2.2f, 0.55f);
+						float n1 = noise3D1.Fbm(cu, cv, cw, 5, 2.2f, 0.55f);
+						float n2 = noise3D2.Fbm(cu, cv, cw, 5, 2.2f, 0.55f);
+#endif
 
 						size_t slizeOff = (slizeSize * w);
 

@@ -83,11 +83,11 @@ float GetCloudDensity(float3 p)
     
     // Detail noise
     // Comes packed as R11G11B10
-    p.z -= Time * 0.01f;
-    float3 detailNoisePk = DetailNoise.SampleLevel(LinearWrapSampler, p * DetailNoiseScale * 5.0f, 0).xyz;
+    // p.z -= Time * 0.01f;
+    float3 detailNoisePk = DetailNoise.SampleLevel(LinearWrapSampler, p * DetailNoiseScale * 10.0f, 0).xyz;
     float detailNoise = (detailNoisePk.x * 0.65f) + (detailNoisePk.y * 0.25f) + (detailNoisePk.z * 0.15f);
 
-    //return saturate(detailNoise - 0.5f);
+    //return baseShape;
     return saturate(baseShape - detailNoise * 0.25f);
 }
 

@@ -22,6 +22,11 @@ glm::vec2 rand2(glm::vec2 p)
 	return glm::fract(glm::sin(glm::vec2(glm::dot(p, glm::vec2(127.1f, 311.7f)), glm::dot(p, glm::vec2(269.5f, 183.3f))))*43758.5453f);
 }
 
+glm::vec3 rand3(glm::vec3 p)
+{
+	return glm::fract(glm::sin(glm::vec3(glm::dot(p, glm::vec3(127.1f, 311.7f,63.53f)), glm::dot(p, glm::vec3(269.5f, 183.3f,91.1f)), glm::dot(p, glm::vec3(169.5f, 283.3f, 191.1f))))*43758.5453f);
+}
+
 //////////////////////////////////
 // Value Noise 1D/////////////////
 Graphics::ValueNoise1D::ValueNoise1D():
@@ -117,7 +122,7 @@ float Graphics::ValueNoise2D::Sample(float x, float y)
 	return smoothstep(b0, b1, y - float(iy));
 }
 
-float Graphics::ValueNoise2D::Fbm(float x, float y, int octaves, float lacunariry /*= 2.0f*/, float gain /*= 0.5f*/)
+float Graphics::ValueNoise2D::Fbm(float x, float y, int octaves, float lacunarity /*= 2.0f*/, float gain /*= 0.5f*/)
 {
 	float sum = 0.0f;
 	float a = 1.0f;
@@ -127,7 +132,7 @@ float Graphics::ValueNoise2D::Fbm(float x, float y, int octaves, float lacunarir
 	{
 		tot += a;
 		sum += Sample(x * f, y * f) * a;
-		f *= lacunariry;
+		f *= lacunarity;
 		a *= gain;
 	}
 	float ret = sum / tot;
@@ -165,7 +170,6 @@ void Graphics::ValueNoise3D::Initialize(uint32_t width, uint32_t height, uint32_
 	}
 }
 
-#pragma  optimize("",off)
 float Graphics::ValueNoise3D::Sample(float x, float y,float z)
 {
 	/*
@@ -213,7 +217,7 @@ float Graphics::ValueNoise3D::Sample(float x, float y,float z)
 	return res;
 }
 
-float Graphics::ValueNoise3D::Fbm(float x, float y,float z, int octaves, float lacunariry /*= 2.0f*/, float gain /*= 0.5f*/)
+float Graphics::ValueNoise3D::Fbm(float x, float y,float z, int octaves, float lacunarity /*= 2.0f*/, float gain /*= 0.5f*/)
 {
 	float sum = 0.0f;
 	float a = 1.0f;
@@ -223,7 +227,7 @@ float Graphics::ValueNoise3D::Fbm(float x, float y,float z, int octaves, float l
 	{
 		tot += a;
 		sum += Sample(x * f, y * f,z * f) * a;
-		f *= lacunariry;
+		f *= lacunarity;
 		a *= gain;
 	}
 	float ret = sum / tot;
@@ -311,7 +315,7 @@ float Graphics::GradientNoise2D::Sample(float x, float y)
 	return smoothstep(b0, b1, ty) * 0.5f + 0.5f;
 }
 
-float Graphics::GradientNoise2D::Fbm(float x, float y, int octaves, float lacunariry, float gain)
+float Graphics::GradientNoise2D::Fbm(float x, float y, int octaves, float lacunarity, float gain)
 {
 	float sum = 0.0f;
 	float a = 1.0f;
@@ -321,7 +325,7 @@ float Graphics::GradientNoise2D::Fbm(float x, float y, int octaves, float lacuna
 	{
 		tot += a;
 		sum += Sample(x * f, y * f) * a;
-		f *= lacunariry;
+		f *= lacunarity;
 		a *= gain;
 	}
 	float ret = sum / tot;
@@ -438,7 +442,7 @@ float Graphics::GradientNoise3D::Sample(float x, float y, float z)
 	return smoothstep(b0,b1,tz) * 0.5f + 0.5f;
 }
 
-float Graphics::GradientNoise3D::Fbm(float x, float y,float z, int octaves, float lacunariry, float gain)
+float Graphics::GradientNoise3D::Fbm(float x, float y,float z, int octaves, float lacunarity, float gain)
 {
 	float sum = 0.0f;
 	float a = 1.0f;
@@ -448,7 +452,7 @@ float Graphics::GradientNoise3D::Fbm(float x, float y,float z, int octaves, floa
 	{
 		tot += a;
 		sum += Sample(x * f, y * f, z * f) * a;
-		f *= lacunariry;
+		f *= lacunarity;
 		a *= gain;
 	}
 	float ret = sum / tot;
@@ -486,22 +490,119 @@ float Graphics::WorleyNoise2D::Sample(float x, float y)
 	float fx = x - float(ix);
 	float fy = y - float(iy);
 
-	float d = 9999999.0f;
+	float d = 1.0f;
 	for (int i = -1; i <= 1; i++)
 	{
 		for (int j = -1; j <= 1; j++)
 		{
-			int tmpi = i == -1 ? mWidth - 1 : i;
-			int tmpy = y == -1 ? mHeight - 1 : y;
-			glm::vec2 p = glm::vec2((ix + i) % mWidth, (iy + j) % mHeight);
-			glm::vec2 feature = rand2(p);
-			glm::vec2 diff = p - glm::vec2(fx, fy);
-			float dist = glm::length(diff);
-			d = glm::min(d, dist);
+			glm::ivec2 neighbor(j, i);
+			glm::ivec2 point = glm::ivec2(ix, iy) + neighbor;
+			// Tile it
+			point.x = point.x >= 0 ? point.x % mWidth : mWidth + point.x;
+			point.y = point.y >= 0 ? point.y % mHeight : mHeight + point.y;
+			
+			glm::vec2 feature = rand2(point);
+
+			glm::vec2 dif = glm::vec2(neighbor) + feature - glm::vec2(fx, fy);
+			d = glm::min(d, glm::length(dif));
 		}
 	}
 
 	return d;
 }
 
+float Graphics::WorleyNoise2D::Fbm(float x, float y, int octaves, float lacunarity /*=2.0f*/, float gain /*=0.5f*/)
+{
+	float sum = 0.0f;
+	float a = 1.0f;
+	float f = 1.0f;
+	float tot = 0.0f;
+	for (int i = 0; i < octaves; i++)
+	{
+		tot += a;
+		sum += Sample(x * f, y * f) * a;
+		f *= lacunarity;
+		a *= gain;
+	}
+	float ret = sum / tot;
+	assert(ret >= 0.0f && ret <= 1.0f);
+	return ret;
+}
 
+//////////////////////////////////
+// Worley Noise 3D//////////////
+Graphics::WorleyNoise3D::WorleyNoise3D():
+	mWidth(0),
+	mHeight(0),
+	mDepth(0)
+{
+}
+
+Graphics::WorleyNoise3D::~WorleyNoise3D()
+{
+}
+
+void Graphics::WorleyNoise3D::Initialize(uint32_t width, uint32_t height, uint32_t depth, uint32_t seed)
+{
+	mWidth = width;
+	mHeight = height;
+	mDepth = depth;
+}
+
+float Graphics::WorleyNoise3D::Sample(float x, float y, float z)
+{
+	// Scale it 
+	x *= (float)mWidth;
+	y *= (float)mHeight;
+	z *= (float)mDepth;
+
+	int ix = floor(x);
+	int iy = floor(y);
+	int iz = floor(z);
+
+	float fx = x - float(ix);
+	float fy = y - float(iy);
+	float fz = z - float(iz);
+
+	float d = 1.0f;
+	for (int i = -1; i <= 1; i++)
+	{
+		for (int j = -1; j <= 1; j++)
+		{
+			for (int k = -1; k <= 1; k++)
+			{
+				glm::ivec3 neighbor(k,j,i);
+				glm::ivec3 point = glm::ivec3(ix, iy, iz) + neighbor;
+				// Tile it
+				point.x = point.x >= 0 ? point.x % mWidth : mWidth + point.x;
+				point.y = point.y >= 0 ? point.y % mHeight : mHeight + point.y;
+				point.z = point.z >= 0 ? point.z % mDepth : mDepth + point.z;
+
+				glm::vec3 feature = rand3(point);
+			
+				glm::vec3 dif = glm::vec3(neighbor) + feature - glm::vec3(fx, fy, fz);
+				d = glm::min(d, glm::length(dif));
+			}
+		}
+	}
+
+	return d;
+}
+
+float Graphics::WorleyNoise3D::Fbm(float x, float y, float z, int octaves, float lacunarity, float gain)
+{
+	float sum = 0.0f;
+	float a = 1.0f;
+	float f = 1.0f;
+	float tot = 0.0f;
+	for (int i = 0; i < octaves; i++)
+	{
+		tot += a;
+		sum += Sample(x * f, y * f, z * f) * a;
+		f *= lacunarity;
+		a *= gain;
+	}
+	float ret = sum / tot;
+	assert(ret >= 0.0f && ret <= 1.0f);
+	return ret;
+}

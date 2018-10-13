@@ -43,6 +43,8 @@ namespace Graphics
 			float Time = 0.0f;
 		}mCloudsData;
 		BufferHandle mCloudsDataHandle;
+
+		TextureHandle mTestWorley;
 	};
 	
 }
