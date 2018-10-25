@@ -31,6 +31,15 @@ namespace Graphics
 		IndexBuffer = 1,
 		ConstantBuffer = 2
 	};
+
+	struct GPUQueryType
+	{
+		enum T
+		{
+			Timestamp
+		};
+	};
+
 	enum CPUAccess
 	{
 		Read = 0,
@@ -38,6 +47,7 @@ namespace Graphics
 		ReadWrite = 2,
 		None = 3
 	};
+
 	enum Format
 	{
 		Unknown = 0,
@@ -54,11 +64,13 @@ namespace Graphics
 		R_32_Float = 11,
 		R_11_G_11_B_10_Float = 12
 	};
+
 	enum Topology
 	{
 		InvalidTopology = 0,
 		TriangleList = 1
 	};
+
 	enum TextureFlags
 	{
 		TextureFlagNone = 0,
@@ -66,6 +78,7 @@ namespace Graphics
 		DepthStencil = 1 << 2,
 		UnorderedAccess = 1 << 3
 	};
+
 	enum DepthFunc
 	{
 		Always = 0,
@@ -74,6 +87,7 @@ namespace Graphics
 		LessEqual = 3,
 		GreatEqual = 4
 	};
+
 	enum BlendOperation
 	{
 		BlendOpAdd = 0,
@@ -81,6 +95,7 @@ namespace Graphics
 		BlendOpMin = 2,
 		BlendOpMax = 3
 	};
+
 	enum BlendFunction
 	{
 		BlendZero = 0,
@@ -100,15 +115,23 @@ namespace Graphics
 	{
 		uint64_t Handle;
 	};
+
 	struct TextureHandle
 	{
 		uint64_t Handle;
 	};
+
 	struct GraphicsPipeline
 	{
 		uint64_t Handle;
 	};
+
 	struct ComputePipeline
+	{
+		uint64_t Handle;
+	};
+
+	struct GPUQueryHandle
 	{
 		uint64_t Handle;
 	};
@@ -128,7 +151,7 @@ namespace Graphics
 		std::string ShaderPath;
 		std::string ShaderEntryPoint;
 	};
-#pragma optimize("",off)
+
 	struct VertexInputDescription
 	{
 		VertexInputDescription():
@@ -152,6 +175,7 @@ namespace Graphics
 		}*Elements;
 		bool NeedRelease;
 	};
+
 	struct GraphicsPipelineDescription
 	{
 		GraphicsPipelineDescription()
@@ -182,10 +206,12 @@ namespace Graphics
 			BlendOperation BlendOpAlpha;
 		}BlendTargets[8];
 	};
+
 	struct ComputePipelineDescription
 	{
 		ShaderDescription ComputeShader;
 	};
+
 	struct BoundingSphere
 	{
 		BoundingSphere() :Center(0.0f), Radius(-1.0f) {}
@@ -193,6 +219,7 @@ namespace Graphics
 		glm::vec3 Center;
 		float Radius;
 	};
+
 	struct Mesh
 	{
 		BufferHandle VertexBuffer;
@@ -222,6 +249,7 @@ namespace Graphics
 		virtual BufferHandle CreateBuffer(BufferType type, CPUAccess cpuAccess, uint64_t size,void* data = nullptr) = 0;
 		virtual TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips,uint32_t layers,Format format,TextureFlags flags = TextureFlagNone, void* data = nullptr) = 0;
 		virtual TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr) = 0;
+		virtual GPUQueryHandle CreateQuery(const GPUQueryType::T& type) = 0;
 		virtual GraphicsPipeline CreateGraphicsPipeline(const GraphicsPipelineDescription& desc) = 0;
 		virtual ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc) = 0;
 		virtual void ReloadGraphicsPipeline(GraphicsPipeline& pipeline) = 0;
@@ -251,5 +279,7 @@ namespace Graphics
 		virtual void UnMapBuffer(BufferHandle buffer, bool writeOnly = true) = 0;
 		virtual void SetBlendFactors(float blend[4]) {}
 		virtual glm::vec2 GetCurrentRenderingSize() = 0;
+		virtual void BeginQuery(const GPUQueryHandle& query) = 0;
+		virtual void EndQuery(const GPUQueryHandle& query) = 0;
 	};
 }

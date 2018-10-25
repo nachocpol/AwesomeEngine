@@ -56,6 +56,11 @@ namespace Graphics{ namespace DX12
 		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencil;
 	};
 
+	struct QueryEntry
+	{
+		GPUQueryType Type;
+	};
+
 	struct BufferEntry
 	{
 		BufferEntry() :
@@ -71,8 +76,7 @@ namespace Graphics{ namespace DX12
 		BufferType Type;
 		CPUAccess Access;
 		uint64_t LastFrame;
-		// Used to track how many times we bind a Constant Buffer
-		uint64_t CopyCount; 
+		uint64_t CopyCount; // Used to track how many times we bind a Constant Buffer 
 	};
 	
 	struct GraphicsPipelineEntry
@@ -99,6 +103,7 @@ namespace Graphics{ namespace DX12
 		BufferHandle CreateBuffer(BufferType type, CPUAccess cpuAccess, uint64_t size, void* data = nullptr)final override;
 		TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
 		TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
+		GPUQueryHandle CreateQuery(const GPUQueryType::T& type)final override;
 		GraphicsPipeline CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)final override;
 		ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc)final override;
 		void ReloadGraphicsPipeline(GraphicsPipeline& pipeline)final override;
@@ -128,6 +133,8 @@ namespace Graphics{ namespace DX12
 		void UnMapBuffer(BufferHandle buffer, bool writeOnly = true)final override;
 		void SetBlendFactors(float blend[4])override;;
 		glm::vec2 GetCurrentRenderingSize()final override;
+		void BeginQuery(const GPUQueryHandle& query)final override;
+		void EndQuery(const GPUQueryHandle& query)final override;
 
 	private:
 		void InitSurface(DisplaySurface* surface);
@@ -151,6 +158,10 @@ namespace Graphics{ namespace DX12
 		TextureEntry mTextures[MAX_TEXTURES];
 		uint64_t mCurTexture;
 
+		// Query pool [time stamp, .... ]
+		QueryEntry mQueries[MAX_TIMESTAMP_QUERIES];
+		uint64_t mCurTimeStampQuery;
+
 		// PSO pools
 		GraphicsPipelineEntry mGraphicsPipelines[MAX_GRAPHICS_PIPELINES];
 		uint64_t mCurGraphicsPipeline;
@@ -164,6 +175,8 @@ namespace Graphics{ namespace DX12
 		// Storage heaps
 		DX12Heap* mRenderTargetHeap;
 		DX12Heap* mDepthStencilHeap;
+
+		ID3D12QueryHeap* mTimeStampsHeap;
 
 		ID3D12RootSignature* mGraphicsRootSignature;
 

@@ -10,6 +10,7 @@ namespace Graphics { namespace DX12 {
 		mDevice(nullptr),
 		mCurBuffer(0),
 		mCurTexture(0),
+		mCurTimeStampQuery(0),
 		mGraphicsRootSignature(nullptr),
 		mCurGraphicsPipeline(0),
 		mCurComputePipeline(0),
@@ -17,10 +18,12 @@ namespace Graphics { namespace DX12 {
 		mFrame(0),
 		mCurBackBuffer(0),
 		mNumDrawCalls(0),
-		mReleaseManager(this)
+		mReleaseManager(this),
+		mTimeStampsHeap(nullptr)
 	{
 		memset(mBuffers, 0, sizeof(mBuffers));
 		memset(mTextures, 0, sizeof(mTextures));
+		memset(mQueries, 0, sizeof(mQueries));
 		memset(mGraphicsPipelines, 0, sizeof(mGraphicsPipelines));
 		memset(mComputePipelines, 0, sizeof(mComputePipelines));
 	}
@@ -120,6 +123,13 @@ namespace Graphics { namespace DX12 {
 		InitSurface(&mDefaultSurface);
 
 		InitRootSignature();
+
+		// Time stamp heap
+		D3D12_QUERY_HEAP_DESC tsHeapDesc = {};
+		tsHeapDesc.Count = MAX_TIMESTAMP_QUERIES;
+		tsHeapDesc.NodeMask = 0;
+		tsHeapDesc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
+		mDevice->CreateQueryHeap(&tsHeapDesc, IID_PPV_ARGS(&mTimeStampsHeap));
 
 		return true;
 	}
@@ -767,6 +777,24 @@ namespace Graphics { namespace DX12 {
 		return handle;
 	}
 
+	GPUQueryHandle DX12GraphicsInterface::CreateQuery(const GPUQueryType::T& type)
+	{
+		GPUQueryHandle handle = {};
+		switch (type)
+		{	
+			case GPUQueryType::Timestamp: 
+			{
+				handle.Handle = mCurTimeStampQuery++;
+				mQueries[handle.Handle].Type = type;
+				return handle;
+			}
+			default:
+			{
+				return handle;
+			}
+		}
+	}
+
 	GraphicsPipeline DX12GraphicsInterface::CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)
 	{
 		// Build the input layout:
@@ -1286,5 +1314,33 @@ namespace Graphics { namespace DX12 {
 	glm::vec2 DX12GraphicsInterface::GetCurrentRenderingSize()
 	{
 		return glm::vec2(mDefaultSurface.Window->GetWidth(), mDefaultSurface.Window->GetHeight());
+	}
+
+	void DX12GraphicsInterface::BeginQuery(const GPUQueryHandle& query)
+	{
+		QueryEntry& entry = mQueries[query.Handle];
+
+		switch (entry.Type)
+		{
+			case GPUQueryType::Timestamp:
+			{
+				mDefaultSurface.CmdContext->EndEvent(mTimeStampsHeap, D3D12_QUERY_HEAP_TYPE_TIMESTAMP, query.Handle);
+				return;
+			}
+		}
+	}
+
+	void DX12GraphicsInterface::EndQuery(const GPUQueryHandle& query)
+	{
+		QueryEntry& entry = mQueries[query.Handle];
+
+		switch (entry.Type)
+		{
+			case GPUQueryType::Timestamp:
+			{
+				mDefaultSurface.CmdContext->EndEvent(mTimeStampsHeap, D3D12_QUERY_HEAP_TYPE_TIMESTAMP, query.Handle + 1);
+				return;
+			}
+		}
 	}
 }}
