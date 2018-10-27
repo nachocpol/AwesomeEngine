@@ -279,7 +279,7 @@ namespace Graphics
 		virtual void UnMapBuffer(BufferHandle buffer, bool writeOnly = true) = 0;
 		virtual void SetBlendFactors(float blend[4]) {}
 		virtual glm::vec2 GetCurrentRenderingSize() = 0;
-		virtual void BeginQuery(const GPUQueryHandle& query) = 0;
-		virtual void EndQuery(const GPUQueryHandle& query) = 0;
+		virtual void BeginQuery(const GPUQueryHandle& query, const GPUQueryType::T& type) = 0;
+		virtual void EndQuery(const GPUQueryHandle& query, const GPUQueryType::T& type) = 0;
 	};
 }

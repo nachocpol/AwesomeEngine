@@ -9,7 +9,6 @@ namespace Graphics { namespace DX12 {
 	DX12GraphicsInterface::DX12GraphicsInterface():
 		mDevice(nullptr),
 		mCurBuffer(0),
-		mCurTimeStampQuery(0),
 		mGraphicsRootSignature(nullptr),
 		mCurGraphicsPipeline(0),
 		mCurComputePipeline(0),
@@ -21,7 +20,6 @@ namespace Graphics { namespace DX12 {
 		mTimeStampsHeap(nullptr)
 	{
 		memset(mBuffers, 0, sizeof(mBuffers));
-		memset(mQueries, 0, sizeof(mQueries));
 		memset(mGraphicsPipelines, 0, sizeof(mGraphicsPipelines));
 		memset(mComputePipelines, 0, sizeof(mComputePipelines));
 	}
@@ -121,10 +119,10 @@ namespace Graphics { namespace DX12 {
 		InitSurface(&mDefaultSurface);
 
 		InitRootSignature();
-
+		
 		// Time stamp heap
 		D3D12_QUERY_HEAP_DESC tsHeapDesc = {};
-		tsHeapDesc.Count = MAX_TIMESTAMP_QUERIES;
+		tsHeapDesc.Count = 4096;//uint max?
 		tsHeapDesc.NodeMask = 0;
 		tsHeapDesc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
 		mDevice->CreateQueryHeap(&tsHeapDesc, IID_PPV_ARGS(&mTimeStampsHeap));
@@ -565,7 +563,7 @@ namespace Graphics { namespace DX12 {
 		}
 
 		TextureHandle handle;
-		TextureEntry& curTexEntry = mTextures.GetFreeEntry(handle.Handle);
+		TextureEntry& curTexEntry = mTexturesPool.GetFreeEntry(handle.Handle);
 
 		bool isUav = false;
 
@@ -672,7 +670,7 @@ namespace Graphics { namespace DX12 {
 		}
 
 		TextureHandle handle;
-		TextureEntry& curTexEntry = mTextures.GetFreeEntry(handle.Handle);
+		TextureEntry& curTexEntry = mTexturesPool.GetFreeEntry(handle.Handle);
 
 		D3D12_RESOURCE_FLAGS dxflags = D3D12_RESOURCE_FLAG_NONE;
 		if ((flags & UnorderedAccess) == UnorderedAccess)
@@ -769,7 +767,21 @@ namespace Graphics { namespace DX12 {
 
 	GPUQueryHandle DX12GraphicsInterface::CreateQuery(const GPUQueryType::T& type)
 	{
-		return GPUQueryHandle{};
+		GPUQueryHandle handle;
+		switch (type)
+		{
+			case GPUQueryType::Timestamp:
+			{
+				QueryEntry& entry = mTimeStampQueriesPool.GetEntry(handle.Handle);
+				entry.Type = type;
+				entry.HeapIdx = handle.Handle;
+				mTimeStampQueriesPool.GetEntry(entry.EndHeapIdx);
+				break;
+			}
+			default:break;
+		}
+
+		return handle;
 	}
 
 	GraphicsPipeline DX12GraphicsInterface::CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)
@@ -916,8 +928,8 @@ namespace Graphics { namespace DX12 {
 			assert(false);
 			return;
 		}
-		mReleaseManager.ReleaseItem(mTextures.GetEntry(handle.Handle).Resource);
-		mReleaseManager.ReleaseItem(mTextures.GetEntry(handle.Handle).Resource);
+		mReleaseManager.ReleaseItem(mTexturesPool.GetEntry(handle.Handle).Resource);
+		mReleaseManager.ReleaseItem(mTexturesPool.GetEntry(handle.Handle).Resource);
 
 		handle.Handle = InvalidTexture.Handle;
 	}
@@ -1142,7 +1154,7 @@ namespace Graphics { namespace DX12 {
 			return;
 		}
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
-		TextureEntry& entry = mTextures.GetEntry(texture.Handle);
+		TextureEntry& entry = mTexturesPool.GetEntry(texture.Handle);
 		ID3D12Resource* res = entry.Resource;
 		if (texture.Handle != InvalidTexture.Handle && res != nullptr)
 		{
@@ -1165,7 +1177,7 @@ namespace Graphics { namespace DX12 {
 			return;
 		}
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
-		TextureEntry& entry = mTextures.GetEntry(texture.Handle);
+		TextureEntry& entry = mTexturesPool.GetEntry(texture.Handle);
 		ID3D12Resource* res = entry.Resource;
 		if (texture.Handle != InvalidTexture.Handle && res != nullptr)
 		{
@@ -1185,7 +1197,7 @@ namespace Graphics { namespace DX12 {
 		D3D12_CPU_DESCRIPTOR_HANDLE colHandles[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
 		for (int i = 0; i < num; i++)
 		{
-			TextureEntry& curTex = mTextures.GetEntry(colorTargets[i].Handle);
+			TextureEntry& curTex = mTexturesPool.GetEntry(colorTargets[i].Handle);
 			if (curTex.State != D3D12_RESOURCE_STATE_RENDER_TARGET)
 			{
 				mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTex.Resource, curTex.State, D3D12_RESOURCE_STATE_RENDER_TARGET));
@@ -1196,7 +1208,7 @@ namespace Graphics { namespace DX12 {
 		D3D12_CPU_DESCRIPTOR_HANDLE* depthHandle = nullptr;
 		if (depth)
 		{
-			TextureEntry& curTex = mTextures.GetEntry(depth->Handle);
+			TextureEntry& curTex = mTexturesPool.GetEntry(depth->Handle);
 			if (curTex.State != D3D12_RESOURCE_STATE_DEPTH_WRITE)
 			{
 				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTex.Resource, curTex.State, D3D12_RESOURCE_STATE_DEPTH_WRITE));
@@ -1211,12 +1223,12 @@ namespace Graphics { namespace DX12 {
 	{
 		for (int i = 0; i < num; i++)
 		{
-			TextureEntry& texEntry = mTextures.GetEntry(colorTargets[i].Handle);
+			TextureEntry& texEntry = mTexturesPool.GetEntry(colorTargets[i].Handle);
 			mDefaultSurface.CmdContext->ClearRenderTargetView(texEntry.RenderTarget, clear, 0, nullptr);
 		}
 		if (depth)
 		{
-			TextureEntry& texEntry = mTextures.GetEntry(depth->Handle);
+			TextureEntry& texEntry = mTexturesPool.GetEntry(depth->Handle);
 			D3D12_CLEAR_FLAGS flags = D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL;
 			mDefaultSurface.CmdContext->ClearDepthStencilView(texEntry.DepthStencil, flags, d, stencil, 0, nullptr);
 		}
@@ -1295,11 +1307,33 @@ namespace Graphics { namespace DX12 {
 		return glm::vec2(mDefaultSurface.Window->GetWidth(), mDefaultSurface.Window->GetHeight());
 	}
 
-	void DX12GraphicsInterface::BeginQuery(const GPUQueryHandle& query)
+	void DX12GraphicsInterface::BeginQuery(const GPUQueryHandle& query, const GPUQueryType::T& type)
 	{
+		switch (type)
+		{
+			case GPUQueryType::Timestamp:
+			{
+				QueryEntry& entry = mTimeStampQueriesPool.GetEntry(query.Handle);
+				mDefaultSurface.CmdContext->EndQuery(mTimeStampsHeap, D3D12_QUERY_TYPE_TIMESTAMP, query.Handle);
+				break;
+			}
+			default:
+				break;
+		}
 	}
 
-	void DX12GraphicsInterface::EndQuery(const GPUQueryHandle& query)
+	void DX12GraphicsInterface::EndQuery(const GPUQueryHandle& query, const GPUQueryType::T& type)
 	{
+		switch (type)
+		{
+			case GPUQueryType::Timestamp:
+			{
+				QueryEntry& entry = mTimeStampQueriesPool.GetEntry(query.Handle);
+				mDefaultSurface.CmdContext->EndQuery(mTimeStampsHeap, D3D12_QUERY_TYPE_TIMESTAMP, entry.EndHeapIdx);
+				break;
+			}
+			default:
+				break;
+		}
 	}
 }}

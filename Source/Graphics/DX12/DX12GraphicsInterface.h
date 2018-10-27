@@ -58,7 +58,10 @@ namespace Graphics{ namespace DX12
 
 	struct QueryEntry
 	{
-		GPUQueryType Type;
+		GPUQueryType::T Type;
+		uint32_t HeapIdx; // Points to the 'heap Type' index for this query
+
+		uint64_t EndHeapIdx; // Only for time stamp queries (we can only end/end)
 	};
 
 	struct BufferEntry
@@ -156,8 +159,8 @@ namespace Graphics{ namespace DX12
 		void UnMapBuffer(BufferHandle buffer, bool writeOnly = true)final override;
 		void SetBlendFactors(float blend[4])override;;
 		glm::vec2 GetCurrentRenderingSize()final override;
-		void BeginQuery(const GPUQueryHandle& query)final override;
-		void EndQuery(const GPUQueryHandle& query)final override;
+		void BeginQuery(const GPUQueryHandle& query, const GPUQueryType::T& type)final override;
+		void EndQuery(const GPUQueryHandle& query, const GPUQueryType::T& type)final override;
 
 	private:
 		void InitSurface(DisplaySurface* surface);
@@ -178,13 +181,10 @@ namespace Graphics{ namespace DX12
 		uint64_t mCurBuffer;
 
 		// Texture pool
-		// TextureEntry mTextures[MAX_TEXTURES];
-		// uint64_t mCurTexture;
-		ResourcePool<TextureEntry> mTextures;
+		ResourcePool<TextureEntry> mTexturesPool;
 
-		// Query pool [time stamp, .... ]
-		QueryEntry mQueries[MAX_TIMESTAMP_QUERIES];
-		uint64_t mCurTimeStampQuery;
+		// Query pool
+		ResourcePool<QueryEntry> mTimeStampQueriesPool;
 
 		// PSO pools
 		GraphicsPipelineEntry mGraphicsPipelines[MAX_GRAPHICS_PIPELINES];
