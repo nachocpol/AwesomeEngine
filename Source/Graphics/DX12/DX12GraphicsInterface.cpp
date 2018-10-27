@@ -9,7 +9,6 @@ namespace Graphics { namespace DX12 {
 	DX12GraphicsInterface::DX12GraphicsInterface():
 		mDevice(nullptr),
 		mCurBuffer(0),
-		mCurTexture(0),
 		mCurTimeStampQuery(0),
 		mGraphicsRootSignature(nullptr),
 		mCurGraphicsPipeline(0),
@@ -22,7 +21,6 @@ namespace Graphics { namespace DX12 {
 		mTimeStampsHeap(nullptr)
 	{
 		memset(mBuffers, 0, sizeof(mBuffers));
-		memset(mTextures, 0, sizeof(mTextures));
 		memset(mQueries, 0, sizeof(mQueries));
 		memset(mGraphicsPipelines, 0, sizeof(mGraphicsPipelines));
 		memset(mComputePipelines, 0, sizeof(mComputePipelines));
@@ -565,12 +563,10 @@ namespace Graphics { namespace DX12 {
 		{
 			return InvalidTexture;
 		}
-		if (mTextures[mCurTexture].Resource)
-		{
-			std::cout << "Something weird is happening! \n";
-		}
 
-		TextureEntry& curTexEntry = mTextures[mCurTexture];
+		TextureHandle handle;
+		TextureEntry& curTexEntry = mTextures.GetFreeEntry(handle.Handle);
+
 		bool isUav = false;
 
 		D3D12_RESOURCE_FLAGS dxflags = D3D12_RESOURCE_FLAG_NONE;
@@ -665,8 +661,6 @@ namespace Graphics { namespace DX12 {
 			mDepthStencilHeap->OffsetHandles(1);
 		}
 
-		TextureHandle handle = { mCurTexture };
-		mCurTexture++;
 		return handle;
 	}
 
@@ -676,11 +670,9 @@ namespace Graphics { namespace DX12 {
 		{
 			return InvalidTexture;
 		}
-		if (mTextures[mCurTexture].Resource)
-		{
-			std::cout << "Something weird is happening! \n";
-		}
-		auto& curTexEntry = mTextures[mCurTexture];
+
+		TextureHandle handle;
+		TextureEntry& curTexEntry = mTextures.GetFreeEntry(handle.Handle);
 
 		D3D12_RESOURCE_FLAGS dxflags = D3D12_RESOURCE_FLAG_NONE;
 		if ((flags & UnorderedAccess) == UnorderedAccess)
@@ -772,27 +764,12 @@ namespace Graphics { namespace DX12 {
 			mDepthStencilHeap->OffsetHandles(1);
 		}
 
-		TextureHandle handle = { mCurTexture };
-		mCurTexture++;
 		return handle;
 	}
 
 	GPUQueryHandle DX12GraphicsInterface::CreateQuery(const GPUQueryType::T& type)
 	{
-		GPUQueryHandle handle = {};
-		switch (type)
-		{	
-			case GPUQueryType::Timestamp: 
-			{
-				handle.Handle = mCurTimeStampQuery++;
-				mQueries[handle.Handle].Type = type;
-				return handle;
-			}
-			default:
-			{
-				return handle;
-			}
-		}
+		return GPUQueryHandle{};
 	}
 
 	GraphicsPipeline DX12GraphicsInterface::CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)
@@ -934,13 +911,13 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::ReleaseTexture(TextureHandle& handle)
 	{
-		if (handle.Handle == InvalidTexture.Handle || handle.Handle > MAX_TEXTURES)
+		if (handle.Handle == InvalidTexture.Handle)
 		{
 			assert(false);
 			return;
 		}
-		mReleaseManager.ReleaseItem(mTextures[handle.Handle].Resource);
-		mReleaseManager.ReleaseItem(mTextures[handle.Handle].Resource);
+		mReleaseManager.ReleaseItem(mTextures.GetEntry(handle.Handle).Resource);
+		mReleaseManager.ReleaseItem(mTextures.GetEntry(handle.Handle).Resource);
 
 		handle.Handle = InvalidTexture.Handle;
 	}
@@ -1165,14 +1142,15 @@ namespace Graphics { namespace DX12 {
 			return;
 		}
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
-		const auto res = mTextures[texture.Handle].Resource;
+		TextureEntry& entry = mTextures.GetEntry(texture.Handle);
+		ID3D12Resource* res = entry.Resource;
 		if (texture.Handle != InvalidTexture.Handle && res != nullptr)
 		{
-			if (mTextures[texture.Handle].State != (TEXTURE_READ))
+			if (entry.State != (TEXTURE_READ))
 			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, mTextures[texture.Handle].State, TEXTURE_READ));
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, entry.State, TEXTURE_READ));
 			}
-			mTextures[texture.Handle].State = TEXTURE_READ;
+			entry.State = TEXTURE_READ;
 			auto slotHandle = mFrameHeap[idx]->GetCPU();
 			slotHandle.Offset(slot,mFrameHeap[idx]->GetIncrementSize());
 			mDevice->CreateShaderResourceView(res, nullptr, slotHandle);
@@ -1187,14 +1165,15 @@ namespace Graphics { namespace DX12 {
 			return;
 		}
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
-		const auto res = mTextures[texture.Handle].Resource;
+		TextureEntry& entry = mTextures.GetEntry(texture.Handle);
+		ID3D12Resource* res = entry.Resource;
 		if (texture.Handle != InvalidTexture.Handle && res != nullptr)
 		{
-			if (mTextures[texture.Handle].State != (UNORDERED_ACCESS))
+			if (entry.State != (UNORDERED_ACCESS))
 			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, mTextures[texture.Handle].State, UNORDERED_ACCESS));
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, entry.State, UNORDERED_ACCESS));
 			}
-			mTextures[texture.Handle].State = UNORDERED_ACCESS;
+			entry.State = UNORDERED_ACCESS;
 			auto slotHandle = mFrameHeap[idx]->GetCPU();
 			slotHandle.Offset(slot + NUM_SRVS, mFrameHeap[idx]->GetIncrementSize());
 			mDevice->CreateUnorderedAccessView(res,nullptr, nullptr, slotHandle);
@@ -1206,7 +1185,7 @@ namespace Graphics { namespace DX12 {
 		D3D12_CPU_DESCRIPTOR_HANDLE colHandles[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT];
 		for (int i = 0; i < num; i++)
 		{
-			TextureEntry& curTex = mTextures[colorTargets[i].Handle];
+			TextureEntry& curTex = mTextures.GetEntry(colorTargets[i].Handle);
 			if (curTex.State != D3D12_RESOURCE_STATE_RENDER_TARGET)
 			{
 				mDefaultSurface.CmdContext->ResourceBarrier(1,&CD3DX12_RESOURCE_BARRIER::Transition(curTex.Resource, curTex.State, D3D12_RESOURCE_STATE_RENDER_TARGET));
@@ -1217,7 +1196,7 @@ namespace Graphics { namespace DX12 {
 		D3D12_CPU_DESCRIPTOR_HANDLE* depthHandle = nullptr;
 		if (depth)
 		{
-			TextureEntry& curTex = mTextures[depth->Handle];
+			TextureEntry& curTex = mTextures.GetEntry(depth->Handle);
 			if (curTex.State != D3D12_RESOURCE_STATE_DEPTH_WRITE)
 			{
 				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTex.Resource, curTex.State, D3D12_RESOURCE_STATE_DEPTH_WRITE));
@@ -1232,12 +1211,12 @@ namespace Graphics { namespace DX12 {
 	{
 		for (int i = 0; i < num; i++)
 		{
-			TextureEntry& texEntry = mTextures[colorTargets[i].Handle];
+			TextureEntry& texEntry = mTextures.GetEntry(colorTargets[i].Handle);
 			mDefaultSurface.CmdContext->ClearRenderTargetView(texEntry.RenderTarget, clear, 0, nullptr);
 		}
 		if (depth)
 		{
-			TextureEntry& texEntry = mTextures[depth->Handle];
+			TextureEntry& texEntry = mTextures.GetEntry(depth->Handle);
 			D3D12_CLEAR_FLAGS flags = D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL;
 			mDefaultSurface.CmdContext->ClearDepthStencilView(texEntry.DepthStencil, flags, d, stencil, 0, nullptr);
 		}
@@ -1318,29 +1297,9 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::BeginQuery(const GPUQueryHandle& query)
 	{
-		QueryEntry& entry = mQueries[query.Handle];
-
-		switch (entry.Type)
-		{
-			case GPUQueryType::Timestamp:
-			{
-				mDefaultSurface.CmdContext->EndEvent(mTimeStampsHeap, D3D12_QUERY_HEAP_TYPE_TIMESTAMP, query.Handle);
-				return;
-			}
-		}
 	}
 
 	void DX12GraphicsInterface::EndQuery(const GPUQueryHandle& query)
 	{
-		QueryEntry& entry = mQueries[query.Handle];
-
-		switch (entry.Type)
-		{
-			case GPUQueryType::Timestamp:
-			{
-				mDefaultSurface.CmdContext->EndEvent(mTimeStampsHeap, D3D12_QUERY_HEAP_TYPE_TIMESTAMP, query.Handle + 1);
-				return;
-			}
-		}
 	}
 }}

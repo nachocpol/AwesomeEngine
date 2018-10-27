@@ -89,6 +89,29 @@ namespace Graphics{ namespace DX12
 		GraphicsPipelineDescription Desc;
 	};
 
+	//! Class that manages creation of new resource entries:
+	template <class T>
+	class ResourcePool
+	{
+	public:
+		ResourcePool<T>() {}
+		~ResourcePool<T>() {}
+		T& GetFreeEntry(uint64_t& entryIdx)
+		{
+			entryIdx = 0;
+			mEntries.push_back(T());
+			entryIdx = mEntries.size() - 1;
+			return mEntries.at(entryIdx);
+		}
+		T& GetEntry(const uint64_t& entryIdx)
+		{
+			return mEntries.at(entryIdx);
+		}
+
+	private:
+		std::vector<T> mEntries;
+	};
+
 	class DX12GraphicsInterface : public GraphicsInterface
 	{
 		friend class DX12ReleaseManager;
@@ -155,8 +178,9 @@ namespace Graphics{ namespace DX12
 		uint64_t mCurBuffer;
 
 		// Texture pool
-		TextureEntry mTextures[MAX_TEXTURES];
-		uint64_t mCurTexture;
+		// TextureEntry mTextures[MAX_TEXTURES];
+		// uint64_t mCurTexture;
+		ResourcePool<TextureEntry> mTextures;
 
 		// Query pool [time stamp, .... ]
 		QueryEntry mQueries[MAX_TIMESTAMP_QUERIES];
@@ -190,4 +214,5 @@ namespace Graphics{ namespace DX12
 		bool mCurrentIsCompute = false;
 	};
 
-}}
+}
+}
