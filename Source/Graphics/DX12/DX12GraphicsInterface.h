@@ -60,8 +60,8 @@ namespace Graphics{ namespace DX12
 	{
 		GPUQueryType::T Type;
 		uint32_t HeapIdx; // Points to the 'heap Type' index for this query
-
-		uint64_t EndHeapIdx; // Only for time stamp queries (we can only end/end)
+		ID3D12Fence* Fences[NUM_BACK_BUFFERS];
+		uint64_t FenceValues[NUM_BACK_BUFFERS];
 	};
 
 	struct BufferEntry
@@ -201,6 +201,8 @@ namespace Graphics{ namespace DX12
 		DX12Heap* mDepthStencilHeap;
 
 		ID3D12QueryHeap* mTimeStampsHeap;
+		ID3D12Resource* mTimeStampsMemory;
+		uint8_t* mTimeStampMemPtr;
 
 		ID3D12RootSignature* mGraphicsRootSignature;
 

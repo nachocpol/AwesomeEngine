@@ -1,6 +1,7 @@
 #include "CloudRendering.h"
 #include "Graphics/UI/IMGUI/imgui.h"
 #include "Graphics/Noise.h"
+#include "Graphics/Profiler.h"
 
 #include "glm/gtc/packing.hpp"
 
@@ -68,6 +69,7 @@ namespace Graphics
 
 	void CloudRenderer::Draw(float dt,glm::vec3 camPos, glm::mat4 iViewProj,glm::vec3 SunDirection)
 	{
+		Graphics::Profiler::GetInstance()->Begin("Clouds Render");
 		mCloudsData.Time += dt;
 		mCloudsData.ViewPosition = glm::vec4(camPos,0.0f);
 		mCloudsData.InvViewProj = iViewProj;
@@ -78,6 +80,7 @@ namespace Graphics
 		mGraphicsInterface->SetResource(mBaseNoise, 1);
 		mGraphicsInterface->SetResource(mDetailNoise, 2);
 		mGraphicsInterface->Draw(6, 0);
+		Graphics::Profiler::GetInstance()->End("Clouds Render");
 
 		{
 			//mGraphicsInterface->SetComputePipeline(mCloudsPipelineCompute);

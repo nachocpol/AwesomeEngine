@@ -1,8 +1,12 @@
 #include "DX12GraphicsInterface.h"
 #include "Graphics/Platform/Windows/WWindow.h"
 #include "cro_mipmap.h"
+#include "Graphics/Profiler.h"
+
 #include <iostream>
 #include <vector>
+
+#pragma optimize("",off)
 
 namespace Graphics { namespace DX12 {
 
@@ -17,7 +21,8 @@ namespace Graphics { namespace DX12 {
 		mCurBackBuffer(0),
 		mNumDrawCalls(0),
 		mReleaseManager(this),
-		mTimeStampsHeap(nullptr)
+		mTimeStampsHeap(nullptr),
+		mTimeStampsMemory(nullptr)
 	{
 		memset(mBuffers, 0, sizeof(mBuffers));
 		memset(mGraphicsPipelines, 0, sizeof(mGraphicsPipelines));
@@ -30,6 +35,9 @@ namespace Graphics { namespace DX12 {
 
 	bool DX12GraphicsInterface::Initialize(Platform::BaseWindow* targetWindow)
 	{
+		// Provide graphics to the profiler
+		Profiler::GetInstance()->Init(this);
+
 		HWND whandle = (HWND)targetWindow;
 		memset(&mDefaultSurface, 0, sizeof(DisplaySurface));
 		mDefaultSurface.Window = (Platform::Windows::WWindow*)targetWindow;
@@ -37,7 +45,7 @@ namespace Graphics { namespace DX12 {
 
 		UINT factoryFlags = 0;
 		ID3D12Debug* debugController = nullptr;
-		static bool enableDebug = false;
+		static bool enableDebug = true;
 		if (enableDebug && SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 		{
 			debugController->EnableDebugLayer();
@@ -122,11 +130,17 @@ namespace Graphics { namespace DX12 {
 		
 		// Time stamp heap
 		D3D12_QUERY_HEAP_DESC tsHeapDesc = {};
-		tsHeapDesc.Count = 4096;//uint max?
+		tsHeapDesc.Count = 8000;
 		tsHeapDesc.NodeMask = 0;
 		tsHeapDesc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
 		mDevice->CreateQueryHeap(&tsHeapDesc, IID_PPV_ARGS(&mTimeStampsHeap));
-
+		// Time stamps memory
+		// We just map it once and roll with it
+		// Also, note that we create up to NUM_BACK_BUFFERS!
+		CD3DX12_RESOURCE_DESC memTs = CD3DX12_RESOURCE_DESC::Buffer(8000 * 8 * NUM_BACK_BUFFERS, D3D12_RESOURCE_FLAG_NONE);
+		D3D12_HEAP_PROPERTIES memHeap = CD3DX12_HEAP_PROPERTIES::CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK);
+		mDevice->CreateCommittedResource(&memHeap, D3D12_HEAP_FLAG_NONE, &memTs, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&mTimeStampsMemory));
+		mTimeStampsMemory->Map(0, nullptr, reinterpret_cast<void**>(&mTimeStampMemPtr));
 		return true;
 	}
 
@@ -772,10 +786,14 @@ namespace Graphics { namespace DX12 {
 		{
 			case GPUQueryType::Timestamp:
 			{
-				QueryEntry& entry = mTimeStampQueriesPool.GetEntry(handle.Handle);
+				QueryEntry& entry = mTimeStampQueriesPool.GetFreeEntry(handle.Handle);
 				entry.Type = type;
 				entry.HeapIdx = handle.Handle;
-				mTimeStampQueriesPool.GetEntry(entry.EndHeapIdx);
+				for (int i = 0; i < NUM_BACK_BUFFERS; i++)
+				{
+					entry.FenceValues[i] = 0;
+					mDevice->CreateFence(entry.FenceValues[i], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&entry.Fences[i]));
+				}
 				break;
 			}
 			default:break;
@@ -1313,8 +1331,8 @@ namespace Graphics { namespace DX12 {
 		{
 			case GPUQueryType::Timestamp:
 			{
-				QueryEntry& entry = mTimeStampQueriesPool.GetEntry(query.Handle);
-				mDefaultSurface.CmdContext->EndQuery(mTimeStampsHeap, D3D12_QUERY_TYPE_TIMESTAMP, query.Handle);
+				// Must be end/end. fuck u dx12 api
+				assert(false);
 				break;
 			}
 			default:
@@ -1329,7 +1347,8 @@ namespace Graphics { namespace DX12 {
 			case GPUQueryType::Timestamp:
 			{
 				QueryEntry& entry = mTimeStampQueriesPool.GetEntry(query.Handle);
-				mDefaultSurface.CmdContext->EndQuery(mTimeStampsHeap, D3D12_QUERY_TYPE_TIMESTAMP, entry.EndHeapIdx);
+				mDefaultSurface.CmdContext->EndQuery(mTimeStampsHeap, D3D12_QUERY_TYPE_TIMESTAMP, query.Handle);
+				mDefaultSurface.Queue->Signal(entry.Fences[mCurBackBuffer], ++entry.FenceValues[mCurBackBuffer]);
 				break;
 			}
 			default:
