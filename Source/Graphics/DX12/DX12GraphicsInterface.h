@@ -174,6 +174,7 @@ namespace Graphics{ namespace DX12
 
 		DisplaySurface mDefaultSurface;
 		ID3D12Device* mDevice;
+		D3D12_FEATURE_DATA_D3D12_OPTIONS mDeviceFeatures;
 		Graphics::Format mOutputFormat;
 
 		// Buffer pools
@@ -199,6 +200,9 @@ namespace Graphics{ namespace DX12
 		// Storage heaps
 		DX12Heap* mRenderTargetHeap;
 		DX12Heap* mDepthStencilHeap;
+		DX12Heap mNullsHeap;
+		D3D12_CPU_DESCRIPTOR_HANDLE mNullUav;
+		D3D12_CPU_DESCRIPTOR_HANDLE mNullSrv;
 
 		ID3D12QueryHeap* mTimeStampsHeap;
 		ID3D12Resource* mTimeStampsMemory;

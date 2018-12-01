@@ -28,6 +28,9 @@ namespace Graphics
 		TextureHandle mCloudsIntermediate;
 		glm::vec2 mCurRenderSize;
 
+		ComputePipeline mCloudShadowPipeline;
+		TextureHandle mCloudShadowTexture;
+
 		struct CloudsData
 		{
 			glm::vec4 ViewPosition;

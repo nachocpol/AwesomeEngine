@@ -45,9 +45,16 @@ namespace Graphics { namespace DX12 {
 
 		UINT factoryFlags = 0;
 		ID3D12Debug* debugController = nullptr;
-		static bool enableDebug = true;
+		static bool enableDebug = false;
 		if (enableDebug && SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 		{
+			static bool enableGPUValidation = false;
+			if (enableGPUValidation)
+			{
+				ID3D12Debug1* debug1 = nullptr;
+				D3D12GetDebugInterface(IID_PPV_ARGS(&debug1));
+				debug1->SetEnableGPUBasedValidation(true);
+			}
 			debugController->EnableDebugLayer();
 			factoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
 			debugController->Release();
@@ -91,6 +98,9 @@ namespace Graphics { namespace DX12 {
 			std::cerr << "Could not create the device! \n";
 			return false;
 		}
+		// Query features
+		mDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &mDeviceFeatures, sizeof(mDeviceFeatures));
+
 		// Mute some annoyances:
 		ID3D12InfoQueue* infoQueue = nullptr;
 		mDevice->QueryInterface(IID_PPV_ARGS(&infoQueue));
@@ -141,6 +151,28 @@ namespace Graphics { namespace DX12 {
 		D3D12_HEAP_PROPERTIES memHeap = CD3DX12_HEAP_PROPERTIES::CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK);
 		mDevice->CreateCommittedResource(&memHeap, D3D12_HEAP_FLAG_NONE, &memTs, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&mTimeStampsMemory));
 		mTimeStampsMemory->Map(0, nullptr, reinterpret_cast<void**>(&mTimeStampMemPtr));
+
+
+
+		// Null resources
+		mNullsHeap.Initialize(mDevice, 4, false, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		{
+			D3D12_UNORDERED_ACCESS_VIEW_DESC nullUav = {};
+			nullUav.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+			nullUav.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D; 
+			mNullUav = mNullsHeap.GetCPU();
+			mDevice->CreateUnorderedAccessView(nullptr, nullptr, &nullUav, mNullUav);
+			mNullsHeap.OffsetHandles(1);
+		}
+		{
+			D3D12_SHADER_RESOURCE_VIEW_DESC nullSrv = {};
+			nullSrv.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+			nullSrv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+			nullSrv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			mNullSrv = mNullsHeap.GetCPU();
+			mDevice->CreateShaderResourceView(nullptr, &nullSrv, mNullSrv);
+			mNullsHeap.OffsetHandles(1);
+		}
 		return true;
 	}
 
@@ -1043,6 +1075,22 @@ namespace Graphics { namespace DX12 {
 		{
 			mDefaultSurface.CmdContext->SetComputeRootSignature(mGraphicsRootSignature);
 			mDefaultSurface.CmdContext->SetPipelineState(mComputePipelines[pipeline.Handle]);
+
+			// Setup NULL views tier 1
+			int idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
+			auto startSlot = mFrameHeap[idx]->GetCPU();
+			for (int i = 0; i < NUM_SRVS; i++)
+			{
+				CD3DX12_CPU_DESCRIPTOR_HANDLE curSlot = {};
+				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, i *  mFrameHeap[idx]->GetIncrementSize());
+				mDevice->CopyDescriptorsSimple(1, curSlot, mNullSrv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			}
+			for (int i = 0; i < NUM_UAVS; i++)
+			{
+				CD3DX12_CPU_DESCRIPTOR_HANDLE curSlot = {};
+				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, (i + NUM_SRVS) *  mFrameHeap[idx]->GetIncrementSize());
+				mDevice->CopyDescriptorsSimple(1, curSlot, mNullUav	, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			}
 		}
 	}
 
@@ -1206,6 +1254,7 @@ namespace Graphics { namespace DX12 {
 			entry.State = UNORDERED_ACCESS;
 			auto slotHandle = mFrameHeap[idx]->GetCPU();
 			slotHandle.Offset(slot + NUM_SRVS, mFrameHeap[idx]->GetIncrementSize());
+
 			mDevice->CreateUnorderedAccessView(res,nullptr, nullptr, slotHandle);
 		}
 	}

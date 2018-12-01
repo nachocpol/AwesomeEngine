@@ -64,6 +64,15 @@ namespace Graphics
 			mCloudsPipelineCompute = mGraphicsInterface->CreateComputePipeline(computeCloudsDesc);
 		}
 
+		{
+			ComputePipelineDescription shadowCloudDesc = {};
+			shadowCloudDesc.ComputeShader.ShaderEntryPoint = "CSCloudShadow";
+			shadowCloudDesc.ComputeShader.ShaderPath = "Clouds.hlsl";
+			shadowCloudDesc.ComputeShader.Type = ShaderType::Compute;
+
+			mCloudShadowPipeline = mGraphicsInterface->CreateComputePipeline(shadowCloudDesc);
+		}
+
 		return true;
 	}
 
@@ -74,12 +83,25 @@ namespace Graphics
 		mCloudsData.ViewPosition = glm::vec4(camPos,0.0f);
 		mCloudsData.InvViewProj = iViewProj;
 		mCloudsData.SunDirection = glm::vec4(SunDirection, 0.0f);
-		mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData),&mCloudsData);
-		mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
+
+		// Cloud shadow
+		mGraphicsInterface->SetComputePipeline(mCloudShadowPipeline);
 		mGraphicsInterface->SetResource(mCloudCoverage, 0);
 		mGraphicsInterface->SetResource(mBaseNoise, 1);
 		mGraphicsInterface->SetResource(mDetailNoise, 2);
-		mGraphicsInterface->Draw(6, 0);
+		mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData), &mCloudsData);
+		mGraphicsInterface->SetRWResource(mCloudShadowTexture, 0);
+		int tx = ceil((float)128/ (float)16);
+		int ty = ceil((float)128 / (float)16);
+		int tz = ceil((float)32 / (float)4);
+		mGraphicsInterface->Dispatch(ceil(tx),ty,tz);
+
+		//mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
+		//mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData),&mCloudsData);
+		//mGraphicsInterface->SetResource(mCloudCoverage, 0);
+		//mGraphicsInterface->SetResource(mBaseNoise, 1);
+		//mGraphicsInterface->SetResource(mDetailNoise, 2);
+		//mGraphicsInterface->Draw(6, 0);
 		Graphics::Profiler::GetInstance()->End("Clouds Render");
 
 		{
@@ -133,6 +155,8 @@ namespace Graphics
 
 	void CloudRenderer::CreateTextures()
 	{
+		mCloudShadowTexture = mGraphicsInterface->CreateTexture3D(128, 128, 1, 32, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::UnorderedAccess);
+
 		mCurRenderSize = mGraphicsInterface->GetCurrentRenderingSize();
 		mCloudsIntermediate = mGraphicsInterface->CreateTexture2D(mCurRenderSize.x, mCurRenderSize.y,1,1,Graphics::Format::RGBA_16_Float,Graphics::TextureFlags::UnorderedAccess);
 

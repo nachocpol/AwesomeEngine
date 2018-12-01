@@ -19,7 +19,9 @@ Texture2D CloudCoverageTex : register(t0);
 Texture3D BaseNoise : register(t1);
 Texture3D DetailNoise : register(t2);
 SamplerState LinearWrapSampler : register(s0);
+
 RWTexture2D<float4> CloudOutput : register(u0);
+RWTexture3D<float4> CloudShadowOutput : register(u0);
 
 struct VSIn
 {
@@ -282,6 +284,16 @@ void CSClouds(uint3 threadID : SV_DispatchThreadID)
     }
     texCoord.y = 1.0f - texCoord.y;
     CloudOutput[threadID.xy] = RenderClouds(texCoord);
+}
+
+[numthreads(16,16,4)]
+void CSCloudShadow(uint3 groudID: SV_GroupID,uint3 threadID : SV_GroupThreadID)
+{
+    uint3 pos = (groudID * uint3(16,16,4)) + threadID;
+    uint3 dim = uint3(128,128,32);
+    float3 texCoord =  float3(pos) / float3(dim);    
+    pos.z = 0;
+    CloudShadowOutput[pos] = float4(texCoord.xy,0,0);
 }
 
 float4 PSClouds(VSOut i): SV_Target0
