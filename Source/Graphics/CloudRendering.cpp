@@ -90,18 +90,19 @@ namespace Graphics
 		mGraphicsInterface->SetResource(mBaseNoise, 1);
 		mGraphicsInterface->SetResource(mDetailNoise, 2);
 		mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData), &mCloudsData);
-		mGraphicsInterface->SetRWResource(mCloudShadowTexture, 0);
-		int tx = ceil((float)128/ (float)16);
-		int ty = ceil((float)128 / (float)16);
-		int tz = ceil((float)32 / (float)4);
+		mGraphicsInterface->SetRWResource(mCloudShadowTexture, 1);
+		int tx = ceil((float)256/ (float)16);
+		int ty = ceil((float)256 / (float)16);
+		int tz = ceil((float)64 / (float)4);
 		mGraphicsInterface->Dispatch(ceil(tx),ty,tz);
 
-		//mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
-		//mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData),&mCloudsData);
-		//mGraphicsInterface->SetResource(mCloudCoverage, 0);
-		//mGraphicsInterface->SetResource(mBaseNoise, 1);
-		//mGraphicsInterface->SetResource(mDetailNoise, 2);
-		//mGraphicsInterface->Draw(6, 0);
+		mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
+		mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData),&mCloudsData);
+		mGraphicsInterface->SetResource(mCloudCoverage, 0);
+		mGraphicsInterface->SetResource(mBaseNoise, 1);
+		mGraphicsInterface->SetResource(mDetailNoise, 2);
+		mGraphicsInterface->SetResource(mCloudShadowTexture, 3);
+		mGraphicsInterface->Draw(6, 0);
 		Graphics::Profiler::GetInstance()->End("Clouds Render");
 
 		{
@@ -124,12 +125,7 @@ namespace Graphics
 		ImGui::DragFloat("Absorption", &mCloudsData.Absorption, 0.01f, 0.0f, 100.0f);
 		ImGui::DragFloat("Cloud Base", &mCloudsData.CloudBase, 1.0f, 0.0f, 1000.0f);
 		ImGui::DragFloat("Cloud extents", &mCloudsData.CloudExtents, 1.0f, 0.0f, 2000.0f);
-		// Scales:
-		{
-			ImGui::InputFloat("Coverage Scale", &mCloudsData.CoverageScale);				
-			ImGui::InputFloat("Base Noise Scale", &mCloudsData.BaseNoiseScale);
-			ImGui::InputFloat("Detail Noise Scale", &mCloudsData.DetailNoiseScale);
-		}
+		ImGui::InputFloat("Scale", &mCloudsData.CloudsScale);				
 		if (ImGui::Button("Create Textures"))
 		{
 			DestroyTextures();
@@ -155,7 +151,7 @@ namespace Graphics
 
 	void CloudRenderer::CreateTextures()
 	{
-		mCloudShadowTexture = mGraphicsInterface->CreateTexture3D(128, 128, 1, 32, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::UnorderedAccess);
+		mCloudShadowTexture = mGraphicsInterface->CreateTexture3D(256, 256, 1, 64, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::UnorderedAccess);
 
 		mCurRenderSize = mGraphicsInterface->GetCurrentRenderingSize();
 		mCloudsIntermediate = mGraphicsInterface->CreateTexture2D(mCurRenderSize.x, mCurRenderSize.y,1,1,Graphics::Format::RGBA_16_Float,Graphics::TextureFlags::UnorderedAccess);

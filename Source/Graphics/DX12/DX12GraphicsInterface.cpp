@@ -45,7 +45,7 @@ namespace Graphics { namespace DX12 {
 
 		UINT factoryFlags = 0;
 		ID3D12Debug* debugController = nullptr;
-		static bool enableDebug = false;
+		static bool enableDebug = true;
 		if (enableDebug && SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 		{
 			static bool enableGPUValidation = false;
@@ -54,6 +54,7 @@ namespace Graphics { namespace DX12 {
 				ID3D12Debug1* debug1 = nullptr;
 				D3D12GetDebugInterface(IID_PPV_ARGS(&debug1));
 				debug1->SetEnableGPUBasedValidation(true);
+				debug1->SetEnableSynchronizedCommandQueueValidation(true);
 			}
 			debugController->EnableDebugLayer();
 			factoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
@@ -107,13 +108,6 @@ namespace Graphics { namespace DX12 {
 		if (infoQueue)
 		{
 			D3D12_INFO_QUEUE_FILTER filter = {};
-			D3D12_MESSAGE_CATEGORY catList[] =
-			{
-				D3D12_MESSAGE_CATEGORY_EXECUTION
-			};
-			filter.DenyList.NumCategories = sizeof(catList) / sizeof(D3D12_MESSAGE_CATEGORY);
-			filter.DenyList.pCategoryList = catList;
-
 			D3D12_MESSAGE_ID idList[] =
 			{
 				D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
@@ -121,14 +115,6 @@ namespace Graphics { namespace DX12 {
 			};
 			filter.DenyList.NumIDs = sizeof(idList) / sizeof(D3D12_MESSAGE_ID);
 			filter.DenyList.pIDList = idList;
-
-			D3D12_MESSAGE_SEVERITY sevList[] =
-			{
-				D3D12_MESSAGE_SEVERITY_WARNING
-			};
-			filter.DenyList.NumSeverities = sizeof(sevList) / sizeof(D3D12_MESSAGE_SEVERITY);
-			filter.DenyList.pSeverityList = sevList;
-
 			infoQueue->AddStorageFilterEntries(&filter);
 			infoQueue->Release();
 		}
@@ -152,7 +138,7 @@ namespace Graphics { namespace DX12 {
 		mDevice->CreateCommittedResource(&memHeap, D3D12_HEAP_FLAG_NONE, &memTs, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&mTimeStampsMemory));
 		mTimeStampsMemory->Map(0, nullptr, reinterpret_cast<void**>(&mTimeStampMemPtr));
 
-
+		mViewsHeap.Initialize(mDevice, 4096, false, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 		// Null resources
 		mNullsHeap.Initialize(mDevice, 4, false, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -390,6 +376,27 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
+	DXGI_FORMAT DX12GraphicsInterface::ToDXGIFormatTypeless(const Graphics::Format & format)
+	{
+		switch (format)
+		{
+		case Format::RG_32_Float:			return DXGI_FORMAT_R32G32B32A32_TYPELESS;
+		case Format::RGB_32_Float:			return DXGI_FORMAT_R32G32B32_TYPELESS;
+		case Format::RGBA_32_Float:			return DXGI_FORMAT_R32G32B32A32_TYPELESS;
+		case Format::Depth24_Stencil8:		return DXGI_FORMAT_R24G8_TYPELESS;
+		case Format::RGBA_8_Unorm:			return DXGI_FORMAT_R8G8B8A8_TYPELESS;
+		case Format::RGBA_16_Float:			return DXGI_FORMAT_R16G16B16A16_TYPELESS;
+		case Format::RGBA_8_Snorm:			return DXGI_FORMAT_R8G8B8A8_TYPELESS;
+		case Format::R_16_Uint:				return DXGI_FORMAT_R16_TYPELESS;
+		case Format::R_32_Uint:				return DXGI_FORMAT_R32_TYPELESS;
+		case Format::R_8_Unorm:				return DXGI_FORMAT_R8_TYPELESS;
+		case Format::R_32_Float:			return DXGI_FORMAT_R32_TYPELESS;
+		case Format::R_11_G_11_B_10_Float:	return DXGI_FORMAT_R11G11B10_FLOAT; // ????? R32 maybe
+		case Format::Unknown:
+		default:							return DXGI_FORMAT_UNKNOWN;
+		}
+	}
+
 	D3D12_PRIMITIVE_TOPOLOGY DX12GraphicsInterface::ToDXGITopology(const Graphics::Topology& topology)
 	{
 		switch (topology)
@@ -515,6 +522,8 @@ namespace Graphics { namespace DX12 {
 		mDefaultSurface.GPUFencesValues[idx]++;
 		mDefaultSurface.Queue->Signal(mDefaultSurface.GPUFences[idx], mDefaultSurface.GPUFencesValues[idx]);
 
+
+
 		mFrame++;
 	}
 
@@ -630,7 +639,7 @@ namespace Graphics { namespace DX12 {
 		CD3DX12_RESOURCE_DESC texDesc;
 		texDesc = CD3DX12_RESOURCE_DESC::Tex2D
 		(
-			ToDXGIFormat(format),
+			ToDXGIFormatTypeless(format),
 			width,
 			height,
 			layers,
@@ -692,17 +701,96 @@ namespace Graphics { namespace DX12 {
 		delete[] footPrints;
 		delete[] rowSizes;
 
+		// Render target views
 		if ((flags & RenderTarget) == RenderTarget)
 		{
-			mDevice->CreateRenderTargetView(curTexEntry.Resource, nullptr, mRenderTargetHeap->GetCPU());
+			D3D12_RENDER_TARGET_VIEW_DESC rtDesc = {};
+			rtDesc.Format = ToDXGIFormat(format);
+			rtDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+			rtDesc.Texture2D.MipSlice = 0;
+			rtDesc.Texture2D.PlaneSlice = 0;
+
+			mDevice->CreateRenderTargetView(curTexEntry.Resource, &rtDesc, mRenderTargetHeap->GetCPU());
 			curTexEntry.RenderTarget = mRenderTargetHeap->GetCPU();
 			mRenderTargetHeap->OffsetHandles(1);
 		}
+		// Depth stencil views
 		if ((flags & DepthStencil) == DepthStencil)
 		{
-			mDevice->CreateDepthStencilView(curTexEntry.Resource, nullptr, mDepthStencilHeap->GetCPU());
+			D3D12_DEPTH_STENCIL_VIEW_DESC depthDesc = {};
+			depthDesc.Format = ToDXGIFormat(format);
+			depthDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+			depthDesc.Flags = D3D12_DSV_FLAG_NONE;
+			depthDesc.Texture2D.MipSlice = 0;
+
+			mDevice->CreateDepthStencilView(curTexEntry.Resource, &depthDesc, mDepthStencilHeap->GetCPU());
 			curTexEntry.DepthStencil = mDepthStencilHeap->GetCPU();
 			mDepthStencilHeap->OffsetHandles(1);
+		}
+		// Full view
+		{
+			D3D12_SHADER_RESOURCE_VIEW_DESC desc2D = {};
+			desc2D.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			desc2D.Format = ToDXGIFormat(format);
+			if (format == Format::Depth24_Stencil8)
+			{
+				desc2D.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+			}
+			desc2D.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+			desc2D.Texture2D.MipLevels = mips;
+			desc2D.Texture2D.MostDetailedMip = 0;
+			desc2D.Texture2D.PlaneSlice = 0;
+			desc2D.Texture2D.ResourceMinLODClamp = 0.0f;
+
+			curTexEntry.FullView = mViewsHeap.GetCPU();
+			mDevice->CreateShaderResourceView(curTexEntry.Resource, &desc2D, curTexEntry.FullView);
+			mViewsHeap.OffsetHandles(1);
+		}
+		// Per mip-view
+		{
+			D3D12_SHADER_RESOURCE_VIEW_DESC desc2D = {};
+			desc2D.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			desc2D.Format = ToDXGIFormat(format);
+			if (format == Format::Depth24_Stencil8)
+			{
+				desc2D.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+			}
+			desc2D.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+			desc2D.Texture2D.MipLevels = 1;
+			desc2D.Texture2D.PlaneSlice = 0;
+			desc2D.Texture2D.ResourceMinLODClamp = 0.0f;
+
+			curTexEntry.MipViews = new D3D12_CPU_DESCRIPTOR_HANDLE[mips];
+			for (int m = 0; m < mips; m++)
+			{
+				desc2D.Texture2D.MostDetailedMip = m;
+				curTexEntry.MipViews[m] = mViewsHeap.GetCPU();
+				mDevice->CreateShaderResourceView(curTexEntry.Resource, &desc2D, curTexEntry.MipViews[m]);
+				mViewsHeap.OffsetHandles(1);
+			}
+		}
+		// RW Views
+		if (isUav)
+		{
+			// Full view (no such thing as full view for rw)
+			{
+			}
+			// Per mip-view
+			{
+				D3D12_UNORDERED_ACCESS_VIEW_DESC desc2dRW = {};
+				desc2dRW.Format = ToDXGIFormat(format);
+				desc2dRW.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+				desc2dRW.Texture2D.PlaneSlice = 0;
+
+				curTexEntry.MipViewsRW = new D3D12_CPU_DESCRIPTOR_HANDLE[mips];
+				for (int m = 0; m < mips; m++)
+				{
+					desc2dRW.Texture2D.MipSlice = m;
+					curTexEntry.MipViewsRW[m] = mViewsHeap.GetCPU();
+					mDevice->CreateUnorderedAccessView(curTexEntry.Resource,nullptr, &desc2dRW, curTexEntry.MipViewsRW[m]);
+					mViewsHeap.OffsetHandles(1);
+				}
+			}
 		}
 
 		return handle;
@@ -717,24 +805,28 @@ namespace Graphics { namespace DX12 {
 
 		TextureHandle handle;
 		TextureEntry& curTexEntry = mTexturesPool.GetFreeEntry(handle.Handle);
+		bool isUav = false;
 
 		D3D12_RESOURCE_FLAGS dxflags = D3D12_RESOURCE_FLAG_NONE;
 		if ((flags & UnorderedAccess) == UnorderedAccess)
 		{
+			isUav = true;
 			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 		}
 		if ((flags & RenderTarget) == RenderTarget)
 		{
+			assert(false); // This is actually supported, not implemented tho
 			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 		}
 		if ((flags & DepthStencil) == DepthStencil)
 		{
+			assert(false); // This is not supported
 			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 		}
 		CD3DX12_RESOURCE_DESC texDesc;
 		texDesc = CD3DX12_RESOURCE_DESC::Tex3D
 		(
-			ToDXGIFormat(format),
+			ToDXGIFormatTypeless(format),
 			width,
 			height,
 			layers,
@@ -795,19 +887,74 @@ namespace Graphics { namespace DX12 {
 		delete[] footPrints;
 		delete[] rowSizes;
 
+		// Render target view (can we have 3D rts???)
 		if ((flags & RenderTarget) == RenderTarget)
 		{
-			mDevice->CreateRenderTargetView(curTexEntry.Resource, nullptr, mRenderTargetHeap->GetCPU());
-			curTexEntry.RenderTarget = mRenderTargetHeap->GetCPU();
-			mRenderTargetHeap->OffsetHandles(1);
 		}
+		// Depthstencil view (can we have 3d depths??)
 		if ((flags & DepthStencil) == DepthStencil)
 		{
-			mDevice->CreateDepthStencilView(curTexEntry.Resource, nullptr, mDepthStencilHeap->GetCPU());
-			curTexEntry.DepthStencil = mDepthStencilHeap->GetCPU();
-			mDepthStencilHeap->OffsetHandles(1);
 		}
+		// Full view
+		{
+			D3D12_SHADER_RESOURCE_VIEW_DESC desc3D = {};
+			desc3D.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			desc3D.Format = ToDXGIFormat(format);
+			desc3D.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+			desc3D.Texture3D.MipLevels = mips;
+			desc3D.Texture3D.MostDetailedMip = 0;
+			desc3D.Texture3D.ResourceMinLODClamp = 0.0f;
 
+			curTexEntry.FullView = mViewsHeap.GetCPU();
+			mDevice->CreateShaderResourceView(curTexEntry.Resource, &desc3D, curTexEntry.FullView);
+			mViewsHeap.OffsetHandles(1);
+		}
+		// Per mip-view
+		{
+			D3D12_SHADER_RESOURCE_VIEW_DESC desc3D = {};
+			desc3D.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			desc3D.Format = ToDXGIFormat(format);
+			desc3D.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+			desc3D.Texture3D.MipLevels = 1;
+			desc3D.Texture3D.MostDetailedMip = 0;
+			desc3D.Texture3D.ResourceMinLODClamp = 0.0f;
+
+			curTexEntry.MipViews = new D3D12_CPU_DESCRIPTOR_HANDLE[mips];
+			for (int m = 0; m < mips; m++)
+			{
+				desc3D.Texture3D.MostDetailedMip = m;
+				curTexEntry.MipViews[m] = mViewsHeap.GetCPU();
+				mDevice->CreateShaderResourceView(curTexEntry.Resource, &desc3D, curTexEntry.MipViews[m]);
+				mViewsHeap.OffsetHandles(1);
+			}
+		}
+		// RW Views
+		if (isUav)
+		{
+			// Full view (no such thing as full view for rw)
+			{
+			}
+			// Per mip-view
+			{
+				D3D12_UNORDERED_ACCESS_VIEW_DESC desc3dRW = {};
+				desc3dRW.Format = ToDXGIFormat(format);
+				desc3dRW.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
+				desc3dRW.Texture3D.FirstWSlice = 0;
+				desc3dRW.Texture3D.WSize = layers;
+
+				curTexEntry.MipViewsRW = new D3D12_CPU_DESCRIPTOR_HANDLE[mips];
+				for (int m = 0; m < mips; m++)
+				{
+					desc3dRW.Texture3D.MipSlice = m;
+					curTexEntry.MipViewsRW[m] = mViewsHeap.GetCPU();
+					mDevice->CreateUnorderedAccessView(curTexEntry.Resource, nullptr, &desc3dRW, curTexEntry.MipViewsRW[m]);
+					mViewsHeap.OffsetHandles(1);
+
+					desc3dRW.Texture3D.WSize = desc3dRW.Texture3D.WSize / 2;
+				}
+			}
+			// Per layer view...
+		}
 		return handle;
 	}
 
@@ -1229,9 +1376,11 @@ namespace Graphics { namespace DX12 {
 				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, entry.State, TEXTURE_READ));
 			}
 			entry.State = TEXTURE_READ;
+
+			// Copy descriptor:
 			auto slotHandle = mFrameHeap[idx]->GetCPU();
 			slotHandle.Offset(slot,mFrameHeap[idx]->GetIncrementSize());
-			mDevice->CreateShaderResourceView(res, nullptr, slotHandle);
+			mDevice->CopyDescriptorsSimple(1, slotHandle, entry.FullView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 	}
 
@@ -1252,10 +1401,11 @@ namespace Graphics { namespace DX12 {
 				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, entry.State, UNORDERED_ACCESS));
 			}
 			entry.State = UNORDERED_ACCESS;
+
+			// Copy descriptor:
 			auto slotHandle = mFrameHeap[idx]->GetCPU();
 			slotHandle.Offset(slot + NUM_SRVS, mFrameHeap[idx]->GetIncrementSize());
-
-			mDevice->CreateUnorderedAccessView(res,nullptr, nullptr, slotHandle);
+			mDevice->CopyDescriptorsSimple(1, slotHandle, entry.MipViewsRW[0], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 	}
 
@@ -1403,5 +1553,91 @@ namespace Graphics { namespace DX12 {
 			default:
 				break;
 		}
+	}
+
+	ViewHandle DX12GraphicsInterface::Create2DView(TextureHandle resource, int firstMip, int numMips, bool rw /*=false*/)
+	{
+		// to-do msaa
+		if (resource.Handle == InvalidTexture.Handle)
+		{
+			assert(false);
+		}
+
+		TextureEntry& texture = mTexturesPool.GetEntry(resource.Handle);
+		D3D12_CPU_DESCRIPTOR_HANDLE heapHandle =  mViewsHeap.GetCPU();
+		mViewsHeap.OffsetHandles(1);
+		ViewHandle handle = {};
+		D3D12_RESOURCE_DESC textureDesc = texture.Resource->GetDesc();
+
+		if (rw)
+		{
+			assert(numMips == 1);
+			D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {};
+			desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+			desc.Format = textureDesc.Format;
+			desc.Texture2D.MipSlice = firstMip;
+			desc.Texture2D.PlaneSlice = 0;
+			mDevice->CreateUnorderedAccessView(texture.Resource, nullptr, &desc, heapHandle);
+		}
+		else
+		{
+			D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
+			desc.Format = textureDesc.Format;
+			desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D; 
+			desc.Texture2D.MostDetailedMip = firstMip;
+			desc.Texture2D.MipLevels = numMips;
+			desc.Texture2D.ResourceMinLODClamp = 0.0f;
+			mDevice->CreateShaderResourceView(texture.Resource, &desc, heapHandle);
+		}
+
+		// Ahmmmm yeah...
+		// maybe use the offset to the heap instead of this shiet
+		handle.Handle = heapHandle.ptr;
+		return handle;
+	}
+
+	ViewHandle DX12GraphicsInterface::Create3DView(TextureHandle resource, int firstMip, int numMips, int firstSlice, int numSlices, bool rw)
+	{
+		if (resource.Handle == InvalidTexture.Handle)
+		{
+			assert(false);
+		}
+
+		TextureEntry& texture = mTexturesPool.GetEntry(resource.Handle);
+		D3D12_CPU_DESCRIPTOR_HANDLE heapHandle = mViewsHeap.GetCPU();
+		mViewsHeap.OffsetHandles(1);
+		ViewHandle handle = {};
+		D3D12_RESOURCE_DESC textureDesc = texture.Resource->GetDesc();
+
+		if (rw)
+		{
+			assert(numMips == 1);
+			D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {};
+			desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
+			desc.Format = textureDesc.Format;
+			desc.Texture3D.FirstWSlice = firstSlice;
+			desc.Texture3D.MipSlice = firstMip;
+			desc.Texture3D.WSize = numSlices;
+			mDevice->CreateUnorderedAccessView(texture.Resource, nullptr, &desc, heapHandle);
+		}
+		else
+		{
+			assert(numSlices == 1);
+			assert(firstSlice == 0);
+			D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
+			desc.Format = textureDesc.Format;
+			desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+			desc.Texture3D.MipLevels = numMips;
+			desc.Texture3D.MostDetailedMip = firstMip;
+			desc.Texture3D.ResourceMinLODClamp = 0.0f;
+			mDevice->CreateShaderResourceView(texture.Resource, &desc, heapHandle);
+		}
+
+		// Ahmmmm yeah...
+		// maybe use the offset to the heap instead of this shiet
+		handle.Handle = heapHandle.ptr;
+		return handle;
 	}
 }}

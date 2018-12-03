@@ -136,6 +136,11 @@ namespace Graphics
 		uint64_t Handle;
 	};
 
+	struct ViewHandle
+	{
+		uint64_t Handle;
+	};
+
 	struct ShaderDescription
 	{
 		ShaderDescription()
@@ -281,5 +286,7 @@ namespace Graphics
 		virtual glm::vec2 GetCurrentRenderingSize() = 0;
 		virtual void BeginQuery(const GPUQueryHandle& query, const GPUQueryType::T& type) = 0;
 		virtual void EndQuery(const GPUQueryHandle& query, const GPUQueryType::T& type) = 0;
+		virtual ViewHandle Create2DView(TextureHandle resource, int firstMip, int numMips, bool rw = false) = 0;
+		virtual ViewHandle Create3DView(TextureHandle resource, int firstMip, int numMips, int firstSlice, int numSlices, bool rw = false) = 0;
 	};
 }

@@ -39,9 +39,7 @@ namespace Graphics
 			float CloudBase = 240.0f;
 			float CloudExtents = 100.0f;
 			float Absorption = 0.55f;
-			float CoverageScale = 0.00015f;
-			float BaseNoiseScale = 0.0004f;
-			float DetailNoiseScale = 0.0004f;
+			float CloudsScale = 0.00015f;
 			float EarthR = 6360e3f;
 			float Time = 0.0f;
 		}mCloudsData;

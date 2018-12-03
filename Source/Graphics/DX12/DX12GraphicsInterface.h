@@ -46,7 +46,9 @@ namespace Graphics{ namespace DX12
 		TextureEntry() :
 			Resource(nullptr),
 			UploadHeap(nullptr),
-			State(D3D12_RESOURCE_STATE_VIDEO_DECODE_READ)
+			State(D3D12_RESOURCE_STATE_VIDEO_DECODE_READ),
+			MipViews(nullptr),
+			MipViewsRW(nullptr)
 		{
 		}
 		ID3D12Resource* Resource;
@@ -54,6 +56,10 @@ namespace Graphics{ namespace DX12
 		D3D12_RESOURCE_STATES State;
 		D3D12_CPU_DESCRIPTOR_HANDLE RenderTarget;
 		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencil;
+
+		D3D12_CPU_DESCRIPTOR_HANDLE FullView;
+		D3D12_CPU_DESCRIPTOR_HANDLE* MipViews;
+		D3D12_CPU_DESCRIPTOR_HANDLE* MipViewsRW;
 	};
 
 	struct QueryEntry
@@ -62,6 +68,11 @@ namespace Graphics{ namespace DX12
 		uint32_t HeapIdx; // Points to the 'heap Type' index for this query
 		ID3D12Fence* Fences[NUM_BACK_BUFFERS];
 		uint64_t FenceValues[NUM_BACK_BUFFERS];
+	};
+
+	struct ViewEntry
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE View;
 	};
 
 	struct BufferEntry
@@ -161,12 +172,15 @@ namespace Graphics{ namespace DX12
 		glm::vec2 GetCurrentRenderingSize()final override;
 		void BeginQuery(const GPUQueryHandle& query, const GPUQueryType::T& type)final override;
 		void EndQuery(const GPUQueryHandle& query, const GPUQueryType::T& type)final override;
+		ViewHandle Create2DView(TextureHandle resource, int firstMip, int numMips, bool rw = false)final override;
+		ViewHandle Create3DView(TextureHandle resource, int firstMip, int numMips, int firstSlice, int numSlices, bool rw = false)final override;
 
 	private:
 		void InitSurface(DisplaySurface* surface);
 		void InitRootSignature();
 		bool LoadShader(const ShaderDescription& desc, D3D12_SHADER_BYTECODE& outShader);
 		static DXGI_FORMAT ToDXGIFormat(const Graphics::Format& format);
+		static DXGI_FORMAT ToDXGIFormatTypeless(const Graphics::Format& format);
 		static D3D12_PRIMITIVE_TOPOLOGY ToDXGITopology(const Graphics::Topology& topology);
 		static D3D12_COMPARISON_FUNC ToDX12DepthFunc(const DepthFunc& func);
 		static D3D12_BLEND ToDX12Blend(const BlendFunction& func);
@@ -200,6 +214,7 @@ namespace Graphics{ namespace DX12
 		// Storage heaps
 		DX12Heap* mRenderTargetHeap;
 		DX12Heap* mDepthStencilHeap;
+		DX12Heap mViewsHeap;
 		DX12Heap mNullsHeap;
 		D3D12_CPU_DESCRIPTOR_HANDLE mNullUav;
 		D3D12_CPU_DESCRIPTOR_HANDLE mNullSrv;

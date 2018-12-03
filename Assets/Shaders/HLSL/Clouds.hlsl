@@ -8,9 +8,7 @@ cbuffer CloudsData : register(b0)
     float CloudBase;
     float CloudExtents;
     float Absorption;
-    float CoverageScale;
-    float BaseNoiseScale;
-    float DetailNoiseScale;
+    float CloudsScale;
     float EarthR;
     float Time;
 }
@@ -18,10 +16,11 @@ cbuffer CloudsData : register(b0)
 Texture2D CloudCoverageTex : register(t0);
 Texture3D BaseNoise : register(t1);
 Texture3D DetailNoise : register(t2);
+Texture3D CloudShadow : register(t3);
 SamplerState LinearWrapSampler : register(s0);
 
 RWTexture2D<float4> CloudOutput : register(u0);
-RWTexture3D<float4> CloudShadowOutput : register(u0);
+RWTexture3D<float4> CloudShadowOutput : register(u1);
 
 struct VSIn
 {
@@ -65,129 +64,46 @@ float FMB5(float3 p, float lacunariy, float gain)
 }
 
 float GetCloudDensity(float3 p)
-{
-    //float baseRadius = EarthR + (CloudBase * 1000.0f);
-    //float extentRadius = baseRadius + (CloudExtents * 1000.0f);
-    //float curRadius = length(p);    
-    
-    //float sampleY = saturate((curRadius - baseRadius) / extentRadius); // 0-1
-    //float fbot = lerp(0.0f,1.0f,clamp(sampleY,0.0f,0.45f) / 0.45f);
-    
+{    
     float sampleY = saturate((p.y - (CloudBase )) / (CloudExtents)); // 0-1
     float fbot = lerp(0.0f,1.0f,clamp(sampleY,0.0f,0.45f) / 0.45f);
 
     // Coverage
-    float coverage = CloudCoverageTex.SampleLevel(LinearWrapSampler,float2(p.x,p.z) * CoverageScale, 0).x;
+    float coverage = CloudCoverageTex.SampleLevel(LinearWrapSampler,float2(p.x,p.z) * CloudsScale, 0).x;
 
     // Base noise
-    float baseNoise = BaseNoise.SampleLevel(LinearWrapSampler, p * BaseNoiseScale, 0).x;
+    float baseNoise = BaseNoise.SampleLevel(LinearWrapSampler, p * CloudsScale * 2.0f, 0).x;
     float baseShape = saturate(baseNoise - pow(abs(coverage),1.5f)) * fbot; 
     
     // Detail noise
     // Comes packed as R11G11B10
     // p.z -= Time * 0.01f;
-    float3 detailNoisePk = DetailNoise.SampleLevel(LinearWrapSampler, p * DetailNoiseScale * 10.0f, 0).xyz;
+    float3 detailNoisePk = DetailNoise.SampleLevel(LinearWrapSampler, p * CloudsScale * 20.0f, 0).xyz;
     float detailNoise = (detailNoisePk.x * 0.65f) + (detailNoisePk.y * 0.25f) + (detailNoisePk.z * 0.15f);
 
     //return baseShape;
     return saturate(baseShape - detailNoise * 0.25f);
 }
 
-float GetCloudDensityCheap(float3 p)
-{
-    float sampleY = saturate((p.y - CloudBase) / CloudExtents); // 0-1
+float GetCloudDensity2(float3 p)
+{    
+    float sampleY = saturate((p.y - (CloudBase )) / (CloudExtents)); // 0-1
     float fbot = lerp(0.0f,1.0f,clamp(sampleY,0.0f,0.45f) / 0.45f);
-    
+
     // Coverage
-    float coverage = CloudCoverageTex.SampleLevel(LinearWrapSampler,float2(p.x,p.z) * CoverageScale, 0).x;
+    float coverage = CloudCoverageTex.SampleLevel(LinearWrapSampler,float2(p.x,p.z), 0).x;
 
     // Base noise
-    float baseNoise = BaseNoise.SampleLevel(LinearWrapSampler, p * BaseNoiseScale, 0).x;
-    float baseShape = saturate(baseNoise - pow(coverage,1.5f)) * fbot; 
+    float baseNoise = BaseNoise.SampleLevel(LinearWrapSampler, p * 2.0f, 0).x;
+    float baseShape = saturate(baseNoise - pow(abs(coverage),1.5f)) * fbot; 
+    
+    // Detail noise
+    // Comes packed as R11G11B10
+    // p.z -= Time * 0.01f;
+    float3 detailNoisePk = DetailNoise.SampleLevel(LinearWrapSampler, p * 20.0f, 0).xyz;
+    float detailNoise = (detailNoisePk.x * 0.65f) + (detailNoisePk.y * 0.25f) + (detailNoisePk.z * 0.15f);
 
-    return baseShape;
-}
-
-float4 RenderCloudsInSphere(float2 texCoords)
-{
-    float M_PI = 3.141516f;
-    float MaxFadeDist = 5000.0f;
-
-    float3 toSun = normalize(-SunDirection).xyz;
-    float3 ro = ViewPosition.xyz;
-    ro.y += EarthR;
-    float3 rd = normalize(mul(InvViewProj,float4(texCoords,1.0f,1.0f))).xyz;
-    float3 cloudColor = float3(0.0f,0.0f,0.0f);
-    float transmitance = 1.0f;
-
-    float cloudIntersection = RaySphere(float3(0.0f,0.0f,0.0f), EarthR + (CloudBase * 1000.0f), ro, rd).x;
-    if(cloudIntersection != -1.0f && rd.y >= 0.0f)
-    {
-        float mu = dot(rd, normalize(SunDirection).xyz);
-        float g = -0.76f; 
-        float phaseM = 3.0f / (8.0f * M_PI) * ((1.0f - g * g) * (1.0f + mu * mu)) / ((2.0f + g * g) * pow(abs(1.0f + g * g - 2.0f * g * mu), 1.5f)); 
-
-        float3 cloudEntry = ro + rd * cloudIntersection;
-        float cloudExitIntersection = RaySphere(float3(0.0f,0.0f,0.0f), (EarthR + (CloudBase * 1000.0f)) + (CloudExtents * 1000.0f), ro, rd).x;
-        float3 cloudExit = cloudEntry + rd * cloudExitIntersection;
-        //cloudEntry.y = EarthR + (CloudBase * 1000.0f);
-        //cloudExit.y = 
-        float travelDist = distance(cloudEntry,cloudExit);
-        
-        const int steps = 1024;
-        float stepSize = travelDist / float(steps);
-        float lightStepSize = 50.0f;
-        float3 p = cloudEntry;
-        
-        // Precalculate the dir * lenght:
-        float3 rdScaled = rd * stepSize;
-        float3 toSunScaled = toSun * lightStepSize;
-        // Precalculate Absorption * lenght:
-        float absorptionScaled = Absorption * stepSize;
-        float absorptionScaledLight = Absorption * lightStepSize;
-        // Powder precal:
-        float powderScaled = Absorption * stepSize * 2.0f;
-
-        // Cloud marching:
-        [loop]
-        for(int i=0; i<steps; i++)
-        {
-            float density = GetCloudDensity(p);
-            float ti = exp(-absorptionScaled  * density);
-            transmitance *= ti;
-
-            // Light sampling:
-            float3 lightColor = float3(0.0f,0.0f,0.0f);
-            float lightTransmitance = 1.0f;
-            float3 lightPos = p + toSunScaled;
-            [loop]
-            for(int j=0;j<6;j++)
-            {
-                float lightDensity = GetCloudDensity(lightPos);
-                float lightCurTransmitance = exp(-absorptionScaledLight * lightDensity);
-                lightTransmitance *= lightCurTransmitance;
-                lightPos = lightPos + toSun * lightStepSize;
-                if(lightTransmitance < 0.001f)
-                {
-                    break;
-                }
-            }
-
-            float powder = 1.0f - (-powderScaled * density);
-            float3 stepLight = float3(100.0f,100.0f,100.0f) * lightTransmitance * phaseM * powder;
-            float3 stepColor = stepLight * density * stepSize;
-            cloudColor += stepColor * transmitance;
-
-            if(transmitance < 0.001f )
-            {
-                break;
-            }
-            p = p + rdScaled;
-        }
-    }
-
-    float opacity = 1.0f - transmitance;
-    return float4(cloudColor,opacity);
+    return saturate(baseShape - detailNoise * 0.25f);
 }
 
 float4 RenderClouds(float2 texCoords)
@@ -240,6 +156,11 @@ float4 RenderClouds(float2 texCoords)
             // Light sampling:
             float3 lightColor = float3(0.0f,0.0f,0.0f);
             float lightTransmitance = 1.0f;
+            #if 1
+            float3 shadowTc = p * CloudsScale;
+            shadowTc.y = lerp(0.0,1.0, (CloudBase + CloudExtents)/(CloudBase - p.y));
+            lightTransmitance = CloudShadow.SampleLevel(LinearWrapSampler,shadowTc.xzy,0).x;
+            #else
             float3 lightPos = p + toSunScaled;
             [loop]
             for(int j=0;j<6;j++)
@@ -253,6 +174,7 @@ float4 RenderClouds(float2 texCoords)
                     break;
                 }
             }
+            #endif
 
             float powder = 1.0f - (-powderScaled * density);
             float3 stepLight = float3(100.0f,60.0f,40.0f) * lightTransmitance * phaseM * powder;
@@ -290,10 +212,39 @@ void CSClouds(uint3 threadID : SV_DispatchThreadID)
 void CSCloudShadow(uint3 groudID: SV_GroupID,uint3 threadID : SV_GroupThreadID)
 {
     uint3 pos = (groudID * uint3(16,16,4)) + threadID;
-    uint3 dim = uint3(128,128,32);
+    uint3 dim = uint3(0,0,0);
+    CloudShadowOutput.GetDimensions(dim.x,dim.y,dim.z);
     float3 texCoord =  float3(pos) / float3(dim);    
-    pos.z = 0;
-    CloudShadowOutput[pos] = float4(texCoord.xy,0,0);
+
+    // Current world position:
+    float3 wpos = texCoord / CloudsScale;
+    wpos.z =  lerp(CloudBase,CloudBase + CloudExtents, texCoord.z);
+
+    float tmpz = wpos.z;
+    wpos.z = wpos.y;
+    wpos.y = tmpz;
+
+    // Light sampling:
+    float3 toSun = normalize(-SunDirection).xyz;
+    float lightStepSize = 16.0f;
+    float absorptionScaledLight = Absorption * lightStepSize;
+    float lightTransmitance = 1.0f;
+    float3 toSunScaled = toSun * lightStepSize;
+    float3 lightPos = wpos + toSunScaled;
+    [loop]
+    for(int j=0;j<6;j++)
+    {
+        float lightDensity = GetCloudDensity(lightPos);
+        float lightCurTransmitance = exp(-absorptionScaledLight * lightDensity);
+        lightTransmitance *= lightCurTransmitance;
+        lightPos = lightPos + toSun * lightStepSize;
+        if(lightPos.y > CloudBase + CloudExtents || lightTransmitance < 0.001f)
+        {
+            break;
+        }
+    }
+
+    CloudShadowOutput[pos] = float4(lightTransmitance,0.0f,0.0f,0.0f);
 }
 
 float4 PSClouds(VSOut i): SV_Target0
