@@ -158,7 +158,7 @@ float4 RenderClouds(float2 texCoords)
             float lightTransmitance = 1.0f;
             #if 1
             float3 shadowTc = p * CloudsScale;
-            shadowTc.y = lerp(0.0,1.0, (CloudBase + CloudExtents)/(CloudBase - p.y));
+            shadowTc.y = (p.y - CloudBase) / CloudExtents;
             lightTransmitance = CloudShadow.SampleLevel(LinearWrapSampler,shadowTc.xzy,0).x;
             #else
             float3 lightPos = p + toSunScaled;
