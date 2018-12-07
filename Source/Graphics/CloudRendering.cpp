@@ -91,9 +91,9 @@ namespace Graphics
 		mGraphicsInterface->SetResource(mDetailNoise, 2);
 		mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData), &mCloudsData);
 		mGraphicsInterface->SetRWResource(mCloudShadowTexture, 1);
-		int tx = ceil((float)256/ (float)16);
-		int ty = ceil((float)256 / (float)16);
-		int tz = ceil((float)64 / (float)4);
+		int tx = ceil((float)128/ (float)16);
+		int ty = ceil((float)128 / (float)16);
+		int tz = ceil((float)32 / (float)4);
 		mGraphicsInterface->Dispatch(ceil(tx),ty,tz);
 
 		mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
@@ -103,6 +103,7 @@ namespace Graphics
 		mGraphicsInterface->SetResource(mDetailNoise, 2);
 		mGraphicsInterface->SetResource(mCloudShadowTexture, 3);
 		mGraphicsInterface->Draw(6, 0);
+
 		Graphics::Profiler::GetInstance()->End("Clouds Render");
 
 		{
@@ -111,11 +112,12 @@ namespace Graphics
 			//mGraphicsInterface->SetResource(mCloudCoverage, 0);
 			//mGraphicsInterface->SetResource(mBaseNoise, 1);
 			//mGraphicsInterface->SetResource(mDetailNoise, 2);
+			//mGraphicsInterface->SetResource(mCloudShadowTexture, 3);
 			//mGraphicsInterface->SetRWResource(mCloudsIntermediate, 0);
 			//int tx = ceil((float)mCurRenderSize.x / (float)32);
 			//int ty = ceil((float)mCurRenderSize.y / (float)32);
 			//int tz = 1;
-			//mGraphicsInterface->Dispatch(ceil(tx),ty,tz);
+			//mGraphicsInterface->Dispatch(tx,ty,tz);
 		}
 	}
 
@@ -151,7 +153,7 @@ namespace Graphics
 
 	void CloudRenderer::CreateTextures()
 	{
-		mCloudShadowTexture = mGraphicsInterface->CreateTexture3D(256, 256, 1, 64, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::UnorderedAccess);
+		mCloudShadowTexture = mGraphicsInterface->CreateTexture3D(128, 128, 1, 32, Graphics::Format::R_32_Float, Graphics::TextureFlags::UnorderedAccess);
 
 		mCurRenderSize = mGraphicsInterface->GetCurrentRenderingSize();
 		mCloudsIntermediate = mGraphicsInterface->CreateTexture2D(mCurRenderSize.x, mCurRenderSize.y,1,1,Graphics::Format::RGBA_16_Float,Graphics::TextureFlags::UnorderedAccess);

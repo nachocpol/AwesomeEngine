@@ -45,7 +45,7 @@ namespace Graphics { namespace DX12 {
 
 		UINT factoryFlags = 0;
 		ID3D12Debug* debugController = nullptr;
-		static bool enableDebug = true;
+		static bool enableDebug = false;
 		if (enableDebug && SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 		{
 			static bool enableGPUValidation = false;
@@ -380,7 +380,7 @@ namespace Graphics { namespace DX12 {
 	{
 		switch (format)
 		{
-		case Format::RG_32_Float:			return DXGI_FORMAT_R32G32B32A32_TYPELESS;
+		case Format::RG_32_Float:			return DXGI_FORMAT_R32G32_TYPELESS;
 		case Format::RGB_32_Float:			return DXGI_FORMAT_R32G32B32_TYPELESS;
 		case Format::RGBA_32_Float:			return DXGI_FORMAT_R32G32B32A32_TYPELESS;
 		case Format::Depth24_Stencil8:		return DXGI_FORMAT_R24G8_TYPELESS;
