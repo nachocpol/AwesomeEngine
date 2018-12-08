@@ -23,6 +23,9 @@ namespace Graphics
 		TextureHandle mDetailNoise;
 		GraphicsInterface* mGraphicsInterface;
 		GraphicsPipeline mCloudsPipeline;
+		GraphicsPipeline mCloudsCompositePipeline;
+
+		float mDownScaleFactor = 0.5f;
 
 		ComputePipeline mCloudsPipelineCompute;
 		TextureHandle mCloudsIntermediate;

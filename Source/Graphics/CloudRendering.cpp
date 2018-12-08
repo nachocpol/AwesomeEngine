@@ -22,39 +22,76 @@ namespace Graphics
 		
 		CreateTextures();
 
-		Graphics::GraphicsPipelineDescription desc;
-		desc.DepthEnabled = true;
-		desc.DepthWriteEnabled = false;
-		desc.DepthFunction = Graphics::Equal; // we paint it at far (so we can discard fragments from it)
-		desc.DepthFormat = Graphics::Format::Depth24_Stencil8;
-		desc.VertexShader.ShaderEntryPoint = "VSClouds";
-		desc.VertexShader.ShaderPath = "Clouds.hlsl";
-		desc.VertexShader.Type = Graphics::ShaderType::Vertex;
-		desc.PixelShader.ShaderEntryPoint = "PSClouds";
-		desc.PixelShader.ShaderPath = "Clouds.hlsl";
-		desc.PixelShader.Type = Graphics::ShaderType::Pixel;
-		Graphics::VertexInputDescription::VertexInputElement eles[1] =
+		// Render clouds PS
 		{
-			"POSITION",0, Graphics::Format::RGB_32_Float,0
-		};
-		desc.VertexDescription.NumElements = 1;
-		desc.VertexDescription.Elements = eles;
-		desc.ColorFormats[0] = Graphics::Format::RGBA_16_Float;
+			Graphics::GraphicsPipelineDescription desc;
+			desc.DepthEnabled = true;
+			desc.DepthWriteEnabled = false;
+			desc.DepthFunction = Graphics::Equal; // we paint it at far (so we can discard fragments from it)
+			desc.DepthFormat = Graphics::Format::Depth24_Stencil8;
+			desc.VertexShader.ShaderEntryPoint = "VSClouds";
+			desc.VertexShader.ShaderPath = "Clouds.hlsl";
+			desc.VertexShader.Type = Graphics::ShaderType::Vertex;
+			desc.PixelShader.ShaderEntryPoint = "PSClouds";
+			desc.PixelShader.ShaderPath = "Clouds.hlsl";
+			desc.PixelShader.Type = Graphics::ShaderType::Pixel;
+			Graphics::VertexInputDescription::VertexInputElement eles[1] =
+			{
+				"POSITION",0, Graphics::Format::RGB_32_Float,0
+			};
+			desc.VertexDescription.NumElements = 1;
+			desc.VertexDescription.Elements = eles;
+			desc.ColorFormats[0] = Graphics::Format::RGBA_16_Float;
 
-		desc.BlendTargets[0].Enabled = true;
-		desc.BlendTargets[0].SrcBlendColor = Graphics::BlendFunction::BlendSrcAlpha;
-		desc.BlendTargets[0].DstBlendColor = Graphics::BlendFunction::BlendInvSrcAlpha;
-		desc.BlendTargets[0].BlendOpColor = Graphics::BlendOperation::BlendOpAdd;
+			desc.BlendTargets[0].Enabled = true;
+			desc.BlendTargets[0].SrcBlendColor = Graphics::BlendFunction::BlendSrcAlpha;
+			desc.BlendTargets[0].DstBlendColor = Graphics::BlendFunction::BlendInvSrcAlpha;
+			desc.BlendTargets[0].BlendOpColor = Graphics::BlendOperation::BlendOpAdd;
 
-		desc.BlendTargets[0].SrcBlendAlpha = Graphics::BlendFunction::BlendOne;
-		desc.BlendTargets[0].DstBlendAlpha = Graphics::BlendFunction::BlendOne;
-		desc.BlendTargets[0].BlendOpAlpha = Graphics::BlendOperation::BlendOpAdd;
+			desc.BlendTargets[0].SrcBlendAlpha = Graphics::BlendFunction::BlendOne;
+			desc.BlendTargets[0].DstBlendAlpha = Graphics::BlendFunction::BlendOne;
+			desc.BlendTargets[0].BlendOpAlpha = Graphics::BlendOperation::BlendOpAdd;
 
-		mCloudsPipeline = mGraphicsInterface->CreateGraphicsPipeline(desc);
+			mCloudsPipeline = mGraphicsInterface->CreateGraphicsPipeline(desc);
+		}
+
+		// Composite clouds PS
+		{
+			Graphics::GraphicsPipelineDescription desc;
+			desc.DepthEnabled = true;
+			desc.DepthWriteEnabled = false;
+			desc.DepthFunction = Graphics::Equal; // we paint it at far (so we can discard fragments from it)
+			desc.DepthFormat = Graphics::Format::Depth24_Stencil8;
+			desc.VertexShader.ShaderEntryPoint = "VSClouds";
+			desc.VertexShader.ShaderPath = "Clouds.hlsl";
+			desc.VertexShader.Type = Graphics::ShaderType::Vertex;
+			desc.PixelShader.ShaderEntryPoint = "PSCloudsComposite";
+			desc.PixelShader.ShaderPath = "Clouds.hlsl";
+			desc.PixelShader.Type = Graphics::ShaderType::Pixel;
+			Graphics::VertexInputDescription::VertexInputElement eles[1] =
+			{
+				"POSITION",0, Graphics::Format::RGB_32_Float,0
+			};
+			desc.VertexDescription.NumElements = 1;
+			desc.VertexDescription.Elements = eles;
+			desc.ColorFormats[0] = mGraphicsInterface->GetOutputFormat();
+
+			desc.BlendTargets[0].Enabled = true;
+			desc.BlendTargets[0].SrcBlendColor = Graphics::BlendFunction::BlendSrcAlpha;
+			desc.BlendTargets[0].DstBlendColor = Graphics::BlendFunction::BlendInvSrcAlpha;
+			desc.BlendTargets[0].BlendOpColor = Graphics::BlendOperation::BlendOpAdd;
+
+			desc.BlendTargets[0].SrcBlendAlpha = Graphics::BlendFunction::BlendOne;
+			desc.BlendTargets[0].DstBlendAlpha = Graphics::BlendFunction::BlendOne;
+			desc.BlendTargets[0].BlendOpAlpha = Graphics::BlendOperation::BlendOpAdd;
+
+			mCloudsCompositePipeline = mGraphicsInterface->CreateGraphicsPipeline(desc);
+		}
 
 		mCloudsDataHandle = mGraphicsInterface->CreateBuffer(Graphics::BufferType::ConstantBuffer, Graphics::CPUAccess::None, sizeof(mCloudsData));
 
 
+		// Render clouds CS
 		{
 			ComputePipelineDescription computeCloudsDesc = {};
 			computeCloudsDesc.ComputeShader.ShaderEntryPoint = "CSClouds";
@@ -64,6 +101,7 @@ namespace Graphics
 			mCloudsPipelineCompute = mGraphicsInterface->CreateComputePipeline(computeCloudsDesc);
 		}
 
+		// Render cloud lighting
 		{
 			ComputePipelineDescription shadowCloudDesc = {};
 			shadowCloudDesc.ComputeShader.ShaderEntryPoint = "CSCloudShadow";
@@ -96,29 +134,36 @@ namespace Graphics
 		int tz = ceil((float)32 / (float)4);
 		mGraphicsInterface->Dispatch(ceil(tx),ty,tz);
 
-		mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
-		mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData),&mCloudsData);
-		mGraphicsInterface->SetResource(mCloudCoverage, 0);
-		mGraphicsInterface->SetResource(mBaseNoise, 1);
-		mGraphicsInterface->SetResource(mDetailNoise, 2);
-		mGraphicsInterface->SetResource(mCloudShadowTexture, 3);
-		mGraphicsInterface->Draw(6, 0);
+		//mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
+		//mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData),&mCloudsData);
+		//mGraphicsInterface->SetResource(mCloudCoverage, 0);
+		//mGraphicsInterface->SetResource(mBaseNoise, 1);
+		//mGraphicsInterface->SetResource(mDetailNoise, 2);
+		//mGraphicsInterface->SetResource(mCloudShadowTexture, 3);
+		//mGraphicsInterface->Draw(6, 0);
 
 		Graphics::Profiler::GetInstance()->End("Clouds Render");
 
 		{
-			//mGraphicsInterface->SetComputePipeline(mCloudsPipelineCompute);
-			//mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData), &mCloudsData);
-			//mGraphicsInterface->SetResource(mCloudCoverage, 0);
-			//mGraphicsInterface->SetResource(mBaseNoise, 1);
-			//mGraphicsInterface->SetResource(mDetailNoise, 2);
-			//mGraphicsInterface->SetResource(mCloudShadowTexture, 3);
-			//mGraphicsInterface->SetRWResource(mCloudsIntermediate, 0);
-			//int tx = ceil((float)mCurRenderSize.x / (float)32);
-			//int ty = ceil((float)mCurRenderSize.y / (float)32);
-			//int tz = 1;
-			//mGraphicsInterface->Dispatch(tx,ty,tz);
+			mGraphicsInterface->SetComputePipeline(mCloudsPipelineCompute);
+			mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData), &mCloudsData);
+			mGraphicsInterface->SetResource(mCloudCoverage, 0);
+			mGraphicsInterface->SetResource(mBaseNoise, 1);
+			mGraphicsInterface->SetResource(mDetailNoise, 2);
+			mGraphicsInterface->SetResource(mCloudShadowTexture, 3);
+			mGraphicsInterface->SetRWResource(mCloudsIntermediate, 0);
+
+			float cursizeX = mCurRenderSize.x * mDownScaleFactor;
+			float cursizeY = mCurRenderSize.y * mDownScaleFactor;
+			int tx = ceil((float)cursizeX / (float)32);
+			int ty = ceil((float)cursizeY / (float)32);
+			int tz = 1;
+			mGraphicsInterface->Dispatch(tx,ty,tz);
 		}
+
+		mGraphicsInterface->SetGraphicsPipeline(mCloudsCompositePipeline);
+		mGraphicsInterface->SetResource(mCloudsIntermediate, 0);
+		mGraphicsInterface->Draw(6, 0);
 	}
 
 	void CloudRenderer::ShowDebug()
@@ -156,7 +201,7 @@ namespace Graphics
 		mCloudShadowTexture = mGraphicsInterface->CreateTexture3D(128, 128, 1, 32, Graphics::Format::R_32_Float, Graphics::TextureFlags::UnorderedAccess);
 
 		mCurRenderSize = mGraphicsInterface->GetCurrentRenderingSize();
-		mCloudsIntermediate = mGraphicsInterface->CreateTexture2D(mCurRenderSize.x, mCurRenderSize.y,1,1,Graphics::Format::RGBA_16_Float,Graphics::TextureFlags::UnorderedAccess);
+		mCloudsIntermediate = mGraphicsInterface->CreateTexture2D(mCurRenderSize.x * mDownScaleFactor, mCurRenderSize.y * mDownScaleFactor,1,1,Graphics::Format::RGBA_16_Float,Graphics::TextureFlags::UnorderedAccess);
 
 		struct TexelRGBA		{ uint8_t r, g, b, a; };
 		struct TexelR			{ uint8_t r; };

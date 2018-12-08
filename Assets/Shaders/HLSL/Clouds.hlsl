@@ -12,12 +12,14 @@ cbuffer CloudsData : register(b0)
     float EarthR;
     float Time;
 }
+SamplerState LinearWrapSampler : register(s0);
 
 Texture2D CloudCoverageTex : register(t0);
 Texture3D BaseNoise : register(t1);
 Texture3D DetailNoise : register(t2);
 Texture3D CloudShadow : register(t3);
-SamplerState LinearWrapSampler : register(s0);
+
+Texture2D CloudInput : register(t0);
 
 RWTexture2D<float4> CloudOutput : register(u0);
 RWTexture3D<float> CloudShadowOutput : register(u1);
@@ -162,6 +164,7 @@ void CSClouds(uint3 threadID : SV_DispatchThreadID)
         return;
     }
     texCoord.y = 1.0f - texCoord.y;
+    texCoord = texCoord * 2.0f - 1.0f;
     CloudOutput[threadID.xy] = RenderClouds(texCoord);
 }
 
@@ -207,4 +210,11 @@ void CSCloudShadow(uint3 groudID: SV_GroupID,uint3 threadID : SV_GroupThreadID)
 float4 PSClouds(VSOut i): SV_Target0
 {
     return RenderClouds(i.TexCoord);
+}
+
+float4 PSCloudsComposite(VSOut i) : SV_Target0
+{
+    float2 uv = i.TexCoord.xy * 0.5f + 0.5f;
+    uv.y = 1.0f - uv.y;
+    return CloudInput.Sample(LinearWrapSampler,uv);
 }
