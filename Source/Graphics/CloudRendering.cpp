@@ -235,7 +235,7 @@ namespace Graphics
 		// 3D base noise
 		{
 			int numNoiseVals = 16;
-			ValueNoise3D noise3D;
+			GradientNoise3D noise3D;
 			noise3D.Initialize(numNoiseVals, numNoiseVals, numNoiseVals);
 
 			int numNoiseValsWor = 16;
@@ -262,7 +262,7 @@ namespace Graphics
 						unsigned char r = unsigned char(cu * 255.0f);
 						unsigned char g = unsigned char(cv * 255.0f);
 
-						float n = noise3D.Fbm(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals, 5, 2.2f, 0.55f);
+						float n = noise3D.Fbm(cu * numNoiseVals, cv * numNoiseVals, cw * numNoiseVals, 5, 2.0f, 0.5f);
 						//float wn = noise3DWorley.Fbm(cu, cv, cw, 5, 2.2f, 0.55f) * 0.25f;
 						float mixedNoise = (n);
 

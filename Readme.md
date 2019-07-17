@@ -13,3 +13,6 @@ Both need to be builded manually at the moment.
 
  - [DirectXTex](https://github.com/Microsoft/DirectXTex)
  - [Assimp](https://github.com/assimp/assimp)
+
+
+ ![Clouds](Assets/Pics/Clouds.png?raw=true "Cloud rendering")

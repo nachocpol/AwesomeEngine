@@ -405,7 +405,7 @@ float Graphics::GradientNoise3D::Sample(float x, float y, float z)
 
 	// Take samples at the corners
 	size_t sliceSize = mWidth * mHeight;
-	size_t slizeOff = minz * sliceSize;
+	size_t slizeOff = sliceSize * (iz % (mDepth - 1));
 
 	glm::vec3 s000 = mValues[slizeOff + (minx + miny * mWidth)];
 	glm::vec3 s100 = mValues[slizeOff + (maxx + miny * mWidth)];
@@ -430,14 +430,14 @@ float Graphics::GradientNoise3D::Sample(float x, float y, float z)
 	float g111 = glm::dot(s111, c111p);
 
 	// Tri-linear interpolation
-	float b00 = smoothstep(g000, g100, tx);
-	float b10 = smoothstep(g010, g110, tx);
+	float b00 = quintic(g000, g100, tx);
+	float b10 = quintic(g010, g110, tx);
 
-	float b01 = smoothstep(g001, g101, tx);
-	float b11 = smoothstep(g011, g111, tx);
+	float b01 = quintic(g001, g101, tx);
+	float b11 = quintic(g011, g111, tx);
 
-	float b0 = smoothstep(b00, b10, ty);
-	float b1 = smoothstep(b01, b11, ty);
+	float b0 = quintic(b00, b10, ty);
+	float b1 = quintic(b01, b11, ty);
 
 	return smoothstep(b0,b1,tz) * 0.5f + 0.5f;
 }

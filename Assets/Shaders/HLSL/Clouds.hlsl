@@ -190,14 +190,14 @@ void CSCloudShadow(uint3 groudID: SV_GroupID,uint3 threadID : SV_GroupThreadID)
     float absorptionScaledLight = Absorption * lightStepSize;
     float lightTransmitance = 1.0f;
     float3 toSunScaled = toSun * lightStepSize;
-    float3 lightPos = wpos + toSunScaled;
+    float3 lightPos = wpos;
     [loop]
     for(int j=0;j<16;j++)
     {
         float lightDensity = GetCloudDensity(lightPos);
         float lightCurTransmitance = exp(-absorptionScaledLight * lightDensity);
         lightTransmitance *= lightCurTransmitance;
-        lightPos = lightPos + toSun * lightStepSize;
+        lightPos = lightPos + toSunScaled;
         if(lightPos.y > CloudBase + CloudExtents || lightTransmitance < 0.0001f)
         {
             break;
