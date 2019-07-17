@@ -15,4 +15,4 @@ Both need to be builded manually at the moment.
  - [Assimp](https://github.com/assimp/assimp)
 
 
- ![Clouds](Assets/Pics/Clouds.png?raw=true "Cloud rendering")
+ ![Clouds](Assets/Pics/Clouds.PNG?raw=true "Cloud rendering")
