@@ -5,14 +5,7 @@ Playing around with DX12.
 
 **To build:**
 
-Just run build.bat
-You must have assimp in the same folder level as the root of this project. Same goes for dxtex.
-Both need to be builded manually at the moment.
-
-**Dependencies:**
-
- - [DirectXTex](https://github.com/Microsoft/DirectXTex)
- - [Assimp](https://github.com/assimp/assimp)
-
+Run build.bat to generate the project solution.
+You will need to have assimp in the root folder (so: Projects/Assimp Projects/AwesomeEngineClone)
 
  ![Clouds](Assets/Pics/Clouds.PNG?raw=true "Cloud rendering")
