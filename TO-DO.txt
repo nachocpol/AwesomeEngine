@@ -1,5 +1,11 @@
 TO-DO:
 
++ Proper logging system
+Have a console like system with Err, War, Info.
+Would be nice to have a macro.
+
++ Make pools for every type of resource
+
 + Replace rand with something better (spherical distribution)
 + Combine dx12 texture creation code
 + Static shape builder class (screen quad, screen triangle, cubes spheres etc etc)
@@ -11,7 +17,6 @@ TO-DO:
 + Begin end compute pipeline?
 + Profiler
 + Finish input for ImGUI
-+ Proper logging system
 
 DONE:
 + Add worley noise

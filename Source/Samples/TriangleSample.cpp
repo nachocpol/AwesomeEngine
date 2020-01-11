@@ -1,71 +1,42 @@
-#include "Graphics/DX12/DX12GraphicsInterface.h"
-#include "Graphics/Platform/Windows/WWindow.h"
 #include <stdio.h>
-
-#include "Core/Logging.h"
-
 #include <windows.h>
+#include "Core/EntryPoint.h"
+#include "Core/App/AppBase.h"
+#include "Core/Logging.h"
+#include "Graphics/GraphicsInterface.h"
+#include "Graphics/Platform/BaseWindow.h"
 
-Graphics::GraphicsInterface* gGraphicsInterface = nullptr;
 struct Vertex
 {
 	float x, y, z;
 	float r, g, b;
 };
-Graphics::BufferHandle vertexBuffer;
-Graphics::GraphicsPipeline pipeline;
 
-bool InitGraphics(Graphics::Platform::BaseWindow* window);
-void InitResources();
-
-int CALLBACK WinMain(
-	_In_ HINSTANCE hInstance,
-	_In_opt_ HINSTANCE hPrevInstance,
-	_In_ LPSTR     lpCmdLine,
-	_In_ int       nCmdShow
-)
+class TriangleApp : public AppBase
 {
-	auto window = new Graphics::Platform::Windows::WWindow();
-	window->Initialize("Awesome Triangle", false, 1280, 920);
+public:
+	TriangleApp(){}
+	~TriangleApp(){}
+	void Init();
+	void Update();
+	void Release();
+
+private:
+	Graphics::BufferHandle m_VertexBuffer;
+	Graphics::GraphicsPipeline m_Pipeline;
+};
+
+void TriangleApp::Init()
+{
+	AppBase::Init();
 	
-	InitGraphics(window);
-	InitResources();
-	gGraphicsInterface->FlushAndWait();
-
-	bool running = true;
-	while (running)
-	{
-		window->Update();
-
-		gGraphicsInterface->StartFrame();
-		gGraphicsInterface->SetScissor(0.0f, 0.0f, (float)window->GetWidth(), (float)window->GetHeight());
-		gGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
-		gGraphicsInterface->SetGraphicsPipeline(pipeline);
-		gGraphicsInterface->SetVertexBuffer(vertexBuffer, sizeof(Vertex) * 3, sizeof(Vertex));
-		gGraphicsInterface->Draw(3, 0);
-		gGraphicsInterface->EndFrame();
-
-		running = !window->IsClosed();
-	}
-	return 1;
-}
-
-bool InitGraphics(Graphics::Platform::BaseWindow* window)
-{
-	gGraphicsInterface = new Graphics::DX12::DX12GraphicsInterface();
-	gGraphicsInterface->Initialize(window);
-	return true;
-}
-
-void InitResources()
-{
 	Vertex arr[3] =
 	{
 		-0.5f, -0.5f, 0.5f,   1.0f, 0.0f, 0.0f,
-		 0.0f,  0.5f, 0.5f,   0.0f, 1.0f, 0.0f,
-		 0.5f, -0.5f, 0.5f,   0.0f, 0.0f, 1.0f
+		0.0f,  0.5f, 0.5f,   0.0f, 1.0f, 0.0f,
+		0.5f, -0.5f, 0.5f,   0.0f, 0.0f, 1.0f
 	};
-	vertexBuffer = gGraphicsInterface->CreateBuffer(Graphics::VertexBuffer, Graphics::CPUAccess::None, sizeof(Vertex) * 3, &arr[0]);
+	m_VertexBuffer = m_GraphicsInterface->CreateBuffer(Graphics::VertexBuffer, Graphics::CPUAccess::None, sizeof(Vertex) * 3, &arr[0]);
 	{
 		Graphics::GraphicsPipelineDescription pdesc = {};
 		pdesc.PixelShader.ShaderEntryPoint = "PSSimple";
@@ -90,7 +61,33 @@ void InitResources()
 		pdesc.VertexDescription.NumElements = sizeof(eles) / sizeof(Graphics::VertexInputDescription::VertexInputElement);
 		pdesc.VertexDescription.Elements = eles;
 
-		pipeline = gGraphicsInterface->CreateGraphicsPipeline(pdesc);
+		m_Pipeline = m_GraphicsInterface->CreateGraphicsPipeline(pdesc);
 	}
 }
 
+void TriangleApp::Update()
+{
+	AppBase::Update();
+
+	m_Window->Update();
+
+	m_GraphicsInterface->StartFrame();
+
+	m_GraphicsInterface->SetScissor(0.0f, 0.0f, (float)m_Window->GetWidth(), (float)m_Window->GetHeight());
+	m_GraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
+	m_GraphicsInterface->SetGraphicsPipeline(m_Pipeline);
+	m_GraphicsInterface->SetVertexBuffer(m_VertexBuffer, sizeof(Vertex) * 3, sizeof(Vertex));
+	m_GraphicsInterface->Draw(3, 0);
+
+	m_GraphicsInterface->EndFrame();
+}
+
+void TriangleApp::Release()
+{
+	m_GraphicsInterface->ReleaseGraphicsPipeline(m_Pipeline);
+	m_GraphicsInterface->ReleaseTexture
+	AppBase::Release();
+}
+
+TriangleApp app;
+ENTRY_POINT(app, "Triangle App", false);

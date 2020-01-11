@@ -1126,7 +1126,6 @@ namespace Graphics { namespace DX12 {
 			return;
 		}
 		mReleaseManager.ReleaseItem(mTexturesPool.GetEntry(handle.Handle).Resource);
-		mReleaseManager.ReleaseItem(mTexturesPool.GetEntry(handle.Handle).Resource);
 
 		handle.Handle = InvalidTexture.Handle;
 	}
