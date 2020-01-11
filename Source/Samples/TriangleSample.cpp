@@ -2,6 +2,10 @@
 #include "Graphics/Platform/Windows/WWindow.h"
 #include <stdio.h>
 
+#include "Core/Logging.h"
+
+#include <windows.h>
+
 Graphics::GraphicsInterface* gGraphicsInterface = nullptr;
 struct Vertex
 {
@@ -14,7 +18,12 @@ Graphics::GraphicsPipeline pipeline;
 bool InitGraphics(Graphics::Platform::BaseWindow* window);
 void InitResources();
 
-int main()
+int CALLBACK WinMain(
+	_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPSTR     lpCmdLine,
+	_In_ int       nCmdShow
+)
 {
 	auto window = new Graphics::Platform::Windows::WWindow();
 	window->Initialize("Awesome Triangle", false, 1280, 920);
