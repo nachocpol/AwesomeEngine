@@ -174,7 +174,7 @@ project "AwesomeTriangle"
 		}
 
 project "AwesomeAdvanced"
-	kind "ConsoleApp"
+	kind "WindowedApp"
 	language "C++"
 	location "Temp/VSFiles"
 	targetdir "Build/%{cfg.platform}/%{cfg.buildcfg}"

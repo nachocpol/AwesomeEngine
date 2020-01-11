@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <windows.h>
 #include "Core/EntryPoint.h"
 #include "Core/App/AppBase.h"
 #include "Core/Logging.h"
@@ -63,6 +62,8 @@ void TriangleApp::Init()
 
 		m_Pipeline = m_GraphicsInterface->CreateGraphicsPipeline(pdesc);
 	}
+
+	m_GraphicsInterface->FlushAndWait();
 }
 
 void TriangleApp::Update()
@@ -85,7 +86,6 @@ void TriangleApp::Update()
 void TriangleApp::Release()
 {
 	m_GraphicsInterface->ReleaseGraphicsPipeline(m_Pipeline);
-	m_GraphicsInterface->ReleaseTexture
 	AppBase::Release();
 }
 

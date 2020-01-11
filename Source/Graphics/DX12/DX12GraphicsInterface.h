@@ -148,6 +148,7 @@ namespace Graphics{ namespace DX12
 		void ReleaseTexture(TextureHandle& handle)final override;
 		void ReleaseGraphicsPipeline(GraphicsPipeline& pipeline)final override;
 		void ReleaseComputePipeline(ComputePipeline& pipeline)final override;
+		void ReleaseBuffer(BufferHandle& buffer) final override;
 		void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)final override;
 		void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize)final override;
 		void SetIndexBuffer(const BufferHandle& buffer,int size, Format idxFormat)final override;
@@ -191,9 +192,8 @@ namespace Graphics{ namespace DX12
 		D3D12_FEATURE_DATA_D3D12_OPTIONS mDeviceFeatures;
 		Graphics::Format mOutputFormat;
 
-		// Buffer pools
-		BufferEntry mBuffers[MAX_BUFFERS];
-		uint64_t mCurBuffer;
+		// Buffer pool
+		ResourcePool<BufferEntry> mBuffersPool;
 
 		// Texture pool
 		ResourcePool<TextureEntry> mTexturesPool;

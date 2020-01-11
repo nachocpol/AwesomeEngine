@@ -12,7 +12,6 @@ namespace Graphics { namespace DX12 {
 
 	DX12GraphicsInterface::DX12GraphicsInterface():
 		mDevice(nullptr),
-		mCurBuffer(0),
 		mGraphicsRootSignature(nullptr),
 		mCurGraphicsPipeline(0),
 		mCurComputePipeline(0),
@@ -24,7 +23,6 @@ namespace Graphics { namespace DX12 {
 		mTimeStampsHeap(nullptr),
 		mTimeStampsMemory(nullptr)
 	{
-		memset(mBuffers, 0, sizeof(mBuffers));
 		memset(mGraphicsPipelines, 0, sizeof(mGraphicsPipelines));
 		memset(mComputePipelines, 0, sizeof(mComputePipelines));
 	}
@@ -45,7 +43,7 @@ namespace Graphics { namespace DX12 {
 
 		UINT factoryFlags = 0;
 		ID3D12Debug* debugController = nullptr;
-		static bool enableDebug = false;
+		static bool enableDebug = true;
 		if (enableDebug && SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 		{
 			static bool enableGPUValidation = false;
@@ -553,12 +551,11 @@ namespace Graphics { namespace DX12 {
 
 	BufferHandle DX12GraphicsInterface::CreateBuffer(BufferType type, CPUAccess cpuAccess, uint64_t size, void* data /*= nullptr*/)
 	{
-		assert(mCurBuffer < MAX_BUFFERS);
-
 		bool isIndex = type == BufferType::IndexBuffer;
 		bool isWrite = cpuAccess == CPUAccess::Write;
 
-		BufferEntry& bufferEntry = mBuffers[mCurBuffer];
+		BufferHandle handle;
+		BufferEntry& bufferEntry = mBuffersPool.GetFreeEntry(handle.Handle);
 		bufferEntry.Type = type;
 		bufferEntry.Access = cpuAccess;
 		bufferEntry.LastFrame = mFrame;
@@ -601,12 +598,11 @@ namespace Graphics { namespace DX12 {
 			IID_PPV_ARGS(&bufferEntry.UploadHeap)
 		);
 		
-		BufferHandle handle = { mCurBuffer };
 		if (data && type != Graphics::ConstantBuffer)
 		{
 			SetBufferData(handle, (int)size, 0, data);
 		}
-		mCurBuffer++;
+		
 		return handle;
 	}
 
@@ -1148,9 +1144,14 @@ namespace Graphics { namespace DX12 {
 	{
 	}
 
+	void DX12GraphicsInterface::ReleaseBuffer(BufferHandle& buffer)
+	{
+
+	}
+
 	void DX12GraphicsInterface::SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)
 	{
-		BufferEntry& bufferEntry = mBuffers[buffer.Handle];
+		BufferEntry& bufferEntry = mBuffersPool.GetEntry(buffer.Handle);
 		if (bufferEntry.Type == ConstantBuffer)
 		{
 			std::cout << "Do not call SetBufferData on a Constant buffer, just use the SetConstantBuffer method. \n";
@@ -1184,11 +1185,11 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetVertexBuffer(const BufferHandle& buffer,int size, int eleSize)
 	{
-		BufferEntry& buffeEntry = mBuffers[buffer.Handle];
-		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && buffeEntry.Buffer != nullptr)
+		BufferEntry& bufferEntry = mBuffersPool.GetEntry(buffer.Handle);
+		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && bufferEntry.Buffer != nullptr)
 		{
 			D3D12_VERTEX_BUFFER_VIEW view	= {};
-			view.BufferLocation				= buffeEntry.Buffer->GetGPUVirtualAddress();
+			view.BufferLocation				= bufferEntry.Buffer->GetGPUVirtualAddress();
 			view.SizeInBytes				= size;
 			view.StrideInBytes				= eleSize;
 			mDefaultSurface.CmdContext->IASetVertexBuffers(0, 1, &view);
@@ -1197,11 +1198,11 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetIndexBuffer(const BufferHandle& buffer,int size, Format idxFormat)
 	{
-		BufferEntry& buffeEntry = mBuffers[buffer.Handle];
-		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && buffeEntry.Buffer != nullptr)
+		BufferEntry& bufferEntry = mBuffersPool.GetEntry(buffer.Handle);
+		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && bufferEntry.Buffer != nullptr)
 		{
 			D3D12_INDEX_BUFFER_VIEW view = {};
-			view.BufferLocation = buffeEntry.Buffer->GetGPUVirtualAddress();
+			view.BufferLocation = bufferEntry.Buffer->GetGPUVirtualAddress();
 			view.SizeInBytes = size;
 			view.Format = ToDXGIFormat(idxFormat);
 			mDefaultSurface.CmdContext->IASetIndexBuffer(&view);
@@ -1311,7 +1312,7 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data)
 	{
-		BufferEntry& bufferEntry = mBuffers[buffer.Handle];
+		BufferEntry& bufferEntry = mBuffersPool.GetEntry(buffer.Handle);
 		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && bufferEntry.UploadHeap != nullptr)
 		{
 			if (data)
@@ -1464,26 +1465,26 @@ namespace Graphics { namespace DX12 {
 	bool DX12GraphicsInterface::MapBuffer(BufferHandle buffer, unsigned char** outPtr, bool writeOnly /*=true*/)
 	{
 		D3D12_RANGE range = CD3DX12_RANGE(0, 0);
-		BufferEntry& bentry = mBuffers[buffer.Handle];
-		if ((bentry.Access != CPUAccess::Write && bentry.Access != CPUAccess::ReadWrite))
+		BufferEntry& bufferEntry = mBuffersPool.GetEntry(buffer.Handle);
+		if ((bufferEntry.Access != CPUAccess::Write && bufferEntry.Access != CPUAccess::ReadWrite))
 		{
 			outPtr = nullptr;
 			assert(false);
 			return false;
 		}
-		if (bentry.UploadHeap)
+		if (bufferEntry.UploadHeap)
 		{
 			HRESULT res = S_OK;
-			res = bentry.UploadHeap->Map(0, writeOnly ? &range : nullptr, (void**)outPtr);
+			res = bufferEntry.UploadHeap->Map(0, writeOnly ? &range : nullptr, (void**)outPtr);
 			if (FAILED(res))
 			{
 				outPtr = nullptr;
 				return false;
 			}
 			// Return the current portion of the upload buffer
-			size_t off = (mFrame % NUM_BACK_BUFFERS) * bentry.Buffer->GetDesc().Width;
+			size_t off = (mFrame % NUM_BACK_BUFFERS) * bufferEntry.Buffer->GetDesc().Width;
 			*outPtr += off;
-			bentry.LastFrame = mFrame;
+			bufferEntry.LastFrame = mFrame;
 			return true;
 		}
 		return false;
@@ -1491,24 +1492,24 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::UnMapBuffer(BufferHandle buffer, bool writeOnly/*=true*/)
 	{
-		BufferEntry& bentry = mBuffers[buffer.Handle];
-		if (bentry.UploadHeap)
+		BufferEntry& bufferEntry = mBuffersPool.GetEntry(buffer.Handle);
+		if (bufferEntry.UploadHeap)
 		{
 			HRESULT res = S_OK;
-			bentry.UploadHeap->Unmap(0, nullptr);
-			size_t off = (bentry.LastFrame % NUM_BACK_BUFFERS) * bentry.Buffer->GetDesc().Width;
-			bentry.LastFrame = 0;
+			bufferEntry.UploadHeap->Unmap(0, nullptr);
+			size_t off = (bufferEntry.LastFrame % NUM_BACK_BUFFERS) * bufferEntry.Buffer->GetDesc().Width;
+			bufferEntry.LastFrame = 0;
 			// Lets make sure the data is ready to be used by the GPU:
 			bool changed = false;
-			if (bentry.State != COPY_DST)
+			if (bufferEntry.State != COPY_DST)
 			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bentry.Buffer, bentry.State, COPY_DST));
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry.Buffer, bufferEntry.State, COPY_DST));
 				changed = true;
 			}			
-			mDefaultSurface.CmdContext->CopyBufferRegion(bentry.Buffer, 0, bentry.UploadHeap, off, bentry.UploadHeap->GetDesc().Width / NUM_BACK_BUFFERS);
+			mDefaultSurface.CmdContext->CopyBufferRegion(bufferEntry.Buffer, 0, bufferEntry.UploadHeap, off, bufferEntry.UploadHeap->GetDesc().Width / NUM_BACK_BUFFERS);
 			if (changed)
 			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bentry.Buffer,COPY_DST, bentry.State));
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry.Buffer,COPY_DST, bufferEntry.State));
 			}
 		}
 	}

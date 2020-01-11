@@ -1,5 +1,7 @@
 #pragma once
 
+#include <windows.h>
+
 class AppBase;
 
 void EntryImpl(AppBase* app);

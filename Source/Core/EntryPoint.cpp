@@ -3,7 +3,7 @@
 
 void EntryImpl(AppBase* app)
 {
-	app->Init();
+	app->Init(); 
 	while (app->Running())
 	{
 		app->Update();
