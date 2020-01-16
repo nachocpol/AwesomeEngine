@@ -60,23 +60,23 @@ void AdvancedApp::Init()
 
 	VertexCube arr[36] =
 	{
-		-1.0f, 1.0f, 1.0f,  1.0f, 1.0f, 1.0f,  1.0f,-1.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f,  1.0f, 1.0f, 1.0f,  1.0f,-1.0f, 1.0f,    // Front
 		-1.0f, 1.0f, 1.0f,  1.0f,-1.0f, 1.0f, -1.0f,-1.0f, 1.0f,
 
-		-1.0f, 1.0f, 1.0f, -1.0f, 1.0f,-1.0f, 1.0f, 1.0f, -1.0f,
-		-1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f,  1.0f,
+		-1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f,  1.0f, 1.0f, -1.0f,  // Top
+		-1.0f, 1.0f, 1.0f,  1.0f, 1.0f, -1.0f,  1.0f, 1.0f,  1.0f,
 
-		-1.0f,-1.0f,1.0f, 1.0f,-1.0f,1.0f, -1.0f,-1.0f,-1.0f,
-		1.0f,-1.0f,1.0f,  1.0f,-1.0f,-1.0f,  -1.0f,-1.0f,-1.0f,
+		-1.0f,-1.0f, 1.0f,   1.0f,-1.0f,1.0f,   -1.0f,-1.0f,-1.0f,  // Bot
+		 1.0f, -1.0f, 1.0f,  1.0f,-1.0f,-1.0f,  -1.0f,-1.0f,-1.0f,
 
-		1.0f, 1.0f,-1.0f, -1.0f, 1.0f,-1.0f, -1.0f,-1.0f,-1.0f,
-		1.0f, 1.0f,-1.0f, 1.0f,-1.0f, -1.0f, -1.0f,-1.0f,-1.0f,
+		1.0f, 1.0f,-1.0f, -1.0f, 1.0f,-1.0f,   -1.0f,-1.0f,-1.0f,    // Back
+		1.0f, 1.0f,-1.0f,  -1.0f,-1.0f, -1.0f,  1.0f,-1.0f,-1.0f,
 
-		1.0f, 1.0f, 1.0f, 1.0f, 1.0f,-1.0f, 1.0f,-1.0f,-1.0f,
-		1.0f, 1.0f, 1.0f, 1.0f,-1.0f,-1.0f, 1.0f,-1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,  1.0f, 1.0f,-1.0f,  1.0f,-1.0f,-1.0f, // Right
+		1.0f, 1.0f, 1.0f,  1.0f,-1.0f,-1.0f,  1.0f,-1.0f, 1.0f, 
 
-		-1.0f, 1.0f,-1.0f, -1.0f, 1.0f,1.0f,-1.0f,-1.0f,1.0f,
-		-1.0f, 1.0f,-1.0f, -1.0f,-1.0f,1.0f, -1.0f,-1.0f,-1.0f
+		-1.0f, 1.0f,-1.0f,  -1.0f, 1.0f,1.0f,  -1.0f,-1.0f,1.0f, // Left
+		-1.0f, 1.0f,-1.0f,  -1.0f,-1.0f,1.0f,  -1.0f,-1.0f,-1.0f
 	};
 	vertexBuffer = mGraphicsInterface->CreateBuffer(Graphics::VertexBuffer, Graphics::CPUAccess::None, sizeof(arr), &arr[0]);
 	{
@@ -165,8 +165,8 @@ void AdvancedApp::Update()
 			AppData.Model = glm::mat4(1.0f);
 			AppData.Model = glm::translate(AppData.Model, glm::vec3(0.0f, 0.0f, 0.0f));
 			AppData.Model = glm::rotate(AppData.Model, 0.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-			AppData.Model = glm::rotate(AppData.Model, TotalTime * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f));
-			AppData.Model = glm::rotate(AppData.Model, TotalTime* 0.5f, glm::vec3(0.0f, 0.0f, 1.0f));
+			AppData.Model = glm::rotate(AppData.Model, TotalTime * 2.5f, glm::vec3(0.0f, 1.0f, 0.0f));
+			AppData.Model = glm::rotate(AppData.Model, TotalTime* 2.5f, glm::vec3(0.0f, 0.0f, 1.0f));
 			AppData.Model = glm::scale(AppData.Model, glm::vec3(1.0f, 1.0f, 1.0f));
 			AppData.DebugColor = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 		}
