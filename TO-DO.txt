@@ -3,9 +3,9 @@ TO-DO:
 + Proper logging system
 Have a console like system with Err, War, Info.
 Would be nice to have a macro.
-
 + Make pools for every type of resource
-
++ Unify shaders...
++ Check proper resizing..
 + Replace rand with something better (spherical distribution)
 + Combine dx12 texture creation code
 + Static shape builder class (screen quad, screen triangle, cubes spheres etc etc)
@@ -17,7 +17,11 @@ Would be nice to have a macro.
 + Begin end compute pipeline?
 + Profiler
 + Finish input for ImGUI
++ Clustered renderer.
++ Scene graph system
 
 DONE:
 + Add worley noise
 + Clouds to compute shader
++ Entry point system
++ App Base system

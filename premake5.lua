@@ -3,6 +3,9 @@ workspace "AwesomeSolution"
 	platforms "x64"
 	systemversion "10.0.16299.0"
 
+filter {"platforms:x64"}
+	defines {"PLATFORM_WINDOWS"}
+
 project "Core"
 	kind "StaticLib"
 	language "C++"

@@ -49,14 +49,14 @@ void AdvancedApp::Init()
 {
 	AppBase::Init();
 
-	int width = 1024;
-	int height = 720;
+	int width = 1920;
+	int height = 1080;
 
 	auto colFlags = Graphics::TextureFlags::RenderTarget;
-	mainTarget = m_GraphicsInterface->CreateTexture2D(width, height, 1, 1, Graphics::Format::RGBA_8_Unorm, colFlags);
+	mainTarget = mGraphicsInterface->CreateTexture2D(width, height, 1, 1, Graphics::Format::RGBA_8_Unorm, colFlags);
 
 	auto depthFlags = Graphics::TextureFlags::DepthStencil;
-	mainDepth = m_GraphicsInterface->CreateTexture2D(width, height, 1, 1, Graphics::Format::Depth24_Stencil8, depthFlags);
+	mainDepth = mGraphicsInterface->CreateTexture2D(width, height, 1, 1, Graphics::Format::Depth24_Stencil8, depthFlags);
 
 	VertexCube arr[36] =
 	{
@@ -78,7 +78,7 @@ void AdvancedApp::Init()
 		-1.0f, 1.0f,-1.0f, -1.0f, 1.0f,1.0f,-1.0f,-1.0f,1.0f,
 		-1.0f, 1.0f,-1.0f, -1.0f,-1.0f,1.0f, -1.0f,-1.0f,-1.0f
 	};
-	vertexBuffer = m_GraphicsInterface->CreateBuffer(Graphics::VertexBuffer, Graphics::CPUAccess::None, sizeof(arr), &arr[0]);
+	vertexBuffer = mGraphicsInterface->CreateBuffer(Graphics::VertexBuffer, Graphics::CPUAccess::None, sizeof(arr), &arr[0]);
 	{
 		Graphics::GraphicsPipelineDescription pdesc = {};
 		pdesc.PixelShader.ShaderEntryPoint = "PSFordwardSimple";
@@ -103,7 +103,7 @@ void AdvancedApp::Init()
 		pdesc.ColorFormats[0] = Graphics::Format::RGBA_8_Unorm;
 		pdesc.DepthFormat = Graphics::Format::Depth24_Stencil8;
 
-		pipeline = m_GraphicsInterface->CreateGraphicsPipeline(pdesc);
+		pipeline = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
 	}
 	{
 		Graphics::GraphicsPipelineDescription desc;
@@ -126,7 +126,7 @@ void AdvancedApp::Init()
 		desc.ColorFormats[0] = Graphics::Format::RGBA_8_Unorm;
 		desc.DepthFormat = Graphics::Format::Depth24_Stencil8;
 
-		fullScreenPipeline = m_GraphicsInterface->CreateGraphicsPipeline(desc);
+		fullScreenPipeline = mGraphicsInterface->CreateGraphicsPipeline(desc);
 
 		VertexScreen vtxData[6] =
 		{
@@ -138,60 +138,56 @@ void AdvancedApp::Init()
 			1.0f,-1.0f,0.0f,
 			-1.0f,-1.0f,0.0f,
 		};
-		fullScreenBuffer = m_GraphicsInterface->CreateBuffer(Graphics::VertexBuffer, Graphics::None, sizeof(VertexScreen) * 6, &vtxData);
+		fullScreenBuffer = mGraphicsInterface->CreateBuffer(Graphics::VertexBuffer, Graphics::None, sizeof(VertexScreen) * 6, &vtxData);
 	}
-	appDataBuffer = m_GraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AppData));
+	appDataBuffer = mGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AppData));
 
-	m_GraphicsInterface->FlushAndWait();
+	mGraphicsInterface->FlushAndWait();
 }
 
 void AdvancedApp::Update()
 {
 	AppBase::Update();
 
-	m_Window->Update();
-
-	m_GraphicsInterface->StartFrame();
-	m_GraphicsInterface->SetScissor(0.0f, 0.0f, m_Window->GetWidth(), m_Window->GetHeight());
+	mGraphicsInterface->SetScissor(0.0f, 0.0f, mWindow->GetWidth(), mWindow->GetHeight());
 
 	// Render to screen buffer
-	m_GraphicsInterface->SetTargets(1, &mainTarget, &mainDepth);
+	mGraphicsInterface->SetTargets(1, &mainTarget, &mainDepth);
 	float clear[4] = { 0.0f,0.0f,0.0f,1.0f };
-	m_GraphicsInterface->ClearTargets(1, &mainTarget, clear, &mainDepth, 1.0f, 0);
+	mGraphicsInterface->ClearTargets(1, &mainTarget, clear, &mainDepth, 1.0f, 0);
 	{
-		m_GraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
-		m_GraphicsInterface->SetGraphicsPipeline(pipeline);
+		mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
+		mGraphicsInterface->SetGraphicsPipeline(pipeline);
 		{
-			AppData.View = glm::lookAtRH(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-			AppData.Projection = glm::perspective(glm::radians(75.0f), 1280.0f / 920.0f, 0.1f, 100.0f);
+			AppData.View = glm::lookAt(glm::vec3(0.0f, 0.0f, -8.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+			AppData.Projection = glm::perspective(glm::radians(90.0f), 1920.0f / 1080.0f, 0.1f, 200.0f);
 
 			AppData.Model = glm::mat4(1.0f);
 			AppData.Model = glm::translate(AppData.Model, glm::vec3(0.0f, 0.0f, 0.0f));
 			AppData.Model = glm::rotate(AppData.Model, 0.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-			AppData.Model = glm::rotate(AppData.Model, /*t*/ 1.0f * 0.2f, glm::vec3(0.0f, 1.0f, 0.0f));
-			AppData.Model = glm::rotate(AppData.Model, /*t*/ 1.0f * 0.2f, glm::vec3(0.0f, 0.0f, 1.0f));
-			AppData.Model = glm::scale(AppData.Model, glm::vec3(0.5f, 0.5f, 0.5f));
+			AppData.Model = glm::rotate(AppData.Model, TotalTime * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f));
+			AppData.Model = glm::rotate(AppData.Model, TotalTime* 0.5f, glm::vec3(0.0f, 0.0f, 1.0f));
+			AppData.Model = glm::scale(AppData.Model, glm::vec3(1.0f, 1.0f, 1.0f));
 			AppData.DebugColor = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 		}
-		m_GraphicsInterface->SetConstantBuffer(appDataBuffer, 0, sizeof(AppData), &AppData);
-		m_GraphicsInterface->SetVertexBuffer(vertexBuffer, sizeof(VertexCube) * 36, sizeof(VertexCube));
-		m_GraphicsInterface->Draw(36, 0);
+		mGraphicsInterface->SetConstantBuffer(appDataBuffer, 0, sizeof(AppData), &AppData);
+		mGraphicsInterface->SetVertexBuffer(vertexBuffer, sizeof(VertexCube) * 36, sizeof(VertexCube));
+		mGraphicsInterface->Draw(36, 0);
 		{
 			AppData.Model = glm::mat4(1.0f);
-			AppData.Model = glm::translate(AppData.Model, glm::vec3(1.0f, 0.5f, -1.0f));
+			AppData.Model = glm::translate(AppData.Model, glm::vec3(4.0f, 0.5f, -1.0f));
 			AppData.DebugColor = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 		}
-		m_GraphicsInterface->SetConstantBuffer(appDataBuffer, 0, sizeof(AppData), &AppData);
-		m_GraphicsInterface->Draw(36, 0);
+		mGraphicsInterface->SetConstantBuffer(appDataBuffer, 0, sizeof(AppData), &AppData);
+		mGraphicsInterface->Draw(36, 0);
 	}
-	m_GraphicsInterface->DisableAllTargets();
+	mGraphicsInterface->DisableAllTargets();
 
 	// Output to the screen
-	m_GraphicsInterface->SetGraphicsPipeline(fullScreenPipeline);
-	m_GraphicsInterface->SetVertexBuffer(fullScreenBuffer, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
-	m_GraphicsInterface->SetResource(mainTarget, 0);
-	m_GraphicsInterface->Draw(6, 0);
-	m_GraphicsInterface->EndFrame();
+	mGraphicsInterface->SetGraphicsPipeline(fullScreenPipeline);
+	mGraphicsInterface->SetVertexBuffer(fullScreenBuffer, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
+	mGraphicsInterface->SetResource(mainTarget, 0);
+	mGraphicsInterface->Draw(6, 0);
 }
 
 void AdvancedApp::Release()

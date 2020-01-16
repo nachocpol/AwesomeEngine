@@ -4,6 +4,7 @@
 #include "Core/Logging.h"
 #include "Graphics/GraphicsInterface.h"
 #include "Graphics/Platform/BaseWindow.h"
+#include "Graphics/UI/UIInterface.h"
 
 struct Vertex
 {
@@ -35,7 +36,7 @@ void TriangleApp::Init()
 		0.0f,  0.5f, 0.5f,   0.0f, 1.0f, 0.0f,
 		0.5f, -0.5f, 0.5f,   0.0f, 0.0f, 1.0f
 	};
-	m_VertexBuffer = m_GraphicsInterface->CreateBuffer(Graphics::VertexBuffer, Graphics::CPUAccess::None, sizeof(Vertex) * 3, &arr[0]);
+	m_VertexBuffer = mGraphicsInterface->CreateBuffer(Graphics::VertexBuffer, Graphics::CPUAccess::None, sizeof(Vertex) * 3, &arr[0]);
 	{
 		Graphics::GraphicsPipelineDescription pdesc = {};
 		pdesc.PixelShader.ShaderEntryPoint = "PSSimple";
@@ -59,33 +60,30 @@ void TriangleApp::Init()
 
 		pdesc.VertexDescription.NumElements = sizeof(eles) / sizeof(Graphics::VertexInputDescription::VertexInputElement);
 		pdesc.VertexDescription.Elements = eles;
-
-		m_Pipeline = m_GraphicsInterface->CreateGraphicsPipeline(pdesc);
+		pdesc.ColorFormats[0] = mGraphicsInterface->GetOutputFormat();
+		m_Pipeline = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
 	}
 
-	m_GraphicsInterface->FlushAndWait();
+	mGraphicsInterface->FlushAndWait();
 }
 
 void TriangleApp::Update()
 {
 	AppBase::Update();
 
-	m_Window->Update();
+	mGraphicsInterface->SetScissor(0.0f, 0.0f, (float)mWindow->GetWidth(), (float)mWindow->GetHeight());
+	mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
+	mGraphicsInterface->SetGraphicsPipeline(m_Pipeline);
+	mGraphicsInterface->SetVertexBuffer(m_VertexBuffer, sizeof(Vertex) * 3, sizeof(Vertex));
+	mGraphicsInterface->Draw(3, 0);
 
-	m_GraphicsInterface->StartFrame();
-
-	m_GraphicsInterface->SetScissor(0.0f, 0.0f, (float)m_Window->GetWidth(), (float)m_Window->GetHeight());
-	m_GraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
-	m_GraphicsInterface->SetGraphicsPipeline(m_Pipeline);
-	m_GraphicsInterface->SetVertexBuffer(m_VertexBuffer, sizeof(Vertex) * 3, sizeof(Vertex));
-	m_GraphicsInterface->Draw(3, 0);
-
-	m_GraphicsInterface->EndFrame();
+	ImGui::Begin("Paco");
+	ImGui::End();
 }
 
 void TriangleApp::Release()
 {
-	m_GraphicsInterface->ReleaseGraphicsPipeline(m_Pipeline);
+	mGraphicsInterface->ReleaseGraphicsPipeline(m_Pipeline);
 	AppBase::Release();
 }
 

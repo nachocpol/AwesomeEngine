@@ -2,10 +2,13 @@
 
 #include "Graphics/Platform/Windows/WWindow.h"
 #include "Graphics/DX12/DX12GraphicsInterface.h"
+#include "Graphics/UI/UIInterface.h"
 
 AppBase::AppBase():
-	 m_Name("Defaul")
-	,m_FullScreen(false)
+	 TotalTime(0.0f)
+	,DeltaTime(0.0f)
+	,mName("Default")
+	,mFullScreen(false)
 {
 }
 
@@ -15,21 +18,37 @@ AppBase::~AppBase()
 
 void AppBase::Configure(const char* name, bool fullScreen)
 {
-	m_Name = name;
-	m_FullScreen = fullScreen;
+	mName = name;
+	mFullScreen = fullScreen;
 }
 
 void AppBase::Init()
 {
-	m_Window = new Graphics::Platform::Windows::WWindow();
-	m_Window->Initialize(m_Name, m_FullScreen, 720, 360);
+	mWindow = new Graphics::Platform::Windows::WWindow();
+	mWindow->Initialize(mName, mFullScreen, 1920, 1080);
 
-	m_GraphicsInterface = new Graphics::DX12::DX12GraphicsInterface();
-	m_GraphicsInterface->Initialize(m_Window);
+	mGraphicsInterface = new Graphics::DX12::DX12GraphicsInterface();
+	mGraphicsInterface->Initialize(mWindow);
+
+	mUIInterface = new Graphics::UI::UIInterface();
+	mUIInterface->Initialize(mWindow, mGraphicsInterface);
+}
+
+void AppBase::StartFrame()
+{
+	mWindow->Update(); // This will query new events...
+	mGraphicsInterface->StartFrame();
+	mUIInterface->StartFrame();
 }
 
 void AppBase::Update()
 {
+}
+
+void AppBase::EndFrame()
+{
+	mUIInterface->EndFrame();
+	mGraphicsInterface->EndFrame();
 }
 
 void AppBase::Release()
@@ -38,5 +57,5 @@ void AppBase::Release()
 
 bool AppBase::Running()
 {
-	return !m_Window->IsClosed();
+	return !mWindow->IsClosed();
 }
