@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <windows.h> // this is not cross plat.
 
 namespace Core
 {
@@ -20,6 +21,6 @@ static void OUT_IMPL(const char* msg, ...)
 	va_end(argptr);
 }
 
-#define INFO(msg, ...) OUT_IMPL("[INFORMATION][%s][%d]:" msg "\n",__FILE__,__LINE__,  __VA_ARGS__);
-#define WARN(msg, ...) OUT_IMPL("[WARNING][%s][%d]:" msg "\n",__FILE__,__LINE__,  __VA_ARGS__);
-#define ERR(msg, ...)  OUT_IMPL("[ERROR][%s][%d]:" msg "\n",__FILE__,__LINE__,  __VA_ARGS__);
+#define INFO(msg, ...) OUT_IMPL("[INFORMATION][%s][%d]: %s\n",__FILE__,__LINE__,  __VA_ARGS__);
+#define WARN(msg, ...) OUT_IMPL("[WARNING][%s][%d]: %s\n",__FILE__,__LINE__,  __VA_ARGS__);
+#define ERR(msg, ...)  OUT_IMPL("[ERROR][%s][%d]: %s\n",__FILE__,__LINE__,  __VA_ARGS__);

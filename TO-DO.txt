@@ -1,8 +1,10 @@
+DOING:
+
++ Proper asset import: model class, model factory
+
 TO-DO:
 
-+ Proper logging system
-Have a console like system with Err, War, Info.
-Would be nice to have a macro.
++ Console to display logs
 + Make pools for every type of resource
 + Unify shaders...
 + Check proper resizing..
@@ -13,7 +15,6 @@ Would be nice to have a macro.
 + Implement gradient noise	
 + Precompile shaders offline
 + Add curl noise
-+ Resize screen, resize textures
 + Begin end compute pipeline?
 + Profiler
 + Finish input for ImGUI
@@ -21,7 +22,17 @@ Would be nice to have a macro.
 + Scene graph system
 
 DONE:
++ Proper logging system. Would be nice to have a macro.
 + Add worley noise
 + Clouds to compute shader
 + Entry point system
 + App Base system
+
+BRAINSTORM:
+
+To render something, you have
++ Source mesh (.fbx, .obj, procedural, binary). This is just a set of vertex data!
++ Material, a shader, this material will reference some textures.
++ Transformation, where should we render, scale, rotation!
+
+A model can have many meshes!

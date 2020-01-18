@@ -173,7 +173,7 @@ project "AwesomeTriangle"
 		}
 		links
 		{
-			"Graphics"
+			"Graphics", "Core"
 		}
 
 project "AwesomeAdvanced"
@@ -216,7 +216,7 @@ project "AwesomeAdvanced"
 		}
 		links
 		{
-			"Graphics"
+			"Graphics", "Core"
 		}
 
 project "AwesomeShowcase"
@@ -245,7 +245,7 @@ project "AwesomeShowcase"
 		}
 		links
 		{
-			"Graphics",
+			"Graphics", "Core",
 			"assimp-vc140-mt"
 		}
 	filter "configurations:Release"
@@ -263,6 +263,6 @@ project "AwesomeShowcase"
 		}
 		links
 		{
-			"Graphics",
+			"Graphics", "Core",
 			"assimp-vc140-mt"
 		}

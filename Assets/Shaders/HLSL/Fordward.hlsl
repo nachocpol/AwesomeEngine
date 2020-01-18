@@ -13,9 +13,9 @@ SamplerState LinearWrapSampler : register(s0);
 struct VSIn
 {
 	float3 Position : POSITION;
-	//float3 Normal 	: NORMAL;
-	//float3 Tangent 	: TANGENT;
-	//float2 Texcoord : TEXCOORD;
+	float3 Normal 	: NORMAL;
+	float3 Tangent 	: TANGENT;
+	float2 Texcoord : TEXCOORD;
 };
 
 struct VSOut

@@ -4,7 +4,7 @@
 #include "Graphics/Platform/Windows/WWindow.h"
 #include "Graphics/AssetImporter.h"
 #include "Graphics/UI/UIInterface.h"
-#include "Graphics/Platform/Windows/WindowsTime.h"
+#include "Core/Platform/Timer.h"
 #include "ShowcaseScene.h"
 
 bool InitSystems();
@@ -16,7 +16,7 @@ Graphics::AssetImporter* gAssetImporter = nullptr;
 ShowcaseScene* gScene = nullptr;
 Graphics::UI::UIInterface* gUIInterface = nullptr;
 
-Graphics::Platform::Windows::WindowsTimer gTimer;
+Core::Timer gTimer;
 
 int main()
 {

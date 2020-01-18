@@ -19,7 +19,7 @@ namespace Graphics
 	};
 	struct Actor
 	{
-		Mesh AMesh;
+		//Mesh AMesh;
 		glm::vec3 Position;
 		glm::vec3 Scale;
 		glm::vec3 Rotation;

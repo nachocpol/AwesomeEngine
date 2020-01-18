@@ -4,6 +4,7 @@
 #include "Core/EntryPoint.h"
 #include "Core/App/AppBase.h"
 #include "Graphics/GraphicsInterface.h"
+#include "Graphics/World/Model.h"
 #include <stdio.h>
 #include "glm/ext.hpp"
 
@@ -40,6 +41,8 @@ private:
 	Graphics::GraphicsPipeline fullScreenPipeline;
 	Graphics::BufferHandle appDataBuffer;
 	Graphics::BufferHandle fullScreenBuffer;
+
+	Graphics::Model* mCube;
 
 	Graphics::TextureHandle mainTarget;
 	Graphics::TextureHandle mainDepth;
@@ -89,11 +92,19 @@ void AdvancedApp::Init()
 		pdesc.VertexShader.ShaderPath = "Fordward.hlsl";
 		pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
 
-		Graphics::VertexInputDescription::VertexInputElement eles[1];
-		eles[0].Semantic = "POSITION";
-		eles[0].Idx = 0;
-		eles[0].EleFormat = Graphics::Format::RGB_32_Float;
-		eles[0].Offset = 0;
+		//Graphics::VertexInputDescription::VertexInputElement eles[1];
+		//eles[0].Semantic = "POSITION";
+		//eles[0].Idx = 0;
+		//eles[0].EleFormat = Graphics::Format::RGB_32_Float;
+		//eles[0].Offset = 0;
+
+		Graphics::VertexInputDescription::VertexInputElement eles[4] =
+		{
+			 {"POSITION", 0, Graphics::Format::RGB_32_Float, 0}
+			,{"NORMAL", 0, Graphics::Format::RGB_32_Float, 12}
+			,{"TANGENT", 0,	Graphics::Format::RGB_32_Float, 24}
+			,{"TEXCOORD", 0, Graphics::Format::RG_32_Float, 36}
+		};
 
 		pdesc.VertexDescription.NumElements = sizeof(eles) / sizeof(Graphics::VertexInputDescription::VertexInputElement);
 		pdesc.VertexDescription.Elements = eles;
@@ -142,6 +153,8 @@ void AdvancedApp::Init()
 	}
 	appDataBuffer = mGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AppData));
 
+	mCube = Graphics::ModelFactory::Get()->LoadFromFile("Meshes\\cube.obj", mGraphicsInterface);
+
 	mGraphicsInterface->FlushAndWait();
 }
 
@@ -171,15 +184,21 @@ void AdvancedApp::Update()
 			AppData.DebugColor = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 		}
 		mGraphicsInterface->SetConstantBuffer(appDataBuffer, 0, sizeof(AppData), &AppData);
-		mGraphicsInterface->SetVertexBuffer(vertexBuffer, sizeof(VertexCube) * 36, sizeof(VertexCube));
-		mGraphicsInterface->Draw(36, 0);
-		{
-			AppData.Model = glm::mat4(1.0f);
-			AppData.Model = glm::translate(AppData.Model, glm::vec3(4.0f, 0.5f, -1.0f));
-			AppData.DebugColor = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-		}
-		mGraphicsInterface->SetConstantBuffer(appDataBuffer, 0, sizeof(AppData), &AppData);
-		mGraphicsInterface->Draw(36, 0);
+		//mGraphicsInterface->SetVertexBuffer(vertexBuffer, sizeof(VertexCube) * 36, sizeof(VertexCube));
+		//mGraphicsInterface->Draw(36, 0);
+
+		mGraphicsInterface->SetVertexBuffer(mCube->Meshes[0].VertexBuffer, mCube->Meshes[0].VertexSize *mCube->Meshes[0].NumVertex, mCube->Meshes[0].VertexSize);
+		mGraphicsInterface->SetIndexBuffer(mCube->Meshes[0].IndexBuffer, mCube->Meshes[0].NumIndices * sizeof(uint32_t), Graphics::Format::R_32_Uint);
+		mGraphicsInterface->DrawIndexed(mCube->Meshes[0].NumIndices);
+
+
+		//{
+		//	AppData.Model = glm::mat4(1.0f);
+		//	AppData.Model = glm::translate(AppData.Model, glm::vec3(4.0f, 0.5f, -1.0f));
+		//	AppData.DebugColor = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+		//}
+		//mGraphicsInterface->SetConstantBuffer(appDataBuffer, 0, sizeof(AppData), &AppData);
+		//mGraphicsInterface->Draw(36, 0);
 	}
 	mGraphicsInterface->DisableAllTargets();
 

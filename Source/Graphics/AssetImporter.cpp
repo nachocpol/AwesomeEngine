@@ -35,6 +35,7 @@ namespace Graphics
 
 	bool AssetImporter::LoadModel(const char* path,Graphics::Scene* scene)
 	{
+		/*
 		std::string fullPath = "..\\..\\Assets\\Meshes\\" + std::string(path);
 
 		unsigned int assimpFlags = aiProcess_CalcTangentSpace | aiProcess_Triangulate;
@@ -153,7 +154,7 @@ namespace Graphics
 			actor->AMesh = loadedMeshes[i];
 			actor->ShadeInfo = loadedMaterials[i];
 		}
-
+		*/
 		return true;
 	}
 
