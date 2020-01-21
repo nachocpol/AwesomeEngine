@@ -1,5 +1,6 @@
 #include "DX12GraphicsInterface.h"
 #include "Graphics/Platform/Windows/WWindow.h"
+#include "Core/Logging.h"
 #include "cro_mipmap.h"
 #include "Graphics/Profiler.h"
 
@@ -1329,6 +1330,7 @@ namespace Graphics { namespace DX12 {
 				{
 					intermediateOffset	+= ((CB_INTERMIDIATE_SIZE) / NUM_BACK_BUFFERS) * mCurBackBuffer;
 					intermediateOffset	+= ((size + 255) & ~255) * bufferEntry.CopyCount;
+					INFO("Cur intermediate offset: %d", intermediateOffset);
 					pData				= pData + intermediateOffset;
 					memcpy(pData, data, size);
 				}

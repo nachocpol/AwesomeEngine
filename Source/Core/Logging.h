@@ -11,16 +11,25 @@ namespace Core
 #define OUT_DEBUG_STR(str) OutputDebugStringA(str);
 
 
-static void OUT_IMPL(const char* msg, ...)
+static void OUT_IMPL(const char* msg, const char* type, const char* file, int line, ...)
 {
-	char buff[256];
+	char buff[1024];
 	va_list argptr;
-	va_start(argptr, msg);
-	vsnprintf_s(buff, 256, msg, argptr);
-	OUT_DEBUG_STR(buff);
+	va_start(argptr, line);
+	vsnprintf_s(buff, 1024, msg, argptr);
+
+	// Make short version of file:
+	char fileName[128];
+	char fileExt[8];
+	_splitpath_s(file, NULL, 0, NULL, 0, fileName, 128, fileExt, 8);
+
+	char fullMsg[2048];
+	sprintf(fullMsg, "%s(%s%s)(%d) %s \n", type, fileName, fileExt, line, buff);
+
+	OUT_DEBUG_STR(fullMsg);
 	va_end(argptr);
 }
 
-#define INFO(msg, ...) OUT_IMPL("[INFORMATION][%s][%d]: %s\n",__FILE__,__LINE__,  __VA_ARGS__);
-#define WARN(msg, ...) OUT_IMPL("[WARNING][%s][%d]: %s\n",__FILE__,__LINE__,  __VA_ARGS__);
-#define ERR(msg, ...)  OUT_IMPL("[ERROR][%s][%d]: %s\n",__FILE__,__LINE__,  __VA_ARGS__);
+#define INFO(msg, ...) OUT_IMPL(msg, "[INFORMATION]", __FILE__, __LINE__,  __VA_ARGS__)
+#define WARN(msg, ...) OUT_IMPL(msg, "[WARNING]", __FILE__, __LINE__,  __VA_ARGS__)
+#define ERR(msg, ...)  OUT_IMPL(msg, "[ERROR]", __FILE__, __LINE__,  __VA_ARGS__)

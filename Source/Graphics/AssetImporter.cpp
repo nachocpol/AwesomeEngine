@@ -9,7 +9,7 @@
 
 #include "cro_mipmap.h"
 
-#include "Graphics/World/Scene.h"
+#include "Graphics/World/SceneGraph.h"
 
 #include "DirectXTex.h"
 

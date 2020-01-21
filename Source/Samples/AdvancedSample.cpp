@@ -5,8 +5,14 @@
 #include "Core/App/AppBase.h"
 #include "Graphics/GraphicsInterface.h"
 #include "Graphics/World/Model.h"
-#include <stdio.h>
+#include "Graphics/World/SceneGraph.h"
+#include "Graphics/World/Actor.h"
+
 #include "glm/ext.hpp"
+
+#include <stdio.h>
+
+using namespace World;
 
 struct VertexCube
 {
@@ -46,6 +52,8 @@ private:
 
 	Graphics::TextureHandle mainTarget;
 	Graphics::TextureHandle mainDepth;
+
+	World::SceneGraph mScene;
 };
 
 void AdvancedApp::Init()
@@ -155,6 +163,18 @@ void AdvancedApp::Init()
 
 	mCube = Graphics::ModelFactory::Get()->LoadFromFile("Meshes\\cube.obj", mGraphicsInterface);
 
+
+	// Spawn some stuff
+	for (uint32_t x = 0; x < 8; ++x)
+	{
+		for (uint32_t y = 0; y < 8; ++y)
+		{
+			World::Actor* curCube = mScene.SpawnActor();
+			curCube->SetPosition((float)x * 2.0f, (float)y * 2.0f, 0.0f);
+			curCube->SetModel(mCube);
+		}
+	}
+
 	mGraphicsInterface->FlushAndWait();
 }
 
@@ -171,34 +191,39 @@ void AdvancedApp::Update()
 	{
 		mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
 		mGraphicsInterface->SetGraphicsPipeline(pipeline);
+		AppData.View = glm::lookAt(glm::vec3(0.0f, 0.0f, -8.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		AppData.Projection = glm::perspective(glm::radians(90.0f), 1920.0f / 1080.0f, 0.1f, 200.0f);
+		//{
+		//
+		//	AppData.Model = glm::mat4(1.0f);
+		//	AppData.Model = glm::translate(AppData.Model, glm::vec3(0.0f, 0.0f, 0.0f));
+		//	AppData.Model = glm::rotate(AppData.Model, 0.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+		//	AppData.Model = glm::rotate(AppData.Model, TotalTime * 2.5f, glm::vec3(0.0f, 1.0f, 0.0f));
+		//	AppData.Model = glm::rotate(AppData.Model, TotalTime* 2.5f, glm::vec3(0.0f, 0.0f, 1.0f));
+		//	AppData.Model = glm::scale(AppData.Model, glm::vec3(1.0f, 1.0f, 1.0f));
+		//	AppData.DebugColor = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+		//}
+		//mGraphicsInterface->SetConstantBuffer(appDataBuffer, 0, sizeof(AppData), &AppData);
+		//mGraphicsInterface->SetVertexBuffer(vertexBuffer, sizeof(VertexCube) * 36, sizeof(VertexCube));
+		//mGraphicsInterface->Draw(36, 0);
+
+		for (uint32_t actorIdx = 0; actorIdx < mScene.mRoot->GetNumChilds(); ++actorIdx)
 		{
-			AppData.View = glm::lookAt(glm::vec3(0.0f, 0.0f, -8.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-			AppData.Projection = glm::perspective(glm::radians(90.0f), 1920.0f / 1080.0f, 0.1f, 200.0f);
+			Actor* cur = mScene.mRoot->GetChild(actorIdx);
 
 			AppData.Model = glm::mat4(1.0f);
-			AppData.Model = glm::translate(AppData.Model, glm::vec3(0.0f, 0.0f, 0.0f));
+			AppData.Model = glm::translate(AppData.Model, cur->GetPosition());
 			AppData.Model = glm::rotate(AppData.Model, 0.0f, glm::vec3(1.0f, 0.0f, 0.0f));
 			AppData.Model = glm::rotate(AppData.Model, TotalTime * 2.5f, glm::vec3(0.0f, 1.0f, 0.0f));
 			AppData.Model = glm::rotate(AppData.Model, TotalTime* 2.5f, glm::vec3(0.0f, 0.0f, 1.0f));
 			AppData.Model = glm::scale(AppData.Model, glm::vec3(1.0f, 1.0f, 1.0f));
 			AppData.DebugColor = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+			
+			mGraphicsInterface->SetConstantBuffer(appDataBuffer, 0, sizeof(AppData), &AppData);
+			mGraphicsInterface->SetVertexBuffer(mCube->Meshes[0].VertexBuffer, mCube->Meshes[0].VertexSize *mCube->Meshes[0].NumVertex, mCube->Meshes[0].VertexSize);
+			mGraphicsInterface->SetIndexBuffer(mCube->Meshes[0].IndexBuffer, mCube->Meshes[0].NumIndices * sizeof(uint32_t), Graphics::Format::R_32_Uint);
+			mGraphicsInterface->DrawIndexed(mCube->Meshes[0].NumIndices);
 		}
-		mGraphicsInterface->SetConstantBuffer(appDataBuffer, 0, sizeof(AppData), &AppData);
-		//mGraphicsInterface->SetVertexBuffer(vertexBuffer, sizeof(VertexCube) * 36, sizeof(VertexCube));
-		//mGraphicsInterface->Draw(36, 0);
-
-		mGraphicsInterface->SetVertexBuffer(mCube->Meshes[0].VertexBuffer, mCube->Meshes[0].VertexSize *mCube->Meshes[0].NumVertex, mCube->Meshes[0].VertexSize);
-		mGraphicsInterface->SetIndexBuffer(mCube->Meshes[0].IndexBuffer, mCube->Meshes[0].NumIndices * sizeof(uint32_t), Graphics::Format::R_32_Uint);
-		mGraphicsInterface->DrawIndexed(mCube->Meshes[0].NumIndices);
-
-
-		//{
-		//	AppData.Model = glm::mat4(1.0f);
-		//	AppData.Model = glm::translate(AppData.Model, glm::vec3(4.0f, 0.5f, -1.0f));
-		//	AppData.DebugColor = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-		//}
-		//mGraphicsInterface->SetConstantBuffer(appDataBuffer, 0, sizeof(AppData), &AppData);
-		//mGraphicsInterface->Draw(36, 0);
 	}
 	mGraphicsInterface->DisableAllTargets();
 

@@ -218,7 +218,7 @@ project "AwesomeAdvanced"
 		{
 			"Graphics", "Core"
 		}
-
+--[[
 project "AwesomeShowcase"
 	kind "ConsoleApp"
 	language "C++"
@@ -266,3 +266,4 @@ project "AwesomeShowcase"
 			"Graphics", "Core",
 			"assimp-vc140-mt"
 		}
+--]]
