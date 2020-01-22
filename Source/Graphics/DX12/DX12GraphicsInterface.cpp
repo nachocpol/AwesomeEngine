@@ -158,6 +158,12 @@ namespace Graphics { namespace DX12 {
 			mDevice->CreateShaderResourceView(nullptr, &nullSrv, mNullSrv);
 			mNullsHeap.OffsetHandles(1);
 		}
+		{
+			D3D12_CONSTANT_BUFFER_VIEW_DESC nullCbv = {};
+			mNullCbv = mNullsHeap.GetCPU();
+			mDevice->CreateConstantBufferView(&nullCbv, mNullCbv);
+			mNullsHeap.OffsetHandles(1);
+		}
 		return true;
 	}
 
@@ -246,6 +252,9 @@ namespace Graphics { namespace DX12 {
 		std::vector<CD3DX12_ROOT_PARAMETER> params;
 		std::vector<CD3DX12_STATIC_SAMPLER_DESC> samplers;
 
+#if 0
+		// We don´t use this for now as I was abusing it.. there is a limit on the
+		// size of the root signature 64DWORDS, to avoid spaming data..
 		// param 0 (CB0)
 		{
 			CD3DX12_ROOT_PARAMETER p0;
@@ -258,14 +267,17 @@ namespace Graphics { namespace DX12 {
 			p1.InitAsConstantBufferView(1);
 			params.push_back(p1);
 		}
-		// param 2 (TEX) & (UAV)
-		CD3DX12_DESCRIPTOR_RANGE texRanges[2];
+#endif
+
+		// param 0 (CBV) & (TEX) & (UAV)
+		CD3DX12_DESCRIPTOR_RANGE descriptorRanges[3];
 		{
-			CD3DX12_ROOT_PARAMETER p2;
-			texRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, NUM_SRVS, 0);
-			texRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, NUM_UAVS, 0,0,NUM_SRVS);
-			p2.InitAsDescriptorTable(sizeof(texRanges) / sizeof(CD3DX12_DESCRIPTOR_RANGE), texRanges);
-			params.push_back(p2);
+			CD3DX12_ROOT_PARAMETER rootParam;
+			descriptorRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, NUM_CBVS, 0);
+			descriptorRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, NUM_SRVS, 0, 0, NUM_CBVS);
+			descriptorRanges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, NUM_UAVS, 0, 0, NUM_CBVS + NUM_SRVS);
+			rootParam.InitAsDescriptorTable(sizeof(descriptorRanges) / sizeof(CD3DX12_DESCRIPTOR_RANGE), descriptorRanges);
+			params.push_back(rootParam);
 		}
 		// LineaWrapSampler (s0)
 		{
@@ -304,7 +316,7 @@ namespace Graphics { namespace DX12 {
 		for (int i = 0; i < NUM_BACK_BUFFERS; i++)
 		{
 			mFrameHeap[i] = new DX12Heap;
-			mFrameHeap[i]->Initialize(mDevice, 1024, true, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			mFrameHeap[i]->Initialize(mDevice, 16096, true, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 
 		// And some storage heaps
@@ -352,6 +364,20 @@ namespace Graphics { namespace DX12 {
 		outShader.BytecodeLength = sblob->GetBufferSize();
 		outShader.pShaderBytecode = sblob->GetBufferPointer();
 		return true;
+	}
+
+	void DX12GraphicsInterface::FlushHeap(bool graphics /*=true*/)
+	{
+		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
+		if (graphics)
+		{
+			mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(0, mFrameHeap[idx]->GetGPU());
+		}
+		else
+		{
+			mDefaultSurface.CmdContext->SetComputeRootDescriptorTable(0, mFrameHeap[idx]->GetGPU());
+		}
+		mFrameHeap[idx]->OffsetHandles(NUM_SRVS + NUM_UAVS + NUM_CBVS);
 	}
 
 	DXGI_FORMAT DX12GraphicsInterface::ToDXGIFormat(const Graphics::Format& format)
@@ -562,6 +588,12 @@ namespace Graphics { namespace DX12 {
 		bufferEntry.LastFrame = mFrame;
 		bufferEntry.State = isIndex ? INDEX_READ : VERTEX_CB_READ;
 
+		// Size should be multiple of 256
+		if (type == BufferType::ConstantBuffer)
+		{
+			size = ((size + 255) & ~255);
+		}
+
 		// GPU resource
 		D3D12_HEAP_PROPERTIES heapDesc = {};
 		auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
@@ -575,13 +607,21 @@ namespace Graphics { namespace DX12 {
 			nullptr, 
 			IID_PPV_ARGS(&bufferEntry.Buffer)
 		);
-
+		
 		// Upload resource
 		heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		desc = CD3DX12_RESOURCE_DESC::Buffer(size);
 		if (type == Graphics::ConstantBuffer)
 		{
 			desc = CD3DX12_RESOURCE_DESC::Buffer(CB_INTERMIDIATE_SIZE);
+
+			// Also create a view for the resource:
+			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
+			cbvDesc.BufferLocation = bufferEntry.Buffer->GetGPUVirtualAddress();
+			cbvDesc.SizeInBytes = size;
+			bufferEntry.CBV = mViewsHeap.GetCPU();
+			mDevice->CreateConstantBufferView(&cbvDesc, bufferEntry.CBV);
+			mViewsHeap.OffsetHandles(1);
 		}
 		else if(type != Graphics::ConstantBuffer && isWrite)
 		{
@@ -1225,18 +1265,25 @@ namespace Graphics { namespace DX12 {
 			mDefaultSurface.CmdContext->SetPipelineState(mComputePipelines[pipeline.Handle]);
 
 			// Setup NULL views tier 1
+			// Why is this a compute only thing??
 			int idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 			auto startSlot = mFrameHeap[idx]->GetCPU();
-			for (int i = 0; i < NUM_SRVS; i++)
+			for (int i = 0; i < NUM_CBVS; i++)
 			{
 				CD3DX12_CPU_DESCRIPTOR_HANDLE curSlot = {};
 				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, i *  mFrameHeap[idx]->GetIncrementSize());
+				mDevice->CopyDescriptorsSimple(1, curSlot, mNullCbv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			}
+			for (int i = 0; i < NUM_SRVS; i++)
+			{
+				CD3DX12_CPU_DESCRIPTOR_HANDLE curSlot = {};
+				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, (i + NUM_CBVS) *  mFrameHeap[idx]->GetIncrementSize());
 				mDevice->CopyDescriptorsSimple(1, curSlot, mNullSrv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			}
 			for (int i = 0; i < NUM_UAVS; i++)
 			{
 				CD3DX12_CPU_DESCRIPTOR_HANDLE curSlot = {};
-				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, (i + NUM_SRVS) *  mFrameHeap[idx]->GetIncrementSize());
+				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, (i + NUM_CBVS + NUM_SRVS) *  mFrameHeap[idx]->GetIncrementSize());
 				mDevice->CopyDescriptorsSimple(1, curSlot, mNullUav	, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			}
 		}
@@ -1255,22 +1302,14 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::Dispatch(int x, int y, int z)
 	{
-		assert((x * y * z) > 0);
-
-		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
-
-		mDefaultSurface.CmdContext->SetComputeRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
-		mFrameHeap[idx]->OffsetHandles(NUM_SRVS + NUM_UAVS);
+		FlushHeap(false);
 
 		mDefaultSurface.CmdContext->Dispatch((UINT)x, (UINT)y, (UINT)z);
 	}
 
 	void DX12GraphicsInterface::Draw(uint32_t numvtx, uint32_t vtxOffset)
 	{
-		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
-
-		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
-		mFrameHeap[idx]->OffsetHandles(NUM_SRVS + NUM_UAVS);
+		FlushHeap();
 
 		mDefaultSurface.CmdContext->DrawInstanced(numvtx, 1, vtxOffset, 0);
 
@@ -1279,10 +1318,7 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::DrawIndexed(uint32_t numIdx, uint32_t idxOff /*= 0*/, uint32_t vtxOff /*= 0*/)
 	{
-		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
-
-		mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(2, mFrameHeap[idx]->GetGPU());
-		mFrameHeap[idx]->OffsetHandles(NUM_SRVS + NUM_UAVS);
+		FlushHeap();
 
 		mDefaultSurface.CmdContext->DrawIndexedInstanced(numIdx, 1, idxOff, vtxOff, 0);
 
@@ -1330,7 +1366,6 @@ namespace Graphics { namespace DX12 {
 				{
 					intermediateOffset	+= ((CB_INTERMIDIATE_SIZE) / NUM_BACK_BUFFERS) * mCurBackBuffer;
 					intermediateOffset	+= ((size + 255) & ~255) * bufferEntry.CopyCount;
-					INFO("Cur intermediate offset: %d", intermediateOffset);
 					pData				= pData + intermediateOffset;
 					memcpy(pData, data, size);
 				}
@@ -1347,9 +1382,17 @@ namespace Graphics { namespace DX12 {
 				{
 					mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry.Buffer, COPY_DST, bufferEntry.State));
 				}
-
 				bufferEntry.CopyCount++;
 			}
+
+			// Copy the view:
+			{
+				UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
+				auto heapHandle = mFrameHeap[idx]->GetCPU();
+				heapHandle.Offset(slot, mFrameHeap[idx]->GetIncrementSize());
+				mDevice->CopyDescriptorsSimple(1, heapHandle, bufferEntry.CBV, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			}
+#if 0
 			if (mCurrentIsCompute)
 			{
 				mDefaultSurface.CmdContext->SetComputeRootConstantBufferView(slot, bufferEntry.Buffer->GetGPUVirtualAddress());
@@ -1358,6 +1401,7 @@ namespace Graphics { namespace DX12 {
 			{
 				mDefaultSurface.CmdContext->SetGraphicsRootConstantBufferView(slot, bufferEntry.Buffer->GetGPUVirtualAddress());
 			}
+#endif
 		}
 	}
 
@@ -1381,7 +1425,7 @@ namespace Graphics { namespace DX12 {
 
 			// Copy descriptor:
 			auto slotHandle = mFrameHeap[idx]->GetCPU();
-			slotHandle.Offset(slot,mFrameHeap[idx]->GetIncrementSize());
+			slotHandle.Offset(slot + NUM_CBVS, mFrameHeap[idx]->GetIncrementSize());
 			mDevice->CopyDescriptorsSimple(1, slotHandle, entry.FullView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 	}
@@ -1406,7 +1450,7 @@ namespace Graphics { namespace DX12 {
 
 			// Copy descriptor:
 			auto slotHandle = mFrameHeap[idx]->GetCPU();
-			slotHandle.Offset(slot + NUM_SRVS, mFrameHeap[idx]->GetIncrementSize());
+			slotHandle.Offset(slot + NUM_CBVS + NUM_SRVS, mFrameHeap[idx]->GetIncrementSize());
 			mDevice->CopyDescriptorsSimple(1, slotHandle, entry.MipViewsRW[0], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 	}

@@ -91,6 +91,7 @@ namespace Graphics{ namespace DX12
 		CPUAccess Access;
 		uint64_t LastFrame;
 		uint64_t CopyCount; // Used to track how many times we bind a Constant Buffer 
+		D3D12_CPU_DESCRIPTOR_HANDLE CBV;
 	};
 	
 	struct GraphicsPipelineEntry
@@ -180,6 +181,7 @@ namespace Graphics{ namespace DX12
 		void InitSurface(DisplaySurface* surface);
 		void InitRootSignature();
 		bool LoadShader(const ShaderDescription& desc, D3D12_SHADER_BYTECODE& outShader);
+		void FlushHeap(bool graphics = true);
 		static DXGI_FORMAT ToDXGIFormat(const Graphics::Format& format);
 		static DXGI_FORMAT ToDXGIFormatTypeless(const Graphics::Format& format);
 		static D3D12_PRIMITIVE_TOPOLOGY ToDXGITopology(const Graphics::Topology& topology);
@@ -216,6 +218,8 @@ namespace Graphics{ namespace DX12
 		DX12Heap* mDepthStencilHeap;
 		DX12Heap mViewsHeap;
 		DX12Heap mNullsHeap;
+
+		D3D12_CPU_DESCRIPTOR_HANDLE mNullCbv;
 		D3D12_CPU_DESCRIPTOR_HANDLE mNullUav;
 		D3D12_CPU_DESCRIPTOR_HANDLE mNullSrv;
 

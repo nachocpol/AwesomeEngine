@@ -165,9 +165,9 @@ void AdvancedApp::Init()
 
 
 	// Spawn some stuff
-	for (uint32_t x = 0; x < 8; ++x)
+	for (uint32_t x = 0; x < 16; ++x)
 	{
-		for (uint32_t y = 0; y < 8; ++y)
+		for (uint32_t y = 0; y < 16; ++y)
 		{
 			World::Actor* curCube = mScene.SpawnActor();
 			curCube->SetPosition((float)x * 2.0f, (float)y * 2.0f, 0.0f);
@@ -191,7 +191,7 @@ void AdvancedApp::Update()
 	{
 		mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
 		mGraphicsInterface->SetGraphicsPipeline(pipeline);
-		AppData.View = glm::lookAt(glm::vec3(0.0f, 0.0f, -8.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		AppData.View = glm::lookAt(glm::vec3(0.0f, 0.0f, -50.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		AppData.Projection = glm::perspective(glm::radians(90.0f), 1920.0f / 1080.0f, 0.1f, 200.0f);
 		//{
 		//

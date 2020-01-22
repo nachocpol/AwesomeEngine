@@ -26,6 +26,7 @@
 
 	#define NUM_SRVS 8
 	#define NUM_UAVS 8
+	#define NUM_CBVS 4
 
 #else
 	#error This platform is not supported
