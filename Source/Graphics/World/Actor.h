@@ -3,15 +3,12 @@
 #include "glm/glm.hpp"
 #include <vector>
 
-namespace Graphics
-{
-	struct Model;
-}
-
 namespace World
 {
+	class SceneGraph;
 	class Actor
 	{
+		friend SceneGraph;
 	public:
 		Actor();
 		~Actor();
@@ -28,19 +25,18 @@ namespace World
 		void SetScale(const glm::vec3& scale);
 		void SetScale(const float& x, const float& y, const float& z);
 
-		Graphics::Model* GetModel()const;
-		void SetModel(Graphics::Model* model);
-
-		void AddChild(Actor* child);
 		uint32_t GetNumChilds()const;
 		Actor* GetChild(uint32_t index);
 
+		virtual void Update(float deltaTime);
+
 	private:
+		void AddChild(Actor* child);
+
 		glm::vec3 mPosition;
 		glm::vec3 mRotation;
 		glm::vec3 mScale;
 		Actor* mParent;
 		std::vector<Actor*> mChilds;
-		Graphics::Model* mModel;
 	};
 }

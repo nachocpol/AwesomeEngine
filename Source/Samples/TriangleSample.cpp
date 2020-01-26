@@ -71,7 +71,7 @@ void TriangleApp::Update()
 {
 	AppBase::Update();
 
-	mGraphicsInterface->SetScissor(0.0f, 0.0f, (float)mWindow->GetWidth(), (float)mWindow->GetHeight());
+	mGraphicsInterface->SetScissor(0, 0, mWindow->GetWidth(), mWindow->GetHeight());
 	mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
 	mGraphicsInterface->SetGraphicsPipeline(m_Pipeline);
 	mGraphicsInterface->SetVertexBuffer(m_VertexBuffer, sizeof(Vertex) * 3, sizeof(Vertex));

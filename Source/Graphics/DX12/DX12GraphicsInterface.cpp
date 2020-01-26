@@ -252,23 +252,6 @@ namespace Graphics { namespace DX12 {
 		std::vector<CD3DX12_ROOT_PARAMETER> params;
 		std::vector<CD3DX12_STATIC_SAMPLER_DESC> samplers;
 
-#if 0
-		// We don´t use this for now as I was abusing it.. there is a limit on the
-		// size of the root signature 64DWORDS, to avoid spaming data..
-		// param 0 (CB0)
-		{
-			CD3DX12_ROOT_PARAMETER p0;
-			p0.InitAsConstantBufferView(0);
-			params.push_back(p0);
-		}
-		// param 1 (CB0)
-		{
-			CD3DX12_ROOT_PARAMETER p1;
-			p1.InitAsConstantBufferView(1);
-			params.push_back(p1);
-		}
-#endif
-
 		// param 0 (CBV) & (TEX) & (UAV)
 		CD3DX12_DESCRIPTOR_RANGE descriptorRanges[3];
 		{
@@ -1325,19 +1308,19 @@ namespace Graphics { namespace DX12 {
 		mNumDrawCalls++;
 	}
 
-	void DX12GraphicsInterface::SetViewport(float x, float y, float w, float h, float zmin /*=0.0f*/, float zmax/*=1.0f*/)
+	void DX12GraphicsInterface::SetViewport(uint32_t x, uint32_t y, uint32_t w, uint32_t h, float zmin /*=0.0f*/, float zmax/*=1.0f*/)
 	{
 		D3D12_VIEWPORT vp;
-		vp.TopLeftX = x;
-		vp.TopLeftY = y;
-		vp.Width	= w;
-		vp.Height	= h;
+		vp.TopLeftX = (FLOAT)x;
+		vp.TopLeftY = (FLOAT)y;
+		vp.Width	= (FLOAT)w;
+		vp.Height	= (FLOAT)h;
 		vp.MinDepth = 0.0f;
 		vp.MaxDepth = 1.0f;
 		mDefaultSurface.CmdContext->RSSetViewports(1, &vp);
 	}
 
-	void DX12GraphicsInterface::SetScissor(float x, float y, float w, float h)
+	void DX12GraphicsInterface::SetScissor(uint32_t x, uint32_t y, uint32_t w, uint32_t h)
 	{
 		D3D12_RECT s;
 		s.left	= (LONG)x;
@@ -1392,16 +1375,6 @@ namespace Graphics { namespace DX12 {
 				heapHandle.Offset(slot, mFrameHeap[idx]->GetIncrementSize());
 				mDevice->CopyDescriptorsSimple(1, heapHandle, bufferEntry.CBV, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			}
-#if 0
-			if (mCurrentIsCompute)
-			{
-				mDefaultSurface.CmdContext->SetComputeRootConstantBufferView(slot, bufferEntry.Buffer->GetGPUVirtualAddress());
-			}
-			else
-			{
-				mDefaultSurface.CmdContext->SetGraphicsRootConstantBufferView(slot, bufferEntry.Buffer->GetGPUVirtualAddress());
-			}
-#endif
 		}
 	}
 

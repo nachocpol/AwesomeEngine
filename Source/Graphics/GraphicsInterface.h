@@ -262,8 +262,8 @@ namespace Graphics
 		virtual void Dispatch(int x, int y, int z) = 0;
 		virtual void Draw(uint32_t numvtx,uint32_t vtxOffset) = 0;
 		virtual void DrawIndexed(uint32_t numIdx, uint32_t idxOff = 0, uint32_t vtxOff = 0) = 0;
-		virtual void SetViewport(float x, float y, float w, float h, float zmin = 0.0f, float zmax = 1.0f) = 0;
-		virtual void SetScissor(float x, float y, float w, float h) = 0;
+		virtual void SetViewport(uint32_t x, uint32_t y, uint32_t w, uint32_t h, float zmin = 0.0f, float zmax = 1.0f) = 0;
+		virtual void SetScissor(uint32_t x, uint32_t y, uint32_t w, uint32_t h) = 0;
 		virtual void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data) = 0;
 		virtual void SetResource(const TextureHandle& texture, uint8_t slot) = 0;
 		virtual void SetRWResource(const TextureHandle& texture, uint8_t slot) = 0;

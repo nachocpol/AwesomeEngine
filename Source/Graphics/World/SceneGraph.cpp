@@ -1,5 +1,6 @@
 #include "SceneGraph.h"
 #include "Actor.h"
+#include "Renderable.h"
 
 using namespace World;
 
@@ -12,9 +13,21 @@ SceneGraph::~SceneGraph()
 {
 }
 
-Actor* SceneGraph::SpawnActor()
+void SceneGraph::Update(float deltaTime)
 {
-	Actor* actor = new Actor;
-	mRoot->AddChild(actor);
-	return actor;
+	mRoot->Update(deltaTime);
+}
+
+Renderable* SceneGraph::SpawnRenderable(Actor* parent /*= nullptr*/)
+{
+	Renderable* renderable = new Renderable;
+	if (parent)
+	{
+		parent->AddChild(renderable);
+	}
+	else
+	{
+		mRoot->AddChild(renderable);
+	}
+	return renderable;
 }

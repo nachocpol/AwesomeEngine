@@ -159,8 +159,8 @@ namespace Graphics{ namespace DX12
 		void Dispatch(int x, int y, int z)final override;
 		void Draw(uint32_t numvtx, uint32_t vtxOffset)final override;
 		void DrawIndexed(uint32_t numIdx, uint32_t idxOff = 0,uint32_t vtxOff = 0)final override;
-		void SetViewport(float x, float y, float w, float h, float zmin = 0.0f, float zmax = 1.0f)final override;
-		void SetScissor(float x, float y, float w, float h)final override;
+		void SetViewport(uint32_t x, uint32_t y, uint32_t w, uint32_t h, float zmin = 0.0f, float zmax = 1.0f)final override;
+		void SetScissor(uint32_t x, uint32_t y, uint32_t w, uint32_t h)final override;
 		void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data)final override;
 		void SetResource(const TextureHandle& texture, uint8_t slot)final override;
 		void SetRWResource(const TextureHandle& texture, uint8_t slot)final override;

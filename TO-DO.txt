@@ -1,5 +1,6 @@
 DOING:
 
++ Scene graph system
 + Proper asset import: model class, model factory
 
 TO-DO:
@@ -19,7 +20,6 @@ TO-DO:
 + Profiler
 + Finish input for ImGUI
 + Clustered renderer.
-+ Scene graph system
 
 DONE:
 + Proper logging system. Would be nice to have a macro.
@@ -36,3 +36,29 @@ To render something, you have
 + Transformation, where should we render, scale, rotation!
 
 A model can have many meshes!
+
+
+
+
+
+Cube vtx buffer:
+	VertexCube arr[36] =
+	{
+		-1.0f, 1.0f, 1.0f,  1.0f, 1.0f, 1.0f,  1.0f,-1.0f, 1.0f,    // Front
+		-1.0f, 1.0f, 1.0f,  1.0f,-1.0f, 1.0f, -1.0f,-1.0f, 1.0f,
+
+		-1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f,  1.0f, 1.0f, -1.0f,  // Top
+		-1.0f, 1.0f, 1.0f,  1.0f, 1.0f, -1.0f,  1.0f, 1.0f,  1.0f,
+
+		-1.0f,-1.0f, 1.0f,   1.0f,-1.0f,1.0f,   -1.0f,-1.0f,-1.0f,  // Bot
+		 1.0f, -1.0f, 1.0f,  1.0f,-1.0f,-1.0f,  -1.0f,-1.0f,-1.0f,
+
+		1.0f, 1.0f,-1.0f, -1.0f, 1.0f,-1.0f,   -1.0f,-1.0f,-1.0f,    // Back
+		1.0f, 1.0f,-1.0f,  -1.0f,-1.0f, -1.0f,  1.0f,-1.0f,-1.0f,
+
+		1.0f, 1.0f, 1.0f,  1.0f, 1.0f,-1.0f,  1.0f,-1.0f,-1.0f, // Right
+		1.0f, 1.0f, 1.0f,  1.0f,-1.0f,-1.0f,  1.0f,-1.0f, 1.0f, 
+
+		-1.0f, 1.0f,-1.0f,  -1.0f, 1.0f,1.0f,  -1.0f,-1.0f,1.0f, // Left
+		-1.0f, 1.0f,-1.0f,  -1.0f,-1.0f,1.0f,  -1.0f,-1.0f,-1.0f
+	};

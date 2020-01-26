@@ -6,6 +6,7 @@
 
 namespace World
 {
+	class Renderable;
 	class Actor;
 	class SceneGraph
 	{
@@ -13,7 +14,8 @@ namespace World
 		SceneGraph();
 		~SceneGraph();
 
-		Actor* SpawnActor();
+		void Update(float deltaTime);
+		Renderable* SpawnRenderable(Actor* parent = nullptr);
 
 	//private:
 		Actor* mRoot;

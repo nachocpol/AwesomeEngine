@@ -25,7 +25,8 @@ public:
 	void EndFrame();
 	virtual void Release();
 	bool Running();
-
+	Graphics::GraphicsInterface* GetGraphicsInterface()const;
+	Graphics::Platform::BaseWindow* GetWindow()const;
 	// Total time in seconds the app has been running (in s)
 	float TotalTime;
 	// Last frame delta time (in ms)

@@ -59,3 +59,13 @@ bool AppBase::Running()
 {
 	return !mWindow->IsClosed();
 }
+
+Graphics::GraphicsInterface* AppBase::GetGraphicsInterface() const
+{
+	return mGraphicsInterface;
+}
+
+Graphics::Platform::BaseWindow* AppBase::GetWindow() const
+{
+	return mWindow;
+}
