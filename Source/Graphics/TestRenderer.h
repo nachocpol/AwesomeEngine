@@ -3,8 +3,24 @@
 #include "RendererBase.h"
 #include "GraphicsInterface.h"
 
+#include <vector>
+
+namespace World
+{
+	class Actor;
+	class Camera;
+}
+
 namespace Graphics
 {
+	struct Mesh;
+	struct RenderItem
+	{
+		glm::mat4 WorldMatrix;
+		Mesh* Meshes;
+		uint32_t NumMeshes;
+	};
+
 	class TestRenderer : public RendererBase
 	{
 	public:
@@ -15,6 +31,8 @@ namespace Graphics
 		void Render(World::SceneGraph* scene)override;
 
 	private:
+		void ProcessVisibility(World::Camera* camera, const std::vector<World::Actor*>& actors, std::vector<RenderItem>& renderItems);
+
 		Graphics::TextureHandle mColourRt;
 		Graphics::TextureHandle mDepthRt;
 		Graphics::GraphicsPipeline mTestPipeline;

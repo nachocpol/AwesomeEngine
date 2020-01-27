@@ -18,6 +18,8 @@ namespace World
 		Graphics::Model* GetModel()const;
 		void SetModel(Graphics::Model* model);
 
+		Type::T GetActorType() const { return Type::Renderable; }
+
 	private:
 		Graphics::Model* mModel;
 	};

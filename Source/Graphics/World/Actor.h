@@ -27,8 +27,21 @@ namespace World
 
 		uint32_t GetNumChilds()const;
 		Actor* GetChild(uint32_t index);
+		const std::vector<Actor*>& GetChilds()const;
 
 		virtual void Update(float deltaTime);
+
+		struct Type
+		{
+			enum T
+			{
+				Renderable, // Actor that can be rendered
+				Camera,		// A camera
+				Node,		// Empty actor (just a transform)
+				COUNT
+			};
+		};
+		virtual Type::T GetActorType() const { return Type::Node; }
 
 	private:
 		void AddChild(Actor* child);

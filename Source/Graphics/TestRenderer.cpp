@@ -111,50 +111,88 @@ void TestRenderer::Release()
 }
 
 void TestRenderer::Render(SceneGraph* scene)
-{
-	Platform::BaseWindow* outputWindow = mOwnerApp->GetWindow();
-	 
-	mGraphicsInterface->SetScissor(0, 0, outputWindow->GetWidth(), outputWindow->GetHeight());
+{ 
+	const Actor* rootActor = scene->GetRoot();
+	const std::vector<Camera*> cameras = scene->GetCameras();
 
-	// Render to screen buffer
-	mGraphicsInterface->SetTargets(1, &mColourRt, &mDepthRt);
-	float clear[4] = { 0.0f,0.0f,0.0f,1.0f };
-	mGraphicsInterface->ClearTargets(1, &mColourRt, clear, &mDepthRt, 1.0f, 0);
+	// Early exit if nothing needs processing:
+	if (cameras.empty() || rootActor == nullptr || rootActor->GetNumChilds() == 0)
 	{
-		mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
-		mGraphicsInterface->SetGraphicsPipeline(mTestPipeline);
-		mAppData.View = glm::lookAt(glm::vec3(0.0f, 0.0f, -50.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		mAppData.Projection = glm::perspective(glm::radians(90.0f), 1920.0f / 1080.0f, 0.1f, 200.0f);
+		return;
+	}
 
-		for (uint32_t actorIdx = 0; actorIdx < scene->mRoot->GetNumChilds(); ++actorIdx)
+	Platform::BaseWindow* outputWindow = mOwnerApp->GetWindow();
+
+	// For each camera:
+	for (Camera* camera : cameras)
+	{
+		std::vector<RenderItem> renderSet;
+		ProcessVisibility(camera, rootActor->GetChilds(), renderSet);
+
+		mGraphicsInterface->SetScissor(0, 0, outputWindow->GetWidth(), outputWindow->GetHeight());
+
+		// Render to screen buffer
+		mGraphicsInterface->SetTargets(1, &mColourRt, &mDepthRt);
+		float clear[4] = { 0.0f,0.0f,0.0f,1.0f };
+		mGraphicsInterface->ClearTargets(1, &mColourRt, clear, &mDepthRt, 1.0f, 0);
 		{
-			Renderable* cur = (Renderable*)scene->mRoot->GetChild(actorIdx);
-			if (!cur)
+			mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
+			mGraphicsInterface->SetGraphicsPipeline(mTestPipeline);
+			mAppData.View = glm::inverse(glm::lookAt(glm::vec3(0.0f, 0.0f, -10.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+			mAppData.Projection = glm::perspective(glm::radians(90.0f), 1920.0f / 1080.0f, 0.1f, 200.0f);
+
+			mAppData.DebugColor = glm::vec4(1, 0, 1, 1);
+
+			for (const RenderItem& item : renderSet)
 			{
-				continue;
+				mAppData.Model = item.WorldMatrix;
+
+				Mesh* meshes = item.Meshes;
+				mGraphicsInterface->SetConstantBuffer(mAppDataCB, 0, sizeof(AppData), &mAppData);
+				mGraphicsInterface->SetVertexBuffer(meshes[0].VertexBuffer, meshes[0].VertexSize * meshes[0].NumVertex, meshes[0].VertexSize);
+				mGraphicsInterface->SetIndexBuffer(meshes[0].IndexBuffer, meshes[0].NumIndices * sizeof(uint32_t), Graphics::Format::R_32_Uint);
+				mGraphicsInterface->DrawIndexed(meshes[0].NumIndices);
 			}
+		}
+		mGraphicsInterface->DisableAllTargets();
 
-			mAppData.Model = glm::mat4(1.0f);
-			mAppData.Model = glm::translate(mAppData.Model, cur->GetPosition());
-			mAppData.Model = glm::rotate(mAppData.Model, 0.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-			mAppData.Model = glm::rotate(mAppData.Model, mOwnerApp->TotalTime * 2.5f, glm::vec3(0.0f, 1.0f, 0.0f));
-			mAppData.Model = glm::rotate(mAppData.Model, mOwnerApp->TotalTime* 2.5f, glm::vec3(0.0f, 0.0f, 1.0f));
-			mAppData.Model = glm::scale(mAppData.Model, glm::vec3(1.0f, 1.0f, 1.0f));
-			mAppData.DebugColor = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+		// Output to the screen
+		mGraphicsInterface->SetGraphicsPipeline(mPresentPipeline);
+		mGraphicsInterface->SetVertexBuffer(mPresentVtxBuffer, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
+		mGraphicsInterface->SetResource(mColourRt, 0);
+		mGraphicsInterface->Draw(6, 0);
+	}
+}
 
+void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<World::Actor*>& actors, std::vector<RenderItem>& renderItems)
+{
+	for (const Actor* actor : actors)
+	{
+		// Check if we can render current actor:
+		if (actor->GetActorType() == Actor::Type::Renderable)
+		{
+			const Renderable* renderable = (const Renderable*)actor;
+			RenderItem item;
 			
-			Mesh* meshes = cur->GetModel()->Meshes;
-			mGraphicsInterface->SetConstantBuffer(mAppDataCB, 0, sizeof(AppData), &mAppData);
-			mGraphicsInterface->SetVertexBuffer(meshes[0].VertexBuffer, meshes[0].VertexSize * meshes[0].NumVertex, meshes[0].VertexSize);
-			mGraphicsInterface->SetIndexBuffer(meshes[0].IndexBuffer, meshes[0].NumIndices * sizeof(uint32_t), Graphics::Format::R_32_Uint);
-			mGraphicsInterface->DrawIndexed(meshes[0].NumIndices);
+			item.Meshes = renderable->GetModel()->Meshes;
+			item.NumMeshes = renderable->GetModel()->NumMeshes;
+			
+			item.WorldMatrix = glm::mat4(1.0f);
+			item.WorldMatrix = glm::translate(item.WorldMatrix, renderable->GetPosition());
+
+			const glm::vec3 rotation = renderable->GetRotation();
+			item.WorldMatrix = glm::rotate(item.WorldMatrix, rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+			item.WorldMatrix = glm::rotate(item.WorldMatrix, rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+			item.WorldMatrix = glm::rotate(item.WorldMatrix, rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+			item.WorldMatrix = glm::scale(item.WorldMatrix, renderable->GetScale());
+
+			renderItems.push_back(item);
+		}
+		
+		if (actor->GetNumChilds() > 0)
+		{
+			ProcessVisibility(camera, actor->GetChilds(), renderItems);
 		}
 	}
-	mGraphicsInterface->DisableAllTargets();
-
-	// Output to the screen
-	mGraphicsInterface->SetGraphicsPipeline(mPresentPipeline);
-	mGraphicsInterface->SetVertexBuffer(mPresentVtxBuffer, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
-	mGraphicsInterface->SetResource(mColourRt, 0);
-	mGraphicsInterface->Draw(6, 0);
 }

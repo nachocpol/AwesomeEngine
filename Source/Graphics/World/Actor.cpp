@@ -69,6 +69,11 @@ Actor* Actor::GetChild(uint32_t index)
 	return mChilds[index];
 }
 
+const std::vector<Actor*>& Actor::GetChilds() const
+{
+	return mChilds;
+}
+
 void Actor::Update(float deltaTime)
 {
 	for (const auto c : mChilds)

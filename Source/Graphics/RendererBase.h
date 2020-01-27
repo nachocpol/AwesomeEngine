@@ -12,7 +12,7 @@ namespace Graphics
 	class RendererBase
 	{
 	public:
-		RendererBase() {}
+		RendererBase() {} 
 		virtual ~RendererBase() {};
 		virtual void Initialize(AppBase* app) = 0;
 		virtual void Release() = 0;
