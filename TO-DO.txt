@@ -1,6 +1,9 @@
 DOING:
 
-+ Scene graph system
++ Unify mesh transform (inv view proj)
++ Frustum culling
++ Debug camera that we can eject
++ Draw debug meshes
 + Proper asset import: model class, model factory
 
 TO-DO:
@@ -22,6 +25,7 @@ TO-DO:
 + Clustered renderer.
 
 DONE:
++ Scene graph system
 + Proper logging system. Would be nice to have a macro.
 + Add worley noise
 + Clouds to compute shader

@@ -22,7 +22,7 @@ struct VSOut
 {
 	float4 ClipPos  : SV_Position;
 	float4 WPos		: WPOS;
-	//float3 PNormal  : NORMAL;
+	float3 PNormal  : NORMAL;
 	//float2 PTexcoord: TEXCOORD;
 	//float3x3 TBN	: TBNMATRIX;
 };
@@ -32,7 +32,7 @@ VSOut VSFordwardSimple(VSIn i)
 	VSOut o;
 	o.WPos = mul(Model,float4(i.Position,1.0f));
 	o.ClipPos = mul(Projection,mul(View,o.WPos));
-	//o.PNormal = normalize(i.Normal);
+	o.PNormal = normalize(i.Normal);
 	//o.PTexcoord = i.Texcoord;
 
 	//float3 T 	= normalize(mul(Model,float4(i.Tangent,0.0f))).xyz;
@@ -57,5 +57,5 @@ float4 PSFordwardSimple(VSOut i): SV_Target0
 
 	return (c * ndl);
 	*/
-	return float4(1,0,1,1);
+	return float4(i.PNormal, 1.0);
 }

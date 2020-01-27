@@ -1,6 +1,6 @@
 #include "UIInterface.h"
 #include "Graphics/Platform/BaseWindow.h"
-#include "Graphics/Platform/InputManager.h"
+#include "Core/Platform/InputManager.h"
 #include "IMGUI/imgui.h"
 
 float gVtxUsage = 0.0f;
@@ -35,7 +35,7 @@ namespace Graphics{namespace UI{
 
 	void UIInterface::StartFrame()
 	{
-		Platform::InputManager* inputManager = Platform::InputManager::GetInstance();
+		Core::InputManager* inputManager = Core::InputManager::GetInstance();
 
 		ImGuiIO& io = ImGui::GetIO();
 
@@ -46,9 +46,9 @@ namespace Graphics{namespace UI{
 		io.DeltaTime = 0.16f;
 
 		// Mouse buttons
-		io.MouseDown[0] = inputManager->IsMouseButtonPressed(Platform::MouseButton::Left);
-		io.MouseDown[1] = inputManager->IsMouseButtonPressed(Platform::MouseButton::Right);
-		io.MouseDown[2] = inputManager->IsMouseButtonPressed(Platform::MouseButton::Middle);
+		io.MouseDown[0] = inputManager->IsMouseButtonPressed(Core::MouseButton::Left);
+		io.MouseDown[1] = inputManager->IsMouseButtonPressed(Core::MouseButton::Right);
+		io.MouseDown[2] = inputManager->IsMouseButtonPressed(Core::MouseButton::Middle);
 
 		// Read keyboard modifiers inputs
 		// io.KeyCtrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;

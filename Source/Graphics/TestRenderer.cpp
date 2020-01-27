@@ -2,6 +2,7 @@
 #include "World/SceneGraph.h"
 #include "World/Renderable.h"
 #include "World/Model.h"
+#include "World/Camera.h"
 #include "Core/App/AppBase.h"
 #include "Graphics/Platform/BaseWindow.h"
 
@@ -58,6 +59,7 @@ void TestRenderer::Initialize(AppBase * app)
 		pdesc.VertexDescription.NumElements = sizeof(eles) / sizeof(Graphics::VertexInputDescription::VertexInputElement);
 		pdesc.VertexDescription.Elements = eles;
 		pdesc.DepthEnabled = true;
+		pdesc.DepthWriteEnabled = true;
 		pdesc.DepthFunction = Graphics::LessEqual;
 		pdesc.DepthFormat = Graphics::Depth24_Stencil8;
 		pdesc.ColorFormats[0] = Graphics::Format::RGBA_8_Unorm;
@@ -133,13 +135,13 @@ void TestRenderer::Render(SceneGraph* scene)
 
 		// Render to screen buffer
 		mGraphicsInterface->SetTargets(1, &mColourRt, &mDepthRt);
-		float clear[4] = { 0.0f,0.0f,0.0f,1.0f };
+		float clear[4] = { 0.1f,0.1f,0.2f,1.0f };
 		mGraphicsInterface->ClearTargets(1, &mColourRt, clear, &mDepthRt, 1.0f, 0);
 		{
 			mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
-			mGraphicsInterface->SetGraphicsPipeline(mTestPipeline);
-			mAppData.View = glm::inverse(glm::lookAt(glm::vec3(0.0f, 0.0f, -10.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
-			mAppData.Projection = glm::perspective(glm::radians(90.0f), 1920.0f / 1080.0f, 0.1f, 200.0f);
+			mGraphicsInterface->SetGraphicsPipeline(mTestPipeline);  
+			mAppData.View = camera->GetViewTransform();
+			mAppData.Projection = camera->GetProjection();
 
 			mAppData.DebugColor = glm::vec4(1, 0, 1, 1);
 

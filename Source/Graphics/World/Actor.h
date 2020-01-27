@@ -16,6 +16,7 @@ namespace World
 		glm::vec3 GetPosition()const;
 		void SetPosition(const glm::vec3& position);
 		void SetPosition(const float& x, const float& y, const float& z);
+		void Translate(const glm::vec3& delta);
 
 		glm::vec3 GetRotation()const;
 		void SetRotation(const glm::vec3& rotation);

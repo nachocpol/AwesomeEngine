@@ -3,7 +3,7 @@
 #include "glm/glm.hpp"
 #include <stdint.h>
 
-namespace Graphics{ namespace Platform
+namespace Core
 {
 	enum KeyState
 	{
@@ -56,4 +56,4 @@ namespace Graphics{ namespace Platform
 		InputManager();
 		~InputManager();
 	};
-}}
+}

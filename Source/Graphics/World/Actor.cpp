@@ -29,6 +29,11 @@ void Actor::SetPosition(const float& x, const float& y, const float& z)
 	SetPosition(glm::vec3(x, y, z));
 }
 
+void Actor::Translate(const glm::vec3 & delta)
+{
+	mPosition += delta;
+}
+
 glm::vec3 Actor::GetRotation() const
 {
 	return mRotation;
