@@ -42,6 +42,7 @@ void AppBase::StartFrame()
 	mWindow->Update(); // This will query new events...
 	mGraphicsInterface->StartFrame();
 	mUIInterface->StartFrame();
+	Graphics::DebugDraw::GetInstance()->StartFrame();
 }
 
 void AppBase::Update()
@@ -50,6 +51,7 @@ void AppBase::Update()
 
 void AppBase::EndFrame()
 {
+	Graphics::DebugDraw::GetInstance()->EndFrame();
 	mUIInterface->EndFrame();
 	mGraphicsInterface->EndFrame();
 }

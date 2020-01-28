@@ -1,23 +1,14 @@
+/*
+	Common.hlsl
+	Shaders to render UI, blit textures and draw simple meshes.
+*/
+
 #include "Utils.hlsl"
+#include "Declarations.hlsl"
 
 //////////////////////////////////////
 // Resources
 //////////////////////////////////////
-
-cbuffer UIData : register(b0)
-{
-	float4x4 ProjectionUI;	// ImGUI ortho projection
-}
-
-cbuffer CameraData : register(b0)
-{
-	float4x4 InvViewProj;
-}
-
-cbuffer ItemData : register(b1)
-{
-	float4x4 World;
-}
 
 Texture2D MainTex : register(t0);
 SamplerState LinearWrapSampler : register(s0);
@@ -74,8 +65,8 @@ struct SimpleVSOut
 FullscrenVSOut VSFullScreen(FullscreenVSIn i)
 {
 	FullscrenVSOut o;
-	o.ClipPos = float4(i.Position.xy,1.0f,1.0f);
-	o.TexCoord = 0.5f * (i.Position.xy + 1.0f);
+	o.ClipPos = float4(i.Position.xy,1.0,1.0);
+	o.TexCoord = 0.5 * (i.Position.xy + 1.0);
 	o.TexCoord.y = 1.0 - o.TexCoord.y;
 	return o;
 }
@@ -91,10 +82,10 @@ float4 PSFullScreen(FullscrenVSOut i): SV_Target0
 float4 PSToneGamma(FullscrenVSOut i): SV_Target0
 {
 	float4 base = MainTex.Sample(LinearWrapSampler, i.TexCoord);
-	base *= 8.0f;
+	base *= 8.0;
 	base.xyz = Uncharted2Tonemap(base.xyz);
-	base.w = 1.0f;
-	base = ToSRGB(base,2.2f);
+	base.w = 1.0;
+	base = ToSRGB(base,2.2);
 	return base;
 }
 
@@ -104,7 +95,7 @@ float4 PSToneGamma(FullscrenVSOut i): SV_Target0
 UIVSOut VSUI(UIVSIn i)
 {
 	UIVSOut o;
-	o.ClipPos = mul(ProjectionUI,float4(i.Position,0.0f,1.0f));
+	o.ClipPos = mul(ProjectionUI,float4(i.Position,0.0,1.0));
 	o.VertexColor = i.VertexColor;
 	o.TexCoord = i.TexCoord;
 	return o;
@@ -112,7 +103,7 @@ UIVSOut VSUI(UIVSIn i)
 
 float4 PSUI(UIVSOut i): SV_Target0
 {
-	return MainTex.Sample(LinearWrapSampler,(i.TexCoord * 1.0f)) * i.VertexColor;
+	return MainTex.Sample(LinearWrapSampler,(i.TexCoord * 1.0)) * i.VertexColor;
 }
 
 //////////////////////////////////////
@@ -121,9 +112,9 @@ float4 PSUI(UIVSOut i): SV_Target0
 SimpleVSOut VSSimple(SimpleVSIn i)
 {
 	SimpleVSOut o;
-	o.WPos = mul(World, float4(i.Position,1.0f));
+	o.WPos = mul(World, float4(i.Position,1.0));
 	o.ClipPos = mul(InvViewProj, o.WPos);
-	o.PNormal = normalize(i.Normal);
+	o.PNormal = mul((float3x3)World,i.Normal);
 	//o.PTexcoord = i.Texcoord;
 
 	//float3 T 	= normalize(mul(Model,float4(i.Tangent,0.0f))).xyz;
@@ -148,5 +139,9 @@ float4 PSSimple(SimpleVSOut i): SV_Target0
 
 	return (c * ndl);
 	*/
-	return float4(i.PNormal, 1.0);
+
+	float lightDir = normalize(float3(1.9,0.0,0.0));
+	float ndl = max(dot(normalize(i.PNormal), lightDir),0.0);
+	float3 albedo = float3(0.7,0.6,0.6);
+	return float4(albedo * ndl, 1.0);
 }

@@ -4,7 +4,8 @@
 #include "World/Model.h"
 #include "World/Camera.h"
 #include "Core/App/AppBase.h"
-#include "Graphics/Platform/BaseWindow.h"
+#include "Platform/BaseWindow.h"
+#include "DebugDraw.h"
 
 using namespace Graphics;
 using namespace World;
@@ -136,7 +137,7 @@ void TestRenderer::Render(SceneGraph* scene)
 
 		// Render to screen buffer
 		mGraphicsInterface->SetTargets(1, &mColourRt, &mDepthRt);
-		float clear[4] = { 0.1f,0.1f,0.2f,1.0f };
+		float clear[4] = { 0.2f,0.2f,0.3f,1.0f };
 		mGraphicsInterface->ClearTargets(1, &mColourRt, clear, &mDepthRt, 1.0f, 0);
 		{
 			mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
@@ -155,6 +156,20 @@ void TestRenderer::Render(SceneGraph* scene)
 				mGraphicsInterface->DrawIndexed(meshes[0].NumIndices);
 			}
 		}
+
+		// Flush debug draw
+		DebugDraw::GetInstance()->DrawLine(
+			glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec4(0.0f, 1.0f,0.0f,1.0f)
+		);
+		DebugDraw::GetInstance()->DrawLine(
+			glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)
+		);
+		DebugDraw::GetInstance()->DrawLine(
+			glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)
+		);
+
+		DebugDraw::GetInstance()->Flush(camera);
+
 		mGraphicsInterface->DisableAllTargets();
 
 		// Output to the screen

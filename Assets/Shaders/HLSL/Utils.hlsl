@@ -1,6 +1,5 @@
 /*
 	Utils.hlsl
-	Just a bunch of functions
 */
 
 float4 ToSRGB(float4 base, float gamma)

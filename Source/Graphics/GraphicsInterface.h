@@ -65,10 +65,26 @@ namespace Graphics
 		R_11_G_11_B_10_Float = 12
 	};
 
-	enum Topology
+	struct Primitive
 	{
-		InvalidTopology = 0,
-		TriangleList = 1
+		enum T
+		{
+			Undefined,
+			Point,
+			Line,
+			Triangle,
+			Patch
+		};
+	};
+
+	struct Topology
+	{
+		enum T
+		{
+			InvalidTopology,
+			TriangleList,
+			LineList,
+		};
 	};
 
 	enum TextureFlags
@@ -185,6 +201,7 @@ namespace Graphics
 	{
 		GraphicsPipelineDescription()
 		{
+			PrimitiveType = Primitive::Triangle;
 			DepthEnabled = false;
 			DepthWriteEnabled = false;
 			memset(ColorFormats, 0, sizeof(ColorFormats));
@@ -193,6 +210,7 @@ namespace Graphics
 		ShaderDescription VertexShader;
 		ShaderDescription PixelShader;
 		VertexInputDescription VertexDescription;
+		Primitive::T PrimitiveType;
 		bool DepthEnabled;
 		bool DepthWriteEnabled;
 		DepthFunc DepthFunction;
@@ -256,7 +274,7 @@ namespace Graphics
 		virtual void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data) = 0;
 		virtual void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize) = 0;
 		virtual void SetIndexBuffer(const BufferHandle& buffer, int size, Format idxFormat) = 0;
-		virtual void SetTopology(const Topology& topology) = 0;
+		virtual void SetTopology(const Topology::T& topology) = 0;
 		virtual void SetGraphicsPipeline(const GraphicsPipeline& pipeline) = 0;
 		virtual void SetComputePipeline(const ComputePipeline& pipeline) = 0;
 		virtual void Dispatch(int x, int y, int z) = 0;

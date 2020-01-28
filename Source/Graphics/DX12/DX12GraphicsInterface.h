@@ -153,7 +153,7 @@ namespace Graphics{ namespace DX12
 		void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)final override;
 		void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize)final override;
 		void SetIndexBuffer(const BufferHandle& buffer,int size, Format idxFormat)final override;
-		void SetTopology(const Topology& topology)final override;
+		void SetTopology(const Topology::T& topology)final override;
 		void SetComputePipeline(const ComputePipeline& pipeline)final override;
 		void SetGraphicsPipeline(const GraphicsPipeline& pipeline)final override;
 		void Dispatch(int x, int y, int z)final override;
@@ -184,7 +184,8 @@ namespace Graphics{ namespace DX12
 		void FlushHeap(bool graphics = true);
 		static DXGI_FORMAT ToDXGIFormat(const Graphics::Format& format);
 		static DXGI_FORMAT ToDXGIFormatTypeless(const Graphics::Format& format);
-		static D3D12_PRIMITIVE_TOPOLOGY ToDXGITopology(const Graphics::Topology& topology);
+		static D3D12_PRIMITIVE_TOPOLOGY ToDXGITopology(const Graphics::Topology::T& topology);
+		static D3D12_PRIMITIVE_TOPOLOGY_TYPE ToDXGIPrimitive(const Graphics::Primitive::T& primitive);
 		static D3D12_COMPARISON_FUNC ToDX12DepthFunc(const DepthFunc& func);
 		static D3D12_BLEND ToDX12Blend(const BlendFunction& func);
 		static D3D12_BLEND_OP ToDX12BlendOp(const BlendOperation& op);

@@ -405,13 +405,28 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
-	D3D12_PRIMITIVE_TOPOLOGY DX12GraphicsInterface::ToDXGITopology(const Graphics::Topology& topology)
+	D3D12_PRIMITIVE_TOPOLOGY DX12GraphicsInterface::ToDXGITopology(const Graphics::Topology::T& topology)
 	{
 		switch (topology)
 		{
 			case Topology::TriangleList: return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+			case Topology::LineList:	 return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_LINELIST;
 			case Topology::InvalidTopology:
 			default: return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
+		}
+	}
+
+	D3D12_PRIMITIVE_TOPOLOGY_TYPE DX12GraphicsInterface::ToDXGIPrimitive(const Graphics::Primitive::T& primitive)
+	{
+		switch (primitive)
+		{
+			case Primitive::Point:		return D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+			case Primitive::Line:		return D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+			case Primitive::Triangle:	return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			case Primitive::Patch:		return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+			case Primitive::Undefined:
+			default:
+							return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
 		}
 	}
 
@@ -1073,8 +1088,8 @@ namespace Graphics { namespace DX12 {
 				numTargets++;
 			}
 		}
-		psoDesc.NumRenderTargets		= numTargets;
-		psoDesc.PrimitiveTopologyType	= D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		psoDesc.NumRenderTargets		= numTargets; 
+		psoDesc.PrimitiveTopologyType = ToDXGIPrimitive(desc.PrimitiveType);
 		psoDesc.SampleDesc.Count		= 1;
 		psoDesc.SampleDesc.Quality		= 0;
 		psoDesc.SampleMask				= 0xffffffff;
@@ -1233,7 +1248,7 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
-	void DX12GraphicsInterface::SetTopology(const Topology& topology)
+	void DX12GraphicsInterface::SetTopology(const Topology::T& topology)
 	{
 		mDefaultSurface.CmdContext->IASetPrimitiveTopology(ToDXGITopology(topology));
 	}

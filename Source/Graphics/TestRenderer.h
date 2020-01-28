@@ -2,6 +2,7 @@
 
 #include "RendererBase.h"
 #include "GraphicsInterface.h"
+#include "Declarations.h"
 
 #include <vector>
 
@@ -38,15 +39,9 @@ namespace Graphics
 		Graphics::GraphicsPipeline mTestPipeline;
 		Graphics::GraphicsPipeline mPresentPipeline;
 		Graphics::BufferHandle mPresentVtxBuffer;
-		struct CameraData
-		{
-			glm::mat4 InvViewProj;
-		}mCameraData;
+		CameraData mCameraData;
 		Graphics::BufferHandle mCameraDataCb;
-		struct ItemData
-		{
-			glm::mat4 World;
-		}mItemData;
+		ItemData mItemData;
 		Graphics::BufferHandle mItemDataCb;
 	};
 }
