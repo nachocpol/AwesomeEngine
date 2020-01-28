@@ -13,7 +13,7 @@ namespace World
 		void ConfigureProjection(float aspect, float vfov, float near, float far);
 
 		glm::mat4 GetProjection()const;
-		glm::mat4 GetViewTransform()const;
+		glm::mat4 GetInvViewTransform()const;
 
 		Type::T GetActorType() const { return Type::Camera; }
 

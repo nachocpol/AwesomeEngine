@@ -11,6 +11,7 @@ Camera::Camera():
 	 mYaw(0.0f)
 	,mPitch(0.0f)
 {
+
 }
 
 Camera::~Camera()
@@ -64,12 +65,12 @@ void Camera::Update(float deltaTime)
 	mYaw -= mouseOff.x;
 	mPitch -= mouseOff.y;
 	mPitch = glm::clamp(mPitch, -89.0f, 89.0f);
-
+	
 	mFront.x = cos(glm::radians(mYaw)) * cos(glm::radians(mPitch));
 	mFront.y = sin(glm::radians(mPitch));
 	mFront.z = sin(glm::radians(mYaw)) * cos(glm::radians(mPitch));
 	mFront = glm::normalize(mFront);
-
+	
 	mRight = glm::normalize(glm::cross(mFront, glm::vec3(0.0f, 1.0f, 0.0f)));
 	mUp = glm::normalize(glm::cross(mRight,mFront));
 
@@ -86,7 +87,9 @@ glm::mat4 World::Camera::GetProjection() const
 	return mProjection;
 }
 
-glm::mat4 World::Camera::GetViewTransform() const
+glm::mat4 World::Camera::GetInvViewTransform() const
 {
+	// This is inverse as in we convert from world to view space.
+	// Note that we don't call glm::inverse anywhere, as it is implicit inside the lookAt!
 	return mViewTransform;
 }

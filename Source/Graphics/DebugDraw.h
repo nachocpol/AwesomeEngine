@@ -1,6 +1,7 @@
 #pragma once
 
 #include "glm/glm.hpp"
+#include "GraphicsInterface.h"
 
 namespace Graphics
 {
@@ -21,5 +22,6 @@ namespace Graphics
 
 	private:
 		GraphicsInterface* mGraphicsInterface;
+		GraphicsPipeline mDebugPipeline;
 	};
 }

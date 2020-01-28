@@ -124,7 +124,6 @@ namespace Graphics{namespace UI{
 			mGraphicsInterface->SetVertexBuffer(mVertexBuffer, mMaxVertices * vtxStride, vtxStride);
 			mGraphicsInterface->SetIndexBuffer(mIndexBuffer, mMaxIndices * idxStride, idxFmt);
 			mGraphicsInterface->SetGraphicsPipeline(mGraphicsPipeline);
-			mGraphicsInterface->SetConstantBuffer(mUIDataHandle, 0, sizeof(mUIData), &mUIData.matrix);
 			mGraphicsInterface->SetBlendFactors(imBlend);
 			ImVec2 displayPos = drawPipe->DisplayPos;
 
@@ -141,6 +140,7 @@ namespace Graphics{namespace UI{
 					const ImDrawCmd* curCmd = &cmdList->CmdBuffer[j];
 					if(curCmd->UserCallback)
 					{
+						mGraphicsInterface->SetConstantBuffer(mUIDataHandle, 0, sizeof(mUIData), &mUIData.matrix);
 						curCmd->UserCallback(cmdList, curCmd);
 					}
 					else
@@ -148,6 +148,7 @@ namespace Graphics{namespace UI{
 						const Graphics::TextureHandle iTex = { (uint64_t)curCmd->TextureId };
 						if (CHECK_TEXTURE(iTex))
 						{
+							mGraphicsInterface->SetConstantBuffer(mUIDataHandle, 0, sizeof(mUIData), &mUIData.matrix);
 							mGraphicsInterface->SetScissor
 							(
 								curCmd->ClipRect.x - displayPos.x, curCmd->ClipRect.y - displayPos.y, 

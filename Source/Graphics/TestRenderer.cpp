@@ -40,12 +40,12 @@ void TestRenderer::Initialize(AppBase * app)
 	// Test pipeline
 	{
 		Graphics::GraphicsPipelineDescription pdesc = {};
-		pdesc.PixelShader.ShaderEntryPoint = "PSFordwardSimple";
-		pdesc.PixelShader.ShaderPath = "Fordward.hlsl";
+		pdesc.PixelShader.ShaderEntryPoint = "PSSimple";
+		pdesc.PixelShader.ShaderPath = "Common.hlsl";
 		pdesc.PixelShader.Type = Graphics::ShaderType::Pixel;
 
-		pdesc.VertexShader.ShaderEntryPoint = "VSFordwardSimple";
-		pdesc.VertexShader.ShaderPath = "Fordward.hlsl";
+		pdesc.VertexShader.ShaderEntryPoint = "VSSimple";
+		pdesc.VertexShader.ShaderPath = "Common.hlsl";
 		pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
 
 		Graphics::VertexInputDescription::VertexInputElement eles[4] =
@@ -105,7 +105,8 @@ void TestRenderer::Initialize(AppBase * app)
 		mPresentVtxBuffer = mGraphicsInterface->CreateBuffer(Graphics::VertexBuffer, Graphics::None, sizeof(VertexScreen) * 6, &vtxData);
 	}
 
-	mAppDataCB = mGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(AppData));
+	mCameraDataCb = mGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(CameraData));
+	mItemDataCb = mGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(ItemData));
 }
 
 void TestRenderer::Release()
@@ -140,17 +141,15 @@ void TestRenderer::Render(SceneGraph* scene)
 		{
 			mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
 			mGraphicsInterface->SetGraphicsPipeline(mTestPipeline);  
-			mAppData.View = camera->GetViewTransform();
-			mAppData.Projection = camera->GetProjection();
-
-			mAppData.DebugColor = glm::vec4(1, 0, 1, 1);
+			mCameraData.InvViewProj = camera->GetProjection() * camera->GetInvViewTransform();
 
 			for (const RenderItem& item : renderSet)
 			{
-				mAppData.Model = item.WorldMatrix;
+				mItemData.World = item.WorldMatrix;
 
 				Mesh* meshes = item.Meshes;
-				mGraphicsInterface->SetConstantBuffer(mAppDataCB, 0, sizeof(AppData), &mAppData);
+				mGraphicsInterface->SetConstantBuffer(mCameraDataCb, 0, sizeof(CameraData), &mCameraData);
+				mGraphicsInterface->SetConstantBuffer(mItemDataCb, 1, sizeof(ItemData), &mItemData);
 				mGraphicsInterface->SetVertexBuffer(meshes[0].VertexBuffer, meshes[0].VertexSize * meshes[0].NumVertex, meshes[0].VertexSize);
 				mGraphicsInterface->SetIndexBuffer(meshes[0].IndexBuffer, meshes[0].NumIndices * sizeof(uint32_t), Graphics::Format::R_32_Uint);
 				mGraphicsInterface->DrawIndexed(meshes[0].NumIndices);

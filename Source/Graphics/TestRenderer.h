@@ -38,13 +38,15 @@ namespace Graphics
 		Graphics::GraphicsPipeline mTestPipeline;
 		Graphics::GraphicsPipeline mPresentPipeline;
 		Graphics::BufferHandle mPresentVtxBuffer;
-		struct AppData
+		struct CameraData
 		{
-			glm::mat4 Model;
-			glm::mat4 View;
-			glm::mat4 Projection;
-			glm::vec4 DebugColor;
-		}mAppData;
-		Graphics::BufferHandle mAppDataCB;
+			glm::mat4 InvViewProj;
+		}mCameraData;
+		Graphics::BufferHandle mCameraDataCb;
+		struct ItemData
+		{
+			glm::mat4 World;
+		}mItemData;
+		Graphics::BufferHandle mItemDataCb;
 	};
 }

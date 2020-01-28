@@ -3,6 +3,7 @@
 #include "Graphics/Platform/Windows/WWindow.h"
 #include "Graphics/DX12/DX12GraphicsInterface.h"
 #include "Graphics/UI/UIInterface.h"
+#include "Graphics/DebugDraw.h"
 
 AppBase::AppBase():
 	 TotalTime(0.0f)
@@ -32,6 +33,8 @@ void AppBase::Init()
 
 	mUIInterface = new Graphics::UI::UIInterface();
 	mUIInterface->Initialize(mWindow, mGraphicsInterface);
+
+	Graphics::DebugDraw::GetInstance()->Initialize(mGraphicsInterface);
 }
 
 void AppBase::StartFrame()

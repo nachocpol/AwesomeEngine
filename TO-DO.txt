@@ -1,6 +1,5 @@
 DOING:
 
-+ Unify mesh transform (inv view proj)
 + Frustum culling
 + Debug camera that we can eject
 + Draw debug meshes
@@ -8,9 +7,9 @@ DOING:
 
 TO-DO:
 
++ Make constant buffer binding more clever, as in, if we don´t change a slot ,do not trash it...
 + Console to display logs
 + Make pools for every type of resource
-+ Unify shaders...
 + Check proper resizing..
 + Replace rand with something better (spherical distribution)
 + Combine dx12 texture creation code
@@ -25,6 +24,8 @@ TO-DO:
 + Clustered renderer.
 
 DONE:
++ Unify mesh transform (inv view proj)
++ Unify shaders.
 + Scene graph system
 + Proper logging system. Would be nice to have a macro.
 + Add worley noise

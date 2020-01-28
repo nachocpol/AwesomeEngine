@@ -10,7 +10,7 @@
 #include "Graphics/World/Renderable.h"
 #include "Graphics/World/Camera.h"
 #include "Graphics/TestRenderer.h"
-
+#include "Graphics/UI/IMGUI/imgui.h"
 #include "glm/ext.hpp"
 
 #include <stdio.h>
@@ -66,6 +66,7 @@ void AdvancedApp::Update()
 	AppBase::Update();
 	mScene.Update(DeltaTime);
 	mRenderer.Render(&mScene);
+	ImGui::ShowTestWindow();
 }
 
 void AdvancedApp::Release()

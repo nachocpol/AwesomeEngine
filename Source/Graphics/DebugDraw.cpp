@@ -17,6 +17,8 @@ DebugDraw* Graphics::DebugDraw::GetInstance()
 
 void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 {
+	GraphicsPipelineDescription pipelineDesc;
+
 }
 
 void DebugDraw::Release()
