@@ -243,6 +243,12 @@ namespace Graphics
 		float Radius;
 	};
 
+	struct AABBData
+	{
+		glm::vec3 Min;
+		glm::vec3 Max;
+	};
+
 	static const BufferHandle InvalidBuffer = { UINT64_MAX };
 	static const TextureHandle InvalidTexture = { UINT64_MAX};
 	static const GraphicsPipeline InvalidGraphicsPipeline = { UINT64_MAX };

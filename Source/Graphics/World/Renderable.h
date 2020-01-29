@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Actor.h"
+#include "Graphics/GraphicsInterface.h"
+
+#include "glm/glm.hpp"
 
 namespace Graphics
 {
@@ -19,6 +22,8 @@ namespace World
 		void SetModel(Graphics::Model* model);
 
 		Type::T GetActorType() const { return Type::Renderable; }
+
+		Graphics::AABBData GetWorldAABB(uint32_t meshIdx);
 
 	private:
 		Graphics::Model* mModel;

@@ -22,7 +22,7 @@ namespace Graphics
 		uint32_t VertexSize;
 		BufferHandle IndexBuffer;
 		uint32_t NumIndices;
-		BoundingSphere SphericalBounds;
+		AABBData AABB;
 	};
 
 	struct Model

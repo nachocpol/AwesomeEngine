@@ -1,5 +1,7 @@
 #include "Actor.h"
 
+#include "glm/ext.hpp"
+
 using namespace World;
 
 Actor::Actor():
@@ -66,7 +68,7 @@ void Actor::SetScale(const float& x, const float& y, const float& z)
 
 uint32_t Actor::GetNumChilds() const
 {
-	return mChilds.size();
+	return (uint32_t)mChilds.size();
 }
 
 Actor* Actor::GetChild(uint32_t index)
@@ -81,11 +83,29 @@ const std::vector<Actor*>& Actor::GetChilds() const
 
 void Actor::Update(float deltaTime)
 {
+	mWorldTransform = glm::mat4(1.0f);
+
+	mWorldTransform = glm::translate(mWorldTransform, GetPosition());
+
+	const glm::vec3 rotation = GetRotation();
+	mWorldTransform = glm::rotate(mWorldTransform, rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+	mWorldTransform = glm::rotate(mWorldTransform, rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+	mWorldTransform = glm::rotate(mWorldTransform, rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+	mWorldTransform = glm::scale(mWorldTransform, GetScale());
+
+
 	for (const auto c : mChilds)
 	{
 		c->Update(deltaTime);
 	}
 }
+
+glm::mat4 Actor::GetWorldTransform()const
+{
+	return mWorldTransform;
+}
+
 
 void Actor::AddChild(Actor* child)
 {

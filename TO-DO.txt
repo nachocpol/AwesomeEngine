@@ -15,7 +15,6 @@ TO-DO:
 + Replace rand with something better (spherical distribution)
 + Combine dx12 texture creation code
 + Static shape builder class (screen quad, screen triangle, cubes spheres etc etc)
-+ Start making components
 + Implement gradient noise	
 + Precompile shaders offline
 + Add curl noise
@@ -25,6 +24,7 @@ TO-DO:
 + Clustered renderer.
 
 DONE:
++ Start making components (nah, I will have a base Actor, and inherit from item, keeping it simple)
 + Unify mesh transform (inv view proj)
 + Unify shaders.
 + Scene graph system

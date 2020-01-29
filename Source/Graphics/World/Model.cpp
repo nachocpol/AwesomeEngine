@@ -1,3 +1,5 @@
+#define NOMINMAX
+
 #include "Model.h"
 #include "Core/Logging.h"
 
@@ -76,12 +78,19 @@ Model* Graphics::ModelFactory::LoadFromFile(std::string path, GraphicsInterface*
 		PosNorTanTexc_Vertex* vtx = &vertices[0];
 
 		// Load vertex data
+		glm::vec3 minVtx, maxVtx;
+		minVtx = glm::vec3(FLT_MAX);
+		maxVtx = glm::vec3(FLT_MIN);
+
 		for (uint32_t v = 0; v < numVertices; v++)
 		{
 			// Position:
 			vtx->Position[0] = curLoadedMesh->mVertices[v].x;
 			vtx->Position[1] = curLoadedMesh->mVertices[v].y;
 			vtx->Position[2] = curLoadedMesh->mVertices[v].z;
+
+			minVtx = glm::min(glm::vec3(vtx->Position[0], vtx->Position[1], vtx->Position[2]), minVtx);
+			maxVtx = glm::max(glm::vec3(vtx->Position[0], vtx->Position[1], vtx->Position[2]), maxVtx);
 
 			// Normal:
 			if (curLoadedMesh->HasNormals())
@@ -130,6 +139,9 @@ Model* Graphics::ModelFactory::LoadFromFile(std::string path, GraphicsInterface*
 		model->Meshes[i].IndexBuffer = graphicsInterface->CreateBuffer(Graphics::BufferType::IndexBuffer, Graphics::CPUAccess::None, sizeof(unsigned int) * loadedIndices.size(), loadedIndices.data());
 		model->Meshes[i].NumIndices = (uint32_t)loadedIndices.size();
 		
+		model->Meshes[i].AABB.Min = minVtx;
+		model->Meshes[i].AABB.Max = maxVtx;
+
 		// Setup material
 		//loadedMaterials[i].AlbedoColor = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
 		//if (loadedScene->HasMaterials())

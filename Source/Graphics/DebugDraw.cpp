@@ -123,6 +123,39 @@ void DebugDraw::DrawLine(glm::vec3 start, glm::vec3 end, glm::vec4 color /*= glm
 	mLines.push_back(LineItem(start, end, color));
 }
 
+void Graphics::DebugDraw::DrawAABB(glm::vec3 min, glm::vec3 max, glm::vec4 color /*= glm::vec4(1.0f)*/)
+{
+	glm::vec3 FrontTR = max;
+	glm::vec3 FrontTL = glm::vec3(min.x, max.y, max.z);
+
+	glm::vec3 BackTR = glm::vec3(max.x, max.y, min.z);
+	glm::vec3 BackTL = glm::vec3(min.x, max.y, min.z);
+
+	glm::vec3 FrontBR = glm::vec3(max.x, min.y, max.z);
+	glm::vec3 FrontBL = glm::vec3(min.x, min.y, max.z);
+
+	glm::vec3 BackBR = glm::vec3(max.x, min.y, min.z);
+	glm::vec3 BackBL = glm::vec3(min.x, min.y, min.z);
+
+	// Top!
+	DrawLine(FrontTR, FrontTL, color);
+	DrawLine(FrontTL, BackTL, color);
+	DrawLine(BackTL, BackTR, color);
+	DrawLine(BackTR, FrontTR, color);
+
+	// Bottom
+	DrawLine(FrontBR, FrontBL, color);
+	DrawLine(FrontBL, BackBL, color);
+	DrawLine(BackBL, BackBR, color);
+	DrawLine(BackBR, FrontBR, color);
+
+	// Sides
+	DrawLine(FrontTR, FrontBR, color);
+	DrawLine(FrontTL, FrontBL, color);
+	DrawLine(BackTR, BackBR, color);
+	DrawLine(BackTL, BackBL, color);
+}
+
 DebugDraw::LineItem::LineItem(glm::vec3 start, glm::vec3 end, glm::vec4 color):
 	 Start(start)
 	,End(end)

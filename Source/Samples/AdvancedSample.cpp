@@ -48,7 +48,7 @@ void AdvancedApp::Init()
 		{
 			World::Renderable* curCube = mScene.SpawnRenderable();
 			curCube->SetPosition(((float)x * 2.0f) - 16.0f, -2.0f, ((float)y * 2.0f) - 16.0f);
-			curCube->SetRotation(glm::vec3(x,x,y));
+			curCube->SetRotation(glm::vec3(x+1,x,y+1));
 			curCube->SetModel(mCube);
 		}
 	}	

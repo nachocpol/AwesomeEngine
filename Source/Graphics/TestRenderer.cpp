@@ -157,17 +157,9 @@ void TestRenderer::Render(SceneGraph* scene)
 			}
 		}
 
+		DrawOriginGizmo();
+		
 		// Flush debug draw
-		DebugDraw::GetInstance()->DrawLine(
-			glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec4(0.0f, 1.0f,0.0f,1.0f)
-		);
-		DebugDraw::GetInstance()->DrawLine(
-			glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)
-		);
-		DebugDraw::GetInstance()->DrawLine(
-			glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)
-		);
-
 		DebugDraw::GetInstance()->Flush(camera);
 
 		mGraphicsInterface->DisableAllTargets();
@@ -182,26 +174,20 @@ void TestRenderer::Render(SceneGraph* scene)
 
 void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<World::Actor*>& actors, std::vector<RenderItem>& renderItems)
 {
-	for (const Actor* actor : actors)
+	for (Actor* actor : actors)
 	{
 		// Check if we can render current actor:
 		if (actor->GetActorType() == Actor::Type::Renderable)
 		{
-			const Renderable* renderable = (const Renderable*)actor;
+			Renderable* renderable = (Renderable*)actor;
 			RenderItem item;
 			
 			item.Meshes = renderable->GetModel()->Meshes;
 			item.NumMeshes = renderable->GetModel()->NumMeshes;
+			item.WorldMatrix = renderable->GetWorldTransform();
 			
-			item.WorldMatrix = glm::mat4(1.0f);
-			item.WorldMatrix = glm::translate(item.WorldMatrix, renderable->GetPosition());
-
-			const glm::vec3 rotation = renderable->GetRotation();
-			item.WorldMatrix = glm::rotate(item.WorldMatrix, rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
-			item.WorldMatrix = glm::rotate(item.WorldMatrix, rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
-			item.WorldMatrix = glm::rotate(item.WorldMatrix, rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
-
-			item.WorldMatrix = glm::scale(item.WorldMatrix, renderable->GetScale());
+			auto const aabb = renderable->GetWorldAABB(0);
+			DebugDraw::GetInstance()->DrawAABB(aabb.Min, aabb.Max);
 
 			renderItems.push_back(item);
 		}
@@ -211,4 +197,11 @@ void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<Wo
 			ProcessVisibility(camera, actor->GetChilds(), renderItems);
 		}
 	}
+}
+
+void TestRenderer::DrawOriginGizmo()
+{
+	DebugDraw::GetInstance()->DrawLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+	DebugDraw::GetInstance()->DrawLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+	DebugDraw::GetInstance()->DrawLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
 }

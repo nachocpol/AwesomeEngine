@@ -44,6 +44,8 @@ namespace World
 		};
 		virtual Type::T GetActorType() const { return Type::Node; }
 
+		glm::mat4 GetWorldTransform()const;
+
 	private:
 		void AddChild(Actor* child);
 
@@ -52,5 +54,7 @@ namespace World
 		glm::vec3 mScale;
 		Actor* mParent;
 		std::vector<Actor*> mChilds;
+
+		glm::mat4 mWorldTransform;
 	};
 }

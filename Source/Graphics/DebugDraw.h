@@ -12,7 +12,7 @@ namespace World
 	class Camera;
 }
 
-#define MAX_LINES 1024
+#define MAX_LINES 4096
 
 namespace Graphics
 {
@@ -34,6 +34,7 @@ namespace Graphics
 		void EndFrame();
 		
 		void DrawLine(glm::vec3 start, glm::vec3 end, glm::vec4 color = glm::vec4(1.0f));
+		void DrawAABB(glm::vec3 min, glm::vec3 max, glm::vec4 color = glm::vec4(1.0f));
 
 	private:
 		GraphicsInterface* mGraphicsInterface;
