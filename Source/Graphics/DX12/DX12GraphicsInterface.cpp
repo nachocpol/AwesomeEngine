@@ -1,7 +1,6 @@
 #include "DX12GraphicsInterface.h"
 #include "Graphics/Platform/Windows/WWindow.h"
 #include "Core/Logging.h"
-#include "cro_mipmap.h"
 #include "Graphics/Profiler.h"
 
 #include <iostream>

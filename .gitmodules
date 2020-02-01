@@ -2,3 +2,6 @@
 	path = Depen/GLM
 	url = https://github.com/g-truc/glm.git
 	branch = 0.9.8
+[submodule "Depen/STB"]
+	path = Depen/STB
+	url = https://github.com/nothings/stb.git

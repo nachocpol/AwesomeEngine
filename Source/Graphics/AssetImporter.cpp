@@ -7,7 +7,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#include "cro_mipmap.h"
 
 #include "Graphics/World/SceneGraph.h"
 
