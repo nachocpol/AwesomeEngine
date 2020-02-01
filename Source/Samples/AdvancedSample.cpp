@@ -31,7 +31,6 @@ private:
 	World::SceneGraph mScene;
 	Graphics::TestRenderer mRenderer;
 	World::Camera* mCamera;
-
 };
 
 void AdvancedApp::Init()
