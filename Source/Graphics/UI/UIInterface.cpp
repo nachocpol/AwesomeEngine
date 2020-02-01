@@ -40,7 +40,7 @@ namespace Graphics{namespace UI{
 		ImGuiIO& io = ImGui::GetIO();
 
 		// Setup display size (every frame to accommodate for window resizing)
-		io.DisplaySize = ImVec2(mOutputWindow->GetWidth(), mOutputWindow->GetHeight());
+		io.DisplaySize = ImVec2((float)mOutputWindow->GetWidth(), (float)mOutputWindow->GetHeight());
 
 		// Setup time step
 		io.DeltaTime = 0.16f;
@@ -112,7 +112,7 @@ namespace Graphics{namespace UI{
 			}
 
 			// Viewport
-			mGraphicsInterface->SetViewport(0.0f, 0.0f, drawPipe->DisplaySize.x, drawPipe->DisplaySize.y);
+			mGraphicsInterface->SetViewport(0, 0, (uint32_t)drawPipe->DisplaySize.x, (uint32_t)drawPipe->DisplaySize.y);
 
 			size_t vtxStride = sizeof(ImDrawVert);
 			size_t idxStride = sizeof(ImDrawIdx);
@@ -121,8 +121,8 @@ namespace Graphics{namespace UI{
 			// Bind state
 			float imBlend[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 			float defBlend[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-			mGraphicsInterface->SetVertexBuffer(mVertexBuffer, mMaxVertices * vtxStride, vtxStride);
-			mGraphicsInterface->SetIndexBuffer(mIndexBuffer, mMaxIndices * idxStride, idxFmt);
+			mGraphicsInterface->SetVertexBuffer(mVertexBuffer, mMaxVertices * (int)vtxStride, (int)vtxStride);
+			mGraphicsInterface->SetIndexBuffer(mIndexBuffer, mMaxIndices * (int)idxStride, idxFmt);
 			mGraphicsInterface->SetGraphicsPipeline(mGraphicsPipeline);
 			mGraphicsInterface->SetBlendFactors(imBlend);
 			ImVec2 displayPos = drawPipe->DisplayPos;

@@ -165,8 +165,10 @@ namespace Graphics
 		ShaderDescription(const ShaderDescription& other)
 		{
 			Type = other.Type;
-			ShaderPath.copy((char*)other.ShaderPath.data(), other.ShaderPath.size());
-			ShaderEntryPoint.copy((char*)other.ShaderEntryPoint.data(), other.ShaderEntryPoint.size());
+			ShaderPath = other.ShaderPath;
+			ShaderEntryPoint = other.ShaderEntryPoint;
+			//ShaderPath.copy((char*)other.ShaderPath.data(), other.ShaderPath.size());
+			//ShaderEntryPoint.copy((char*)other.ShaderEntryPoint.data(), other.ShaderEntryPoint.size());
 		}
 		ShaderType::T Type;
 		std::string ShaderPath;
