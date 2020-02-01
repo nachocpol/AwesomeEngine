@@ -1,0 +1,4 @@
+[submodule "Depen/GLM"]
+	path = Depen/GLM
+	url = https://github.com/g-truc/glm.git
+	branch = 0.9.8
