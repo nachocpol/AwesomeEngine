@@ -23,6 +23,7 @@ namespace Graphics
 		BufferHandle IndexBuffer;
 		uint32_t NumIndices;
 		AABBData AABB;
+		BSData BS;
 	};
 
 	struct Model

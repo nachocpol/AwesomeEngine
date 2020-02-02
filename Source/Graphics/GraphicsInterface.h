@@ -237,16 +237,17 @@ namespace Graphics
 		ShaderDescription ComputeShader;
 	};
 
-	struct BoundingSphere
+	struct BSData
 	{
-		BoundingSphere() :Center(0.0f), Radius(-1.0f) {}
-		BoundingSphere(glm::vec3 c, float r) :Center(c), Radius(r) {}
+		BSData() : Center(0.0f), Radius(-1.0f) {}
+		BSData(glm::vec3 c, float r) : Center(c), Radius(r) {}
 		glm::vec3 Center;
 		float Radius;
 	};
 
 	struct AABBData
 	{
+		AABBData() : Min(0.0f), Max(0.0f) {}
 		glm::vec3 Min;
 		glm::vec3 Max;
 	};

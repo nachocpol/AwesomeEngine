@@ -21,6 +21,7 @@ namespace World
 		glm::vec3 GetRotation()const;
 		void SetRotation(const glm::vec3& rotation);
 		void SetRotation(const float& x, const float& y, const float& z);
+		void Rotate(float x, float y, float z);
 
 		glm::vec3 GetScale()const;
 		void SetScale(const glm::vec3& scale);
@@ -31,6 +32,7 @@ namespace World
 		const std::vector<Actor*>& GetChilds()const;
 
 		virtual void Update(float deltaTime);
+		virtual void UpdateBounds() {}
 
 		struct Type
 		{

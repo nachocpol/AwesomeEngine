@@ -23,9 +23,13 @@ namespace World
 
 		Type::T GetActorType() const { return Type::Renderable; }
 
+		void UpdateBounds()override;
 		Graphics::AABBData GetWorldAABB(uint32_t meshIdx);
+		Graphics::BSData GetWorldBS(uint32_t meshIdx);
 
 	private:
 		Graphics::Model* mModel;
+		std::vector<Graphics::BSData> mWorldBS;
+		std::vector<Graphics::AABBData> mWorldAABB;
 	};
 }

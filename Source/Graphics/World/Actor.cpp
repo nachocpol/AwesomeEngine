@@ -51,6 +51,11 @@ void Actor::SetRotation(const float& x, const float& y, const float& z)
 	SetRotation(glm::vec3(x, y, z));
 }
 
+void Actor::Rotate(float x, float y, float z)
+{
+	SetRotation(mRotation.x + x, mRotation.y + y, mRotation.z + z);
+}
+
 glm::vec3 Actor::GetScale() const
 {
 	return mScale;
@@ -94,6 +99,12 @@ void Actor::Update(float deltaTime)
 
 	mWorldTransform = glm::scale(mWorldTransform, GetScale());
 
+	if (mParent)
+	{
+		mWorldTransform = mParent->GetWorldTransform() * mWorldTransform;
+	}
+
+	UpdateBounds();
 
 	for (const auto c : mChilds)
 	{
@@ -106,8 +117,8 @@ glm::mat4 Actor::GetWorldTransform()const
 	return mWorldTransform;
 }
 
-
 void Actor::AddChild(Actor* child)
 {
+	child->mParent = this;
 	mChilds.push_back(child);
 }
