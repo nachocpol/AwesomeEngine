@@ -15,7 +15,7 @@ struct DebugDrawVSIn
 
 struct DebugDrawVSOut
 {
-	float4 ClipPos 		: SV_Position;
+	float4 ClipPos 	: SV_Position;
 	float4 Color 	: COLOR;
 };
 
@@ -25,7 +25,7 @@ struct DebugDrawVSOut
 DebugDrawVSOut VSDebugDraw(DebugDrawVSIn i)
 {
 	DebugDrawVSOut o;
-	o.ClipPos = mul(InvViewProj, float4(i.Position, 1.0)); // Inputs come in world space
+	o.ClipPos = mul(InvViewProj, mul(World, float4(i.Position, 1.0)));
 	o.Color.rgb = i.Color;
 	o.Color.a = 1.0;
 	return o;

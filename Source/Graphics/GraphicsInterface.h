@@ -84,6 +84,7 @@ namespace Graphics
 			InvalidTopology,
 			TriangleList,
 			LineList,
+			LineStrip,
 		};
 	};
 

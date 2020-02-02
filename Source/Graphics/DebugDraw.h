@@ -12,7 +12,8 @@ namespace World
 	class Camera;
 }
 
-#define MAX_LINES 4096
+#define MAX_LINES		 4096
+#define MAX_WIRE_SPHERES 4096
 
 namespace Graphics
 {
@@ -35,6 +36,7 @@ namespace Graphics
 		
 		void DrawLine(glm::vec3 start, glm::vec3 end, glm::vec4 color = glm::vec4(1.0f));
 		void DrawAABB(glm::vec3 min, glm::vec3 max, glm::vec4 color = glm::vec4(1.0f));
+		void DrawWireSphere(glm::vec3 center, float radius, glm::vec4 color = glm::vec4(1.0f));
 
 	private:
 		GraphicsInterface* mGraphicsInterface;
@@ -43,14 +45,28 @@ namespace Graphics
 		CameraData mCameraData;
 		BufferHandle mCameraDataCb;
 
+		ItemData mItemData;
+		BufferHandle mItemDataCb;
+
 		struct LineItem
 		{
 			LineItem(glm::vec3 start, glm::vec3 end, glm::vec4 color);
-			glm::vec3 Start;
-			glm::vec3 End;
+			glm::vec3 Start; // World space
+			glm::vec3 End;	 // World space
 			glm::vec4 Color;
 		};
 		std::vector<LineItem> mLines;
 		BufferHandle mLinesVtxBuffer;
+
+		struct WireSphereItem
+		{
+			WireSphereItem(glm::vec3 center, float radius, glm::vec4 color);
+			glm::vec3 Center; // World space
+			float Radius;
+			glm::vec4 Color;
+		};
+		std::vector<WireSphereItem> mWireSpheres;
+		BufferHandle mWireSphereVtxBuffer;
+		uint32_t mWireSphereNumVtx;
 	};
 }

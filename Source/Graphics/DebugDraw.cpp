@@ -60,9 +60,69 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 
 	// Init constant buffers:
 	mCameraDataCb = mGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(CameraData));
+	mItemDataCb = mGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(ItemData));
 
 	// Init vertex buffers
 	mLinesVtxBuffer = mGraphicsInterface->CreateBuffer(Graphics::VertexBuffer, CPUAccess::Write, MAX_LINES * 2 * sizeof(DebugVertex));
+
+	// Wire sphere:
+	{
+		uint32_t latitudeSegments = 32;
+		uint32_t longitudeSegments = 32;
+		float radius = 1.0f;
+
+		std::vector<DebugVertex> sphereVtx;
+		sphereVtx.resize(latitudeSegments * 2 + longitudeSegments * 2);
+
+		// Latitude:
+		{
+			float angleDelta = glm::two_pi<float>() / (float)latitudeSegments;
+			float curAngle = 0.0f;
+			for (uint32_t segment = 0; segment < latitudeSegments * 2; segment += 2)
+			{
+				DebugVertex vtx;
+				float x = glm::sin(curAngle * radius);
+				float z = glm::cos(curAngle * radius);
+				vtx.Position = glm::vec3(x, 0.0f, z);
+				vtx.Color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				sphereVtx[segment] = vtx;
+
+				x = glm::sin((curAngle + angleDelta) * radius);
+				z = glm::cos((curAngle + angleDelta) * radius);
+				vtx.Position = glm::vec3(x, 0.0f, z);
+				vtx.Color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				sphereVtx[segment + 1] = vtx;
+
+				curAngle += angleDelta;
+			}
+		}
+		uint32_t vtxOff = latitudeSegments * 2;
+		// Longitude:
+		{
+			float angleDelta = glm::two_pi<float>() / (float)latitudeSegments;
+			float curAngle = 0.0f;
+			for (uint32_t segment = 0; segment < longitudeSegments * 2; segment += 2)
+			{
+				DebugVertex vtx;
+				float x = glm::sin(curAngle * radius);
+				float y = glm::cos(curAngle * radius);
+				vtx.Position = glm::vec3(x, y, 0.0f);
+				vtx.Color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				sphereVtx[vtxOff + segment] = vtx;
+
+				x = glm::sin((curAngle + angleDelta) * radius);
+				y = glm::cos((curAngle + angleDelta) * radius);
+				vtx.Position = glm::vec3(x, y, 0.0f);
+				vtx.Color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				sphereVtx[vtxOff + segment + 1] = vtx;
+
+				curAngle += angleDelta;
+			}
+		}
+
+		mWireSphereNumVtx = sphereVtx.size();
+		mWireSphereVtxBuffer = mGraphicsInterface->CreateBuffer(Graphics::VertexBuffer, CPUAccess::None, sizeof(DebugVertex) * mWireSphereNumVtx, &sphereVtx[0]);
+	}
 }
 
 void DebugDraw::Release()
@@ -73,6 +133,7 @@ void Graphics::DebugDraw::StartFrame()
 {
 	// Reset items:
 	mLines.clear();
+	mWireSpheres.clear();
 }
 
 void Graphics::DebugDraw::Flush(World::Camera* camera)
@@ -98,11 +159,31 @@ void Graphics::DebugDraw::Flush(World::Camera* camera)
 			mGraphicsInterface->UnMapBuffer(mLinesVtxBuffer);
 
 			mCameraData.InvViewProj = camera->GetProjection() * camera->GetInvViewTransform();
+			mItemData.World = glm::mat4(1.0f);
 			mGraphicsInterface->SetGraphicsPipeline(mDebugPipeline);
 			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, 0, sizeof(CameraData), &mCameraData);
+			mGraphicsInterface->SetConstantBuffer(mItemDataCb, 1, sizeof(ItemData), &mItemData);
 			mGraphicsInterface->SetTopology(Topology::LineList);
 			mGraphicsInterface->SetVertexBuffer(mLinesVtxBuffer, sizeof(DebugVertex) * 2 * numLines, sizeof(DebugVertex));
 			mGraphicsInterface->Draw(numLines * 2, 0);
+		}
+	}
+
+	// Wire spheres
+	if (!mWireSpheres.empty())
+	{
+		for (const auto sphere : mWireSpheres)
+		{
+			mItemData.World = glm::mat4(1.0f);
+			mItemData.World = glm::translate(mItemData.World, sphere.Center);
+			mItemData.World = glm::scale(mItemData.World, glm::vec3(sphere.Radius));
+
+			mGraphicsInterface->SetGraphicsPipeline(mDebugPipeline);
+			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, 0, sizeof(CameraData), &mCameraData);
+			mGraphicsInterface->SetConstantBuffer(mItemDataCb, 1, sizeof(ItemData), &mItemData);
+			mGraphicsInterface->SetTopology(Topology::LineList);
+			mGraphicsInterface->SetVertexBuffer(mWireSphereVtxBuffer, sizeof(DebugVertex) * mWireSphereNumVtx, sizeof(DebugVertex));
+			mGraphicsInterface->Draw(mWireSphereNumVtx, 0);
 		}
 	}
 
@@ -156,9 +237,26 @@ void Graphics::DebugDraw::DrawAABB(glm::vec3 min, glm::vec3 max, glm::vec4 color
 	DrawLine(BackTL, BackBL, color);
 }
 
+void Graphics::DebugDraw::DrawWireSphere(glm::vec3 center, float radius, glm::vec4 color /*== glm::vec4(1.0f)*/)
+{
+	if (mWireSpheres.size() >= MAX_WIRE_SPHERES)
+	{
+		ERR("Reached maximum number of wire spheres");
+		return;
+	}
+	mWireSpheres.push_back(WireSphereItem(center, radius, color));
+}
+
 DebugDraw::LineItem::LineItem(glm::vec3 start, glm::vec3 end, glm::vec4 color):
 	 Start(start)
 	,End(end)
+	,Color(color)
+{
+}
+
+DebugDraw::WireSphereItem::WireSphereItem(glm::vec3 center,float radius, glm::vec4 color):
+	 Center(center)
+	,Radius(radius)
 	,Color(color)
 {
 }

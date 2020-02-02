@@ -81,9 +81,8 @@ void Renderable::UpdateBounds()
 
 		// Update bounding sphere:
 		BSData worldBS;
-		glm::vec3 worldDelta = worldAABB.Max - worldAABB.Min;
-		worldBS.Center = worldDelta * 0.5f;
-		worldBS.Radius = glm::length(worldDelta) * 0.5f;
+		worldBS.Center = (worldAABB.Max + worldAABB.Min) * 0.5f;
+		worldBS.Radius = glm::length(worldAABB.Max - worldAABB.Min) * 0.5f;
 
 		mWorldBS[meshIdx] = worldBS;
 	}

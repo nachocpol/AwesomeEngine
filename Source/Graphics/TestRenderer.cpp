@@ -186,8 +186,10 @@ void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<Wo
 			item.NumMeshes = renderable->GetModel()->NumMeshes;
 			item.WorldMatrix = renderable->GetWorldTransform();
 			
-			auto const aabb = renderable->GetWorldAABB(0);
+			const auto aabb = renderable->GetWorldAABB(0);
 			DebugDraw::GetInstance()->DrawAABB(aabb.Min, aabb.Max);
+			const auto sb = renderable->GetWorldBS(0);
+			DebugDraw::GetInstance()->DrawWireSphere(sb.Center, sb.Radius);
 
 			renderItems.push_back(item);
 		}
