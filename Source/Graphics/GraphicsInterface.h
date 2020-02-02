@@ -238,21 +238,6 @@ namespace Graphics
 		ShaderDescription ComputeShader;
 	};
 
-	struct BSData
-	{
-		BSData() : Center(0.0f), Radius(-1.0f) {}
-		BSData(glm::vec3 c, float r) : Center(c), Radius(r) {}
-		glm::vec3 Center;
-		float Radius;
-	};
-
-	struct AABBData
-	{
-		AABBData() : Min(0.0f), Max(0.0f) {}
-		glm::vec3 Min;
-		glm::vec3 Max;
-	};
-
 	static const BufferHandle InvalidBuffer = { UINT64_MAX };
 	static const TextureHandle InvalidTexture = { UINT64_MAX};
 	static const GraphicsPipeline InvalidGraphicsPipeline = { UINT64_MAX };

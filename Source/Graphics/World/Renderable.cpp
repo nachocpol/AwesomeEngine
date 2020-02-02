@@ -3,6 +3,7 @@
 
 using namespace World;
 using namespace Graphics;
+using namespace Math;
 
 Renderable::Renderable():
 	mModel(nullptr)

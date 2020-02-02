@@ -44,5 +44,11 @@ namespace Graphics
 		Graphics::BufferHandle mCameraDataCb;
 		ItemData mItemData;
 		Graphics::BufferHandle mItemDataCb;
+
+		struct CameraState
+		{
+			bool Enabled;
+			glm::mat4 InverseView;
+		}mFreezeCullingState; // TO-DO: per camera?
 	};
 }

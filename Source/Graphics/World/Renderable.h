@@ -2,6 +2,7 @@
 
 #include "Actor.h"
 #include "Graphics/GraphicsInterface.h"
+#include "Core/Math.h"
 
 #include "glm/glm.hpp"
 
@@ -24,12 +25,12 @@ namespace World
 		Type::T GetActorType() const { return Type::Renderable; }
 
 		void UpdateBounds()override;
-		Graphics::AABBData GetWorldAABB(uint32_t meshIdx);
-		Graphics::BSData GetWorldBS(uint32_t meshIdx);
+		Math::AABBData GetWorldAABB(uint32_t meshIdx);
+		Math::BSData GetWorldBS(uint32_t meshIdx);
 
 	private:
 		Graphics::Model* mModel;
-		std::vector<Graphics::BSData> mWorldBS;
-		std::vector<Graphics::AABBData> mWorldAABB;
+		std::vector<Math::BSData> mWorldBS;
+		std::vector<Math::AABBData> mWorldAABB;
 	};
 }

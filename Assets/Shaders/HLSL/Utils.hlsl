@@ -25,6 +25,11 @@ float3 Uncharted2Tonemap(float3 x)
    return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
 }
 
+float3 ReinhardTonemap(float3 x)
+{
+	return x / (x + float3(1.0,1.0,1.0));
+}
+
 bool RayPlane(float3 n, float3 p0, float3 l0, float3 l, inout float t) 
 { 
     // assuming vectors are all normalized

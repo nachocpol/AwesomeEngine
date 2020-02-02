@@ -6,6 +6,8 @@
 #include "Core/App/AppBase.h"
 #include "Platform/BaseWindow.h"
 #include "DebugDraw.h"
+#include "UI/IMGUI/imgui.h"
+#include "Core/Logging.h"
 
 using namespace Graphics;
 using namespace World;
@@ -77,7 +79,7 @@ void TestRenderer::Initialize(AppBase * app)
 		desc.VertexShader.ShaderEntryPoint = "VSFullScreen";
 		desc.VertexShader.ShaderPath = "Common.hlsl";
 		desc.VertexShader.Type = Graphics::ShaderType::Vertex;
-		desc.PixelShader.ShaderEntryPoint = "PSFullScreen";
+		desc.PixelShader.ShaderEntryPoint = "PSToneGamma";
 		desc.PixelShader.ShaderPath = "Common.hlsl";
 		desc.PixelShader.Type = Graphics::ShaderType::Pixel;
 
@@ -114,8 +116,17 @@ void TestRenderer::Release()
 {
 }
 
+static bool kFreezeCulling = false;
+static bool kRenderBounds = false;
+
 void TestRenderer::Render(SceneGraph* scene)
 { 
+	// Render UI:
+	ImGui::Begin("Renderer");
+	ImGui::Checkbox("Render Bounds", &kRenderBounds);
+	ImGui::Checkbox("Freeze Culling", &kFreezeCulling);
+	ImGui::End();
+
 	const Actor* rootActor = scene->GetRoot();
 	const std::vector<Camera*> cameras = scene->GetCameras();
 
@@ -130,14 +141,28 @@ void TestRenderer::Render(SceneGraph* scene)
 	// For each camera:
 	for (Camera* camera : cameras)
 	{
+		// Cache culling:
+		if (kFreezeCulling)
+		{
+			if (!mFreezeCullingState.Enabled)
+			{
+				mFreezeCullingState.InverseView = camera->GetInvViewTransform();
+			}
+			mFreezeCullingState.Enabled = true;
+		}
+		else
+		{
+			mFreezeCullingState.Enabled = false;
+		}
+
+		// Compute visible items for this camera:
 		std::vector<RenderItem> renderSet;
 		ProcessVisibility(camera, rootActor->GetChilds(), renderSet);
 
+		// Render items:
 		mGraphicsInterface->SetScissor(0, 0, outputWindow->GetWidth(), outputWindow->GetHeight());
-
-		// Render to screen buffer
 		mGraphicsInterface->SetTargets(1, &mColourRt, &mDepthRt);
-		float clear[4] = { 0.2f,0.2f,0.3f,1.0f };
+		float clear[4] = { 0.4f,0.4f,0.6f,1.0f };
 		mGraphicsInterface->ClearTargets(1, &mColourRt, clear, &mDepthRt, 1.0f, 0);
 		{
 			mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
@@ -164,7 +189,7 @@ void TestRenderer::Render(SceneGraph* scene)
 
 		mGraphicsInterface->DisableAllTargets();
 
-		// Output to the screen
+		// Output to the screen:
 		mGraphicsInterface->SetGraphicsPipeline(mPresentPipeline);
 		mGraphicsInterface->SetVertexBuffer(mPresentVtxBuffer, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
 		mGraphicsInterface->SetResource(mColourRt, 0);
@@ -175,15 +200,18 @@ void TestRenderer::Render(SceneGraph* scene)
 void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<World::Actor*>& actors, std::vector<RenderItem>& renderItems)
 {
 	const auto projProps = camera->GetProjectionProps();
-	glm::mat4 viewToWorld = glm::inverse(camera->GetInvViewTransform());
-	DebugDraw::GetInstance()->DrawFrustum(
-		viewToWorld,
-		projProps.Aspect,
-		projProps.VFov,
-		projProps.Near,
-		projProps.Far,
-		glm::vec4(0.7f, 0.3f, 0.5f, 1.0f)
-	);
+
+	// Draw camera frustum:
+	if (mFreezeCullingState.Enabled)
+	{
+		glm::mat4 viewToWorld = glm::inverse(mFreezeCullingState.InverseView);
+		DebugDraw::GetInstance()->DrawFrustum(viewToWorld, projProps.Aspect, projProps.VFov, projProps.Near, projProps.Far, glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
+	}
+
+	// Camera frustum planes in viewspace:
+	Math::Plane cameraFrustumPlanes[6];
+	Math::ExtractPlanesFromProjection(cameraFrustumPlanes, projProps.Aspect, projProps.VFov, projProps.Near, projProps.Far);
+
 	for (Actor* actor : actors)
 	{
 		// Check if we can render current actor:
@@ -192,15 +220,32 @@ void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<Wo
 			Renderable* renderable = (Renderable*)actor;
 			RenderItem item;
 			
+			const auto aabb = renderable->GetWorldAABB(0);
+			const auto sb = renderable->GetWorldBS(0);
+			
+			Math::BSData bsViewSpace;
+			bsViewSpace.Center = camera->GetInvViewTransform() * glm::vec4(sb.Center, 1.0f);
+			bsViewSpace.Radius = sb.Radius;
+			
+			bool inside = true;
+			for (uint32_t i = 0; i < 6; ++i)
+			{
+				auto res = Math::PlaneSphereIntersection(cameraFrustumPlanes[i], bsViewSpace);
+				bool curInside = (res == Math::IntersectionResult::Inside) || (res == Math::IntersectionResult::Touching);
+				inside &= curInside;
+			}
+
+			// Draw actor bounds:
+			if (kRenderBounds)
+			{
+				DebugDraw::GetInstance()->DrawAABB(aabb.Min, aabb.Max);
+				DebugDraw::GetInstance()->DrawWireSphere(sb.Center, sb.Radius);
+			}
+
 			item.Meshes = renderable->GetModel()->Meshes;
 			item.NumMeshes = renderable->GetModel()->NumMeshes;
 			item.WorldMatrix = renderable->GetWorldTransform();
 			
-			const auto aabb = renderable->GetWorldAABB(0);
-			DebugDraw::GetInstance()->DrawAABB(aabb.Min, aabb.Max);
-			const auto sb = renderable->GetWorldBS(0);
-			DebugDraw::GetInstance()->DrawWireSphere(sb.Center, sb.Radius);
-
 			renderItems.push_back(item);
 		}
 		

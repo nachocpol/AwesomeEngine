@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Graphics/GraphicsInterface.h"
+#include "Core/Math.h"
 
 #include <string>
 #include <map>
@@ -22,8 +23,8 @@ namespace Graphics
 		uint32_t VertexSize;
 		BufferHandle IndexBuffer;
 		uint32_t NumIndices;
-		AABBData AABB;
-		BSData BS;
+		Math::AABBData AABB;
+		Math::BSData BS;
 	};
 
 	struct Model

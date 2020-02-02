@@ -57,14 +57,14 @@ void AdvancedApp::Init()
 	//}	
 
 	sun = mScene.SpawnRenderable();
-	earth = mScene.SpawnRenderable(sun);
-	moon = mScene.SpawnRenderable(earth);
+	//earth = mScene.SpawnRenderable(sun);
+	//moon = mScene.SpawnRenderable(earth);
 
 	sun->SetModel(mCube);
-	earth->SetModel(mCube);
-	earth->SetPosition(glm::vec3(8.0f, 0.0f, 0.0f));
-	moon->SetModel(mCube);
-	moon->SetPosition(glm::vec3(3.0f, 0.0f, 0.0f));
+	//earth->SetModel(mCube);
+	//earth->SetPosition(glm::vec3(8.0f, 0.0f, 0.0f));
+	//moon->SetModel(mCube);
+	//moon->SetPosition(glm::vec3(3.0f, 0.0f, 0.0f));
 
 	mCamera = mScene.SpawnCamera();
 	mCamera->ConfigureProjection(
@@ -79,7 +79,7 @@ void AdvancedApp::Update()
 	AppBase::Update();
 
 	sun->Rotate(0.0f, 0.0005f * DeltaTime, 0.0f);
-	earth->Rotate(0.0f, 0.001f * DeltaTime, 0.0f);
+	//earth->Rotate(0.0f, 0.001f * DeltaTime, 0.0f);
 
 	mScene.Update(DeltaTime);
 	mRenderer.Render(&mScene);
