@@ -174,6 +174,16 @@ void TestRenderer::Render(SceneGraph* scene)
 
 void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<World::Actor*>& actors, std::vector<RenderItem>& renderItems)
 {
+	const auto projProps = camera->GetProjectionProps();
+	glm::mat4 viewToWorld = glm::inverse(camera->GetInvViewTransform());
+	DebugDraw::GetInstance()->DrawFrustum(
+		viewToWorld,
+		projProps.Aspect,
+		projProps.VFov,
+		projProps.Near,
+		projProps.Far,
+		glm::vec4(0.7f, 0.3f, 0.5f, 1.0f)
+	);
 	for (Actor* actor : actors)
 	{
 		// Check if we can render current actor:

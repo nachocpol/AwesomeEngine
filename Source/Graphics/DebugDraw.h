@@ -37,6 +37,7 @@ namespace Graphics
 		void DrawLine(glm::vec3 start, glm::vec3 end, glm::vec4 color = glm::vec4(1.0f));
 		void DrawAABB(glm::vec3 min, glm::vec3 max, glm::vec4 color = glm::vec4(1.0f));
 		void DrawWireSphere(glm::vec3 center, float radius, glm::vec4 color = glm::vec4(1.0f));
+		void DrawFrustum(glm::mat4 transform, float aspect, float vfov, float nearDist, float farDist, glm::vec4 color = glm::vec4(1.0f));
 
 	private:
 		GraphicsInterface* mGraphicsInterface;

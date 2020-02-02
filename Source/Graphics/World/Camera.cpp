@@ -80,6 +80,11 @@ void Camera::Update(float deltaTime)
 void Camera::ConfigureProjection(float aspect, float vfov, float near, float far)
 {
 	mProjection = glm::perspectiveLH(glm::radians(vfov), aspect, near, far);
+
+	mProjectionProps.Aspect = aspect;
+	mProjectionProps.VFov = vfov;
+	mProjectionProps.Near = near;
+	mProjectionProps.Far = far;
 }
 
 glm::mat4 World::Camera::GetProjection() const
@@ -92,4 +97,9 @@ glm::mat4 World::Camera::GetInvViewTransform() const
 	// This is inverse as in we convert from world to view space.
 	// Note that we don't call glm::inverse anywhere, as it is implicit inside the lookAt!
 	return mViewTransform;
+}
+
+Camera::ProjectionProps World::Camera::GetProjectionProps() const
+{
+	return mProjectionProps;
 }

@@ -247,6 +247,42 @@ void Graphics::DebugDraw::DrawWireSphere(glm::vec3 center, float radius, glm::ve
 	mWireSpheres.push_back(WireSphereItem(center, radius, color));
 }
 
+void Graphics::DebugDraw::DrawFrustum(glm::mat4 transform, float aspect, float vfov, float nearDist, float farDist, glm::vec4 color /*= glm::vec4(1.0f)*/)
+{
+	float halfVFov = glm::radians(vfov * 0.5f);
+	float tanHalfVFov = glm::tan(halfVFov);
+
+	// Near plane
+	float halfHeightNear = tanHalfVFov * nearDist;
+	float halfWidthNear = aspect * halfHeightNear;
+	glm::vec3 TRNear = transform * glm::vec4( halfWidthNear,  halfHeightNear, nearDist, 1.0f);
+	glm::vec3 BRNear = transform * glm::vec4( halfWidthNear, -halfHeightNear, nearDist, 1.0f);
+	glm::vec3 BLNear = transform * glm::vec4(-halfWidthNear, -halfHeightNear, nearDist, 1.0f);
+	glm::vec3 TLNear = transform * glm::vec4(-halfWidthNear,  halfHeightNear, nearDist, 1.0f);
+	DrawLine(TRNear, BRNear, color);
+	DrawLine(BRNear, BLNear, color);
+	DrawLine(BLNear, TLNear, color);
+	DrawLine(TLNear, TRNear, color);
+
+	// Far plane
+	float halfHeightFar = tanHalfVFov * farDist;
+	float halfWidthFar = aspect * halfHeightFar;
+	glm::vec3 TRFar = transform * glm::vec4( halfWidthFar,  halfHeightFar, farDist, 1.0f);
+	glm::vec3 BRFar = transform * glm::vec4( halfWidthFar, -halfHeightFar, farDist, 1.0f);
+	glm::vec3 BLFar = transform * glm::vec4(-halfWidthFar, -halfHeightFar, farDist, 1.0f);
+	glm::vec3 TLFar = transform * glm::vec4(-halfWidthFar,  halfHeightFar, farDist, 1.0f);
+	DrawLine(TRFar, BRFar, color);
+	DrawLine(BRFar, BLFar, color);
+	DrawLine(BLFar, TLFar, color);
+	DrawLine(TLFar, TRFar, color);
+
+	// Sides
+	DrawLine(TRFar, TRNear, color);
+	DrawLine(TLFar, TLNear, color);
+	DrawLine(BRFar, BRNear, color);
+	DrawLine(BLFar, BLNear, color);
+}
+
 DebugDraw::LineItem::LineItem(glm::vec3 start, glm::vec3 end, glm::vec4 color):
 	 Start(start)
 	,End(end)

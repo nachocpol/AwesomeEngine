@@ -7,6 +7,14 @@ namespace World
 	class Camera : public Actor
 	{
 	public:
+		struct ProjectionProps
+		{
+			float Aspect;
+			float VFov;
+			float Near;
+			float Far;
+		};
+
 		Camera();
 		~Camera();
 		void Update(float deltaTime)override;
@@ -14,11 +22,13 @@ namespace World
 
 		glm::mat4 GetProjection()const;
 		glm::mat4 GetInvViewTransform()const;
+		ProjectionProps GetProjectionProps()const;
 
 		Type::T GetActorType() const { return Type::Camera; }
 
 	private:
 		glm::mat4 mProjection;
+		ProjectionProps mProjectionProps;
 		glm::mat4 mViewTransform;
 
 		glm::vec2 mLastMousePos;
