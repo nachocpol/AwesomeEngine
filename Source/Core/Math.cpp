@@ -23,30 +23,23 @@ void Math::ExtractPlanesFromProjection(Plane* planes, float aspect, float fovY, 
 	glm::vec3 BLFar = glm::vec3( -halfWidthFar, -halfHeightFar, farDist);
 	glm::vec3 TLFar = glm::vec3( -halfWidthFar,  halfHeightFar, farDist);
 
-	{
-		// WTF?
-		glm::vec3 a = glm::vec3(-1.0f,0.0f,0.0f);
-		glm::vec3 b = glm::vec3(0.0f,0.0f,1.0f);
-		glm::vec3 c = glm::cross(a, b); //0,-1,0
-		c.length();
-	}
+	// Remember, we use a left handed coordinate system (+y is up)
 
 	// Top plane
 	planes[0].Point = TRNear;
-	planes[0].Normal = glm::normalize(glm::cross(TLNear - TRNear, TRFar - TRNear));
-	// planes[0].Normal = glm::normalize(glm::cross(glm::normalize(TRFar - TRNear), glm::normalize(TLNear - TRNear)));
+	planes[0].Normal = glm::normalize(glm::cross(TRFar - TRNear, TLNear - TRNear));
 
 	// Right plane
 	planes[1].Point = TRNear;
-	planes[1].Normal = glm::normalize(glm::cross(TRFar - TRNear, BRNear - TRNear));
+	planes[1].Normal = glm::normalize(glm::cross(BRNear - TRNear, TRFar - TRNear));
 
 	// Bot plane
 	planes[2].Point = BRNear;
-	planes[2].Normal = glm::normalize(glm::cross(BRFar - BRNear, BLNear - BRNear));
+	planes[2].Normal = glm::normalize(glm::cross(BLNear - BRNear, BRFar - BRNear));
 
 	// Left plane
 	planes[3].Point = BLNear;
-	planes[3].Normal = glm::normalize(glm::cross(BLFar - BLNear, TLNear - BLNear));
+	planes[3].Normal = glm::normalize(glm::cross(TLNear - BLNear, BLFar - BLNear));
 
 	// Far plane
 	planes[4].Point = glm::vec3(0.0f, 0.0f, farDist);

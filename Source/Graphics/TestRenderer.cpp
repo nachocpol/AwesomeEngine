@@ -200,37 +200,20 @@ void TestRenderer::Render(SceneGraph* scene)
 void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<World::Actor*>& actors, std::vector<RenderItem>& renderItems)
 {
 	const auto projProps = camera->GetProjectionProps();
-	glm::mat4 viewToWorld = glm::inverse(mFreezeCullingState.InverseView);
+	glm::mat4 curInvView = mFreezeCullingState.Enabled ? mFreezeCullingState.InverseView : camera->GetInvViewTransform();
 
 	// Draw camera frustum:
 	if (mFreezeCullingState.Enabled)
 	{
+		glm::mat4 viewToWorld = glm::inverse(mFreezeCullingState.InverseView);
 		DebugDraw::GetInstance()->DrawFrustum(viewToWorld, projProps.Aspect, projProps.VFov, projProps.Near, projProps.Far, glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
 	}
 
-	// Camera frustum planes in viewspace:
+	// Camera frustum planes in viewspace. TO-DO: this could be computed just once
 	Math::Plane cameraFrustumPlanes[6];
 	Math::ExtractPlanesFromProjection(cameraFrustumPlanes, projProps.Aspect, projProps.VFov, projProps.Near, projProps.Far);
 
-	for (uint32_t i = 0; i < 6; ++i)
-	{
-		glm::vec4 cols[6] =
-		{
-			glm::vec4(1.0f,0.0f,0.0f,1.0f),
-			glm::vec4(0.0f,1.0f,0.0f,1.0f),
-			glm::vec4(0.0f,0.0f,1.0f,1.0f),
-			glm::vec4(1.0f,1.0f,0.0f,1.0f),
-			glm::vec4(0.0f,1.0f,1.0f,1.0f),
-			glm::vec4(1.0f,1.0f,1.0f,1.0f)
-		};
-		Math::Plane p = cameraFrustumPlanes[i];
-		glm::vec3 pointWorld = viewToWorld * glm::vec4(p.Point, 1.0f);
-		glm::vec3 nWorld = viewToWorld * glm::vec4(p.Normal, 0.0f);
-		//glm::vec3 nWorld = viewToWorld * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
-		nWorld = glm::normalize(nWorld);
-		DebugDraw::GetInstance()->DrawLine(pointWorld, pointWorld + nWorld * 0.2f,cols[i]);
-	}
-
+	// Check for each actor if it is inside the view frustum:
 	for (Actor* actor : actors)
 	{
 		// Check if we can render current actor:
@@ -243,7 +226,7 @@ void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<Wo
 			const auto sb = renderable->GetWorldBS(0);
 			
 			Math::BSData bsViewSpace;
-			bsViewSpace.Center = camera->GetInvViewTransform() * glm::vec4(sb.Center, 1.0f);
+			bsViewSpace.Center = curInvView * glm::vec4(sb.Center, 1.0f);
 			bsViewSpace.Radius = sb.Radius;
 			
 			bool inside = true;
@@ -252,20 +235,28 @@ void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<Wo
 				auto res = Math::PlaneSphereIntersection(cameraFrustumPlanes[i], bsViewSpace);
 				bool curInside = (res == Math::IntersectionResult::Inside) || (res == Math::IntersectionResult::Touching);
 				inside &= curInside;
+				if (!inside)
+				{
+					break;
+				}
 			}
 
-			// Draw actor bounds:
-			if (kRenderBounds || inside)
+			// Mesh is visible, so add it to the render items:
+			if (inside)
 			{
-				DebugDraw::GetInstance()->DrawAABB(aabb.Min, aabb.Max);
-				DebugDraw::GetInstance()->DrawWireSphere(sb.Center, sb.Radius);
-			}
+				item.Meshes = renderable->GetModel()->Meshes;
+				item.NumMeshes = renderable->GetModel()->NumMeshes;
+				item.WorldMatrix = renderable->GetWorldTransform();
+				
+				renderItems.push_back(item);
 
-			item.Meshes = renderable->GetModel()->Meshes;
-			item.NumMeshes = renderable->GetModel()->NumMeshes;
-			item.WorldMatrix = renderable->GetWorldTransform();
-			
-			renderItems.push_back(item);
+				// Draw actor bounds:
+				if (kRenderBounds)
+				{
+					DebugDraw::GetInstance()->DrawAABB(aabb.Min, aabb.Max);
+					DebugDraw::GetInstance()->DrawWireSphere(sb.Center, sb.Radius);
+				}
+			}
 		}
 		
 		if (actor->GetNumChilds() > 0)
