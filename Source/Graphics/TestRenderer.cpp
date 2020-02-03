@@ -136,8 +136,6 @@ void TestRenderer::Render(SceneGraph* scene)
 		return;
 	}
 
-	Platform::BaseWindow* outputWindow = mOwnerApp->GetWindow();
-
 	// For each camera:
 	for (Camera* camera : cameras)
 	{
@@ -160,27 +158,7 @@ void TestRenderer::Render(SceneGraph* scene)
 		ProcessVisibility(camera, rootActor->GetChilds(), renderSet);
 
 		// Render items:
-		mGraphicsInterface->SetScissor(0, 0, outputWindow->GetWidth(), outputWindow->GetHeight());
-		mGraphicsInterface->SetTargets(1, &mColourRt, &mDepthRt);
-		float clear[4] = { 0.4f,0.4f,0.6f,1.0f };
-		mGraphicsInterface->ClearTargets(1, &mColourRt, clear, &mDepthRt, 1.0f, 0);
-		{
-			mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
-			mGraphicsInterface->SetGraphicsPipeline(mTestPipeline);  
-			mCameraData.InvViewProj = camera->GetProjection() * camera->GetInvViewTransform();
-
-			for (const RenderItem& item : renderSet)
-			{
-				mItemData.World = item.WorldMatrix;
-
-				Mesh* meshes = item.Meshes;
-				mGraphicsInterface->SetConstantBuffer(mCameraDataCb, 0, sizeof(CameraData), &mCameraData);
-				mGraphicsInterface->SetConstantBuffer(mItemDataCb, 1, sizeof(ItemData), &mItemData);
-				mGraphicsInterface->SetVertexBuffer(meshes[0].VertexBuffer, meshes[0].VertexSize * meshes[0].NumVertex, meshes[0].VertexSize);
-				mGraphicsInterface->SetIndexBuffer(meshes[0].IndexBuffer, meshes[0].NumIndices * sizeof(uint32_t), Graphics::Format::R_32_Uint);
-				mGraphicsInterface->DrawIndexed(meshes[0].NumIndices);
-			}
-		}
+		RenderItems(camera, renderSet);
 
 		DrawOriginGizmo();
 		
@@ -262,6 +240,33 @@ void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<Wo
 		if (actor->GetNumChilds() > 0)
 		{
 			ProcessVisibility(camera, actor->GetChilds(), renderItems);
+		}
+	}
+}
+
+void TestRenderer::RenderItems(World::Camera* camera, std::vector<RenderItem>& renderSet)
+{
+	Platform::BaseWindow* outputWindow = mOwnerApp->GetWindow();
+
+	mGraphicsInterface->SetScissor(0, 0, outputWindow->GetWidth(), outputWindow->GetHeight());
+	mGraphicsInterface->SetTargets(1, &mColourRt, &mDepthRt);
+	float clear[4] = { 0.4f,0.4f,0.6f,1.0f };
+	mGraphicsInterface->ClearTargets(1, &mColourRt, clear, &mDepthRt, 1.0f, 0);
+	{
+		mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
+		mGraphicsInterface->SetGraphicsPipeline(mTestPipeline);
+		mCameraData.InvViewProj = camera->GetProjection() * camera->GetInvViewTransform();
+
+		for (const RenderItem& item : renderSet)
+		{
+			mItemData.World = item.WorldMatrix;
+
+			Mesh* meshes = item.Meshes;
+			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, kCameraDataSlot, sizeof(CameraData), &mCameraData);
+			mGraphicsInterface->SetConstantBuffer(mItemDataCb, kItemDataSlot, sizeof(ItemData), &mItemData);
+			mGraphicsInterface->SetVertexBuffer(meshes[0].VertexBuffer, meshes[0].VertexSize * meshes[0].NumVertex, meshes[0].VertexSize);
+			mGraphicsInterface->SetIndexBuffer(meshes[0].IndexBuffer, meshes[0].NumIndices * sizeof(uint32_t), Graphics::Format::R_32_Uint);
+			mGraphicsInterface->DrawIndexed(meshes[0].NumIndices);
 		}
 	}
 }

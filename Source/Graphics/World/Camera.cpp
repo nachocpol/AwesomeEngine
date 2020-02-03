@@ -21,6 +21,8 @@ Camera::~Camera()
 
 void Camera::Update(float deltaTime)
 {
+	// Actor update? Use actor up right front etc....
+
 	InputManager* input = InputManager::GetInstance();
 	
 	// Update position

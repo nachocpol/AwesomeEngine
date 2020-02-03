@@ -2,6 +2,7 @@
 
 #include "IMGUI/imgui.h"
 #include "Graphics/GraphicsInterface.h"
+#include "HLSL/Declarations.h"
 
 namespace Graphics
 { 
@@ -32,10 +33,7 @@ namespace Graphics
 			Graphics::BufferHandle mVertexBuffer;
 			Graphics::BufferHandle mIndexBuffer;
 			Graphics::GraphicsPipeline mGraphicsPipeline;
-			struct UIData
-			{
-				float matrix[4][4];
-			}mUIData;
+			UIData mUIData;
 			Graphics::BufferHandle mUIDataHandle;
 
 			uint32_t mMaxVertices;

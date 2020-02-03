@@ -17,6 +17,10 @@ filter { "platforms:x64" }
 		"../DirectXTex/DirectXTex",
 		"../assimp/include"
 	}
+	files
+	{
+		"Assets/Shaders/**.h"
+	}
 
 project "Core"
 	kind "StaticLib"

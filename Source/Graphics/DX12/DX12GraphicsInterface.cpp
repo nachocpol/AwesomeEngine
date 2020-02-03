@@ -545,8 +545,6 @@ namespace Graphics { namespace DX12 {
 		mDefaultSurface.GPUFencesValues[idx]++;
 		mDefaultSurface.Queue->Signal(mDefaultSurface.GPUFences[idx], mDefaultSurface.GPUFencesValues[idx]);
 
-
-
 		mFrame++;
 	}
 

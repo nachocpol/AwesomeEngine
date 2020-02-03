@@ -33,6 +33,7 @@ namespace Graphics
 
 	private:
 		void ProcessVisibility(World::Camera* camera, const std::vector<World::Actor*>& actors, std::vector<RenderItem>& renderItems);
+		void RenderItems(World::Camera* camera, std::vector<RenderItem>& renderSet);
 		void DrawOriginGizmo();
 
 		Graphics::TextureHandle mColourRt;

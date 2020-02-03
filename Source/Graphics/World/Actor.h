@@ -39,7 +39,8 @@ namespace World
 			enum T
 			{
 				Renderable, // Actor that can be rendered
-				Camera,		// A camera
+				Camera,		
+				Light,		
 				Node,		// Empty actor (just a transform)
 				COUNT
 			};

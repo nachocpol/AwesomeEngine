@@ -161,8 +161,8 @@ void Graphics::DebugDraw::Flush(World::Camera* camera)
 			mCameraData.InvViewProj = camera->GetProjection() * camera->GetInvViewTransform();
 			mItemData.World = glm::mat4(1.0f);
 			mGraphicsInterface->SetGraphicsPipeline(mDebugPipeline);
-			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, 0, sizeof(CameraData), &mCameraData);
-			mGraphicsInterface->SetConstantBuffer(mItemDataCb, 1, sizeof(ItemData), &mItemData);
+			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, kCameraDataSlot, sizeof(CameraData), &mCameraData);
+			mGraphicsInterface->SetConstantBuffer(mItemDataCb, kItemDataSlot, sizeof(ItemData), &mItemData);
 			mGraphicsInterface->SetTopology(Topology::LineList);
 			mGraphicsInterface->SetVertexBuffer(mLinesVtxBuffer, sizeof(DebugVertex) * 2 * numLines, sizeof(DebugVertex));
 			mGraphicsInterface->Draw(numLines * 2, 0);
@@ -179,8 +179,8 @@ void Graphics::DebugDraw::Flush(World::Camera* camera)
 			mItemData.World = glm::scale(mItemData.World, glm::vec3(sphere.Radius));
 
 			mGraphicsInterface->SetGraphicsPipeline(mDebugPipeline);
-			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, 0, sizeof(CameraData), &mCameraData);
-			mGraphicsInterface->SetConstantBuffer(mItemDataCb, 1, sizeof(ItemData), &mItemData);
+			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, kCameraDataSlot, sizeof(CameraData), &mCameraData);
+			mGraphicsInterface->SetConstantBuffer(mItemDataCb, kItemDataSlot, sizeof(ItemData), &mItemData);
 			mGraphicsInterface->SetTopology(Topology::LineList);
 			mGraphicsInterface->SetVertexBuffer(mWireSphereVtxBuffer, sizeof(DebugVertex) * mWireSphereNumVtx, sizeof(DebugVertex));
 			mGraphicsInterface->Draw(mWireSphereNumVtx, 0);

@@ -101,14 +101,10 @@ namespace Graphics{namespace UI{
 				float R = drawPipe->DisplayPos.x + drawPipe->DisplaySize.x;
 				float T = drawPipe->DisplayPos.y;
 				float B = drawPipe->DisplayPos.y + drawPipe->DisplaySize.y;
-				float tmp[4][4] = 
-				{
-					{ 2.0f / (R - L),		0.0f,				0.0f,       0.0f },
-					{ 0.0f,					2.0f / (T - B),     0.0f,       0.0f },
-					{ 0.0f,					0.0f,				0.5f,       0.0f },
-					{ (R + L) / (L - R),	(T + B) / (B - T),  0.5f,       1.0f },
-				};
-				memcpy(&mUIData.matrix, &tmp, sizeof(tmp));
+				mUIData.ProjectionUI[0] = glm::vec4(2.0f / (R - L),		0.0f,				0.0f, 0.0f);
+				mUIData.ProjectionUI[1] = glm::vec4(0.0f,				2.0f / (T - B),		0.0f, 0.0f);
+				mUIData.ProjectionUI[2] = glm::vec4(0.0f,				0.0f,				0.5f, 0.0f);
+				mUIData.ProjectionUI[3] = glm::vec4((R + L) / (L - R),	(T + B) / (B - T),	0.5f, 1.0f);
 			}
 
 			// Viewport
@@ -140,7 +136,7 @@ namespace Graphics{namespace UI{
 					const ImDrawCmd* curCmd = &cmdList->CmdBuffer[j];
 					if(curCmd->UserCallback)
 					{
-						mGraphicsInterface->SetConstantBuffer(mUIDataHandle, 0, sizeof(mUIData), &mUIData.matrix);
+						mGraphicsInterface->SetConstantBuffer(mUIDataHandle, kUIDataSlot, sizeof(mUIData), &mUIData.ProjectionUI);
 						curCmd->UserCallback(cmdList, curCmd);
 					}
 					else
@@ -148,7 +144,7 @@ namespace Graphics{namespace UI{
 						const Graphics::TextureHandle iTex = { (uint64_t)curCmd->TextureId };
 						if (CHECK_TEXTURE(iTex))
 						{
-							mGraphicsInterface->SetConstantBuffer(mUIDataHandle, 0, sizeof(mUIData), &mUIData.matrix);
+							mGraphicsInterface->SetConstantBuffer(mUIDataHandle, kUIDataSlot, sizeof(mUIData), &mUIData.ProjectionUI);
 							mGraphicsInterface->SetScissor
 							(
 								curCmd->ClipRect.x - displayPos.x, curCmd->ClipRect.y - displayPos.y, 
