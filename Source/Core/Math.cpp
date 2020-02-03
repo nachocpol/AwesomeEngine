@@ -10,22 +10,31 @@ void Math::ExtractPlanesFromProjection(Plane* planes, float aspect, float fovY, 
 	// Near plane
 	float halfHeightNear = tanHalfVFov * nearDist;
 	float halfWidthNear = aspect * halfHeightNear;
-	glm::vec3 TRNear = glm::vec3(halfWidthNear, halfHeightNear, nearDist);
-	glm::vec3 BRNear = glm::vec3(halfWidthNear, -halfHeightNear, nearDist);
-	glm::vec3 BLNear = glm::vec3( - halfWidthNear, -halfHeightNear, nearDist);
-	glm::vec3 TLNear = glm::vec3( - halfWidthNear, halfHeightNear, nearDist);
+	glm::vec3 TRNear = glm::vec3(  halfWidthNear,  halfHeightNear, nearDist);
+	glm::vec3 BRNear = glm::vec3(  halfWidthNear, -halfHeightNear, nearDist);
+	glm::vec3 BLNear = glm::vec3( -halfWidthNear, -halfHeightNear, nearDist);
+	glm::vec3 TLNear = glm::vec3( -halfWidthNear,  halfHeightNear, nearDist);
 
 	// Far plane
 	float halfHeightFar = tanHalfVFov * farDist;
 	float halfWidthFar = aspect * halfHeightFar;
-	glm::vec3 TRFar = glm::vec3(halfWidthFar, halfHeightFar, farDist);
-	glm::vec3 BRFar = glm::vec3(halfWidthFar, -halfHeightFar, farDist);
-	glm::vec3 BLFar = glm::vec3(-halfWidthFar, -halfHeightFar, farDist);
-	glm::vec3 TLFar = glm::vec3(-halfWidthFar, halfHeightFar, farDist);
+	glm::vec3 TRFar = glm::vec3(  halfWidthFar,  halfHeightFar, farDist);
+	glm::vec3 BRFar = glm::vec3(  halfWidthFar, -halfHeightFar, farDist);
+	glm::vec3 BLFar = glm::vec3( -halfWidthFar, -halfHeightFar, farDist);
+	glm::vec3 TLFar = glm::vec3( -halfWidthFar,  halfHeightFar, farDist);
+
+	{
+		// WTF?
+		glm::vec3 a = glm::vec3(-1.0f,0.0f,0.0f);
+		glm::vec3 b = glm::vec3(0.0f,0.0f,1.0f);
+		glm::vec3 c = glm::cross(a, b); //0,-1,0
+		c.length();
+	}
 
 	// Top plane
 	planes[0].Point = TRNear;
 	planes[0].Normal = glm::normalize(glm::cross(TLNear - TRNear, TRFar - TRNear));
+	// planes[0].Normal = glm::normalize(glm::cross(glm::normalize(TRFar - TRNear), glm::normalize(TLNear - TRNear)));
 
 	// Right plane
 	planes[1].Point = TRNear;

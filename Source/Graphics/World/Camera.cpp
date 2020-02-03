@@ -24,7 +24,7 @@ void Camera::Update(float deltaTime)
 	InputManager* input = InputManager::GetInstance();
 	
 	// Update position
-	float hackSpeed = 0.015f * deltaTime;
+	float hackSpeed = 0.005f * deltaTime;
 	glm::vec3 position = GetPosition();
 	if (input->IsKeyPressed('a'))
 	{
@@ -61,7 +61,7 @@ void Camera::Update(float deltaTime)
 	}
 	mLastMousePos = mousePos;
 
-	mouseOff *= 0.5f;
+	mouseOff *= 0.25f;
 	mYaw -= mouseOff.x;
 	mPitch -= mouseOff.y;
 	mPitch = glm::clamp(mPitch, -89.0f, 89.0f);

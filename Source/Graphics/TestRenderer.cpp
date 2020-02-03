@@ -200,17 +200,36 @@ void TestRenderer::Render(SceneGraph* scene)
 void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<World::Actor*>& actors, std::vector<RenderItem>& renderItems)
 {
 	const auto projProps = camera->GetProjectionProps();
+	glm::mat4 viewToWorld = glm::inverse(mFreezeCullingState.InverseView);
 
 	// Draw camera frustum:
 	if (mFreezeCullingState.Enabled)
 	{
-		glm::mat4 viewToWorld = glm::inverse(mFreezeCullingState.InverseView);
 		DebugDraw::GetInstance()->DrawFrustum(viewToWorld, projProps.Aspect, projProps.VFov, projProps.Near, projProps.Far, glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
 	}
 
 	// Camera frustum planes in viewspace:
 	Math::Plane cameraFrustumPlanes[6];
 	Math::ExtractPlanesFromProjection(cameraFrustumPlanes, projProps.Aspect, projProps.VFov, projProps.Near, projProps.Far);
+
+	for (uint32_t i = 0; i < 6; ++i)
+	{
+		glm::vec4 cols[6] =
+		{
+			glm::vec4(1.0f,0.0f,0.0f,1.0f),
+			glm::vec4(0.0f,1.0f,0.0f,1.0f),
+			glm::vec4(0.0f,0.0f,1.0f,1.0f),
+			glm::vec4(1.0f,1.0f,0.0f,1.0f),
+			glm::vec4(0.0f,1.0f,1.0f,1.0f),
+			glm::vec4(1.0f,1.0f,1.0f,1.0f)
+		};
+		Math::Plane p = cameraFrustumPlanes[i];
+		glm::vec3 pointWorld = viewToWorld * glm::vec4(p.Point, 1.0f);
+		glm::vec3 nWorld = viewToWorld * glm::vec4(p.Normal, 0.0f);
+		//glm::vec3 nWorld = viewToWorld * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+		nWorld = glm::normalize(nWorld);
+		DebugDraw::GetInstance()->DrawLine(pointWorld, pointWorld + nWorld * 0.2f,cols[i]);
+	}
 
 	for (Actor* actor : actors)
 	{
@@ -236,7 +255,7 @@ void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<Wo
 			}
 
 			// Draw actor bounds:
-			if (kRenderBounds)
+			if (kRenderBounds || inside)
 			{
 				DebugDraw::GetInstance()->DrawAABB(aabb.Min, aabb.Max);
 				DebugDraw::GetInstance()->DrawWireSphere(sb.Center, sb.Radius);
