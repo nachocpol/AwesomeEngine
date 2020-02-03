@@ -2,7 +2,7 @@
 	DebugDraw.hlsl
 */
 
-#include "Declarations.hlsl"
+#include "Declarations.h"
 
 //////////////////////////////////////
 // Vertex inputs and outputs definitions

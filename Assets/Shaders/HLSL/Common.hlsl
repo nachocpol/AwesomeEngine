@@ -4,7 +4,7 @@
 */
 
 #include "Utils.hlsl"
-#include "Declarations.hlsl"
+#include "Declarations.h"
 
 //////////////////////////////////////
 // Resources

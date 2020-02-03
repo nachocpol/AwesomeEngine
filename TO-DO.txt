@@ -1,13 +1,10 @@
 DOING:
-
-+ Frustum culling
-+ Debug camera that we can eject
-+ Draw debug meshes
 + Proper asset import: model class, model factory
++ Constant buffer in one file (as in dont have the declaration in cpp and hlsl) use some #define trickery to do it. (check render doc hlsl_cbuffers.h)
 
 TO-DO:
 
-+ Constant buffer in one file (as in dont have the declaration in cpp and hlsl) use some #define trickery to do it. (check render doc hlsl_cbuffers.h)
++ Tiled rendering, in prep of clustered rendering.
 + Auto magic PSO without setting render target and depth formats..
 + Make constant buffer binding more clever, as in, if we don´t change a slot ,do not trash it...
 + Console to display logs
@@ -25,6 +22,9 @@ TO-DO:
 + Clustered renderer.
 
 DONE:
++ Frustum culling
++ Debug camera that we can eject
++ Draw debug meshes
 + Start making components (nah, I will have a base Actor, and inherit from item, keeping it simple)
 + Unify mesh transform (inv view proj)
 + Unify shaders.
