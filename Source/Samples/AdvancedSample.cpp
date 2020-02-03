@@ -11,6 +11,7 @@
 #include "Graphics/World/Camera.h"
 #include "Graphics/TestRenderer.h"
 #include "Graphics/UI/IMGUI/imgui.h"
+#include "glm/glm.hpp"
 #include "glm/ext.hpp"
 
 #include <stdio.h>

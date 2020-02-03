@@ -120,7 +120,7 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 			}
 		}
 
-		mWireSphereNumVtx = sphereVtx.size();
+		mWireSphereNumVtx = (uint32_t)sphereVtx.size();
 		mWireSphereVtxBuffer = mGraphicsInterface->CreateBuffer(Graphics::VertexBuffer, CPUAccess::None, sizeof(DebugVertex) * mWireSphereNumVtx, &sphereVtx[0]);
 	}
 }
@@ -141,7 +141,7 @@ void Graphics::DebugDraw::Flush(World::Camera* camera)
 	// Lines
 	if (!mLines.empty())
 	{
-		uint32_t numLines = mLines.size();
+		uint32_t numLines = (uint32_t)mLines.size();
 		unsigned char* pLines = nullptr;
 		if (mGraphicsInterface->MapBuffer(mLinesVtxBuffer, &pLines))
 		{

@@ -3,6 +3,7 @@
 */
 
 #if defined(__cplusplus)
+	#pragma once
 	#include "glm/glm.hpp"
 
 	#define REGISTER(r)
@@ -31,3 +32,10 @@ CBUFFER(ItemData) REGISTER(b1)
 {
 	float4x4 World;
 };
+
+#if defined(__cplusplus)
+	#undef float4x4
+	#undef float4
+	#undef float2
+	#undef float3
+#endif

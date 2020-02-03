@@ -3,8 +3,20 @@ workspace "AwesomeSolution"
 	platforms "x64"
 	systemversion "10.0.16299.0"
 
-filter {"platforms:x64"}
-	defines {"PLATFORM_WINDOWS"}
+filter { "platforms:x64" }
+	defines { "PLATFORM_WINDOWS" }
+	includedirs 
+	{
+		"Source",
+		"Depen/DX12",
+		"Depen/JSON",
+		"Depen/TinyObj",
+		"Depen/GLM",
+		"Depen/STB",
+		"Assets/Shaders",
+		"../DirectXTex/DirectXTex",
+		"../assimp/include"
+	}
 
 project "Core"
 	kind "StaticLib"
@@ -18,19 +30,7 @@ project "Core"
 	}
 	filter "configurations:Debug"
 		symbols "On"
-		includedirs 
-		{
-			"Source",
-			"Depen/DX12",
-			"Depen/JSON",
-			"Depen/TinyObj",
-			"Depen/GLM",
-			"Depen/STB",
-
-			"../DirectXTex/DirectXTex",
-
-			"../assimp/include"
-		}	
+	
 		libdirs
 		{
 			"../DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Debug",
@@ -45,19 +45,6 @@ project "Core"
 		}
 	filter "configurations:Release"
 		optimize "On"
-		includedirs 
-		{
-			"Source",
-			"Depen/DX12",
-			"Depen/JSON",
-			"Depen/TinyObj",
-			"Depen/GLM",
-			"Depen/STB",
-
-			"../DirectXTex/DirectXTex",
-
-			"../assimp/include"	
-		}
 		libdirs
 		{
 			"../DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Release",
@@ -81,19 +68,6 @@ project "Graphics"
 	}
 	filter "configurations:Debug"
 		symbols "On"
-		includedirs 
-		{
-			"Source",
-			"Depen/DX12",
-			"Depen/JSON",
-			"Depen/TinyObj",
-			"Depen/GLM",
-			"Depen/STB",
-
-			"../DirectXTex/DirectXTex",
-
-			"../assimp/include"
-		}	
 		libdirs
 		{
 			"../DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Debug",
@@ -109,19 +83,6 @@ project "Graphics"
 		}
 	filter "configurations:Release"
 		optimize "On"
-		includedirs 
-		{
-			"Source",
-			"Depen/DX12",
-			"Depen/JSON",
-			"Depen/TinyObj",
-			"Depen/GLM",
-			"Depen/STB",
-
-			"../DirectXTex/DirectXTex",
-
-			"../assimp/include"	
-		}
 		libdirs
 		{
 			"../DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Release",
@@ -145,13 +106,6 @@ project "AwesomeTriangle"
 	}
 	filter "configurations:Debug"
 		symbols "On"
-		includedirs 
-		{
-			"Source",
-			"Depen/DX12",
-			"Depen/GLM",
-			"Depen/STB"
-		}	
 		libdirs
 		{
 		}
@@ -161,13 +115,6 @@ project "AwesomeTriangle"
 		}
 	filter "configurations:Release"
 		optimize "On"
-		includedirs 
-		{
-			"Source",
-			"Depen/DX12",
-			"Depen/GLM",
-			"Depen/STB"
-		}
 		libdirs
 		{
 		}
@@ -188,13 +135,6 @@ project "AwesomeAdvanced"
 	}
 	filter "configurations:Debug"
 		symbols "On"
-		includedirs 
-		{
-			"Source",
-			"Depen/DX12",
-			"Depen/GLM",
-			"Depen/STB"
-		}	
 		libdirs
 		{
 		}
@@ -204,13 +144,6 @@ project "AwesomeAdvanced"
 		}
 	filter "configurations:Release"
 		optimize "On"
-		includedirs 
-		{
-			"Source",
-			"Depen/DX12",
-			"Depen/GLM",
-			"Depen/STB"
-		}
 		libdirs
 		{
 		}
@@ -232,13 +165,6 @@ project "AwesomeShowcase"
 	}
 	filter "configurations:Debug"
 		symbols "On"
-		includedirs 
-		{
-			"Source",
-			"Depen/DX12",
-			"Depen/GLM",
-			"Depen/STB"
-		}	
 		libdirs
 		{
 			"../assimp/lib/Debug"
@@ -250,13 +176,6 @@ project "AwesomeShowcase"
 		}
 	filter "configurations:Release"
 		optimize "On"
-		includedirs 
-		{
-			"Source",
-			"Depen/DX12",
-			"Depen/GLM",
-			"Depen/STB"
-		}
 		libdirs
 		{
 			"../assimp/lib/Release"

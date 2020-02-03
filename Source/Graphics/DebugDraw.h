@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GraphicsInterface.h"
-#include "Declarations.h"
+#include "HLSL/Declarations.h"
 
 #include "glm/glm.hpp"
 
