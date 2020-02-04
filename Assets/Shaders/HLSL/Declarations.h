@@ -34,31 +34,15 @@ CBUFFER(ItemData, 1)
 	float4x4 World;
 };
 
-/*
-CBUFFER(UIData) REGISTER(b0)
+CBUFFER(LightData, 2)
 {
-	float4x4 ProjectionUI;	// ImGUI ortho projection
+	float LightType;			// Should match Light::LightType::T 
+	float3 LightColor;
+	float3 LightPosDirection;
+	float LightIntensity;
+	float LightRadius;
 };
 
-CBUFFER(CameraData) REGISTER(b0)
-{
-	float4x4 InvViewProj;
-};
-
-CBUFFER(ItemData) REGISTER(b1)
-{
-	float4x4 World;
-};
-
-CBUFFER(LightData) REGISTER(b2)
-{
-	float Type;			// Should match Light::LightType::T 
-	float3 Color;
-	float3 Direction;
-	float Intensity;
-	float Radius;
-};
-*/
 #if defined(__cplusplus)
 	#undef float4x4
 	#undef float4

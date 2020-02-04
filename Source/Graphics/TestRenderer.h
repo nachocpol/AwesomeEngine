@@ -18,8 +18,12 @@ namespace Graphics
 	struct RenderItem
 	{
 		glm::mat4 WorldMatrix;
-		Mesh* Meshes;
+		Mesh* Meshes;// this should be 1 mesh (so rendereables with more that 1 mesh should split)
 		uint32_t NumMeshes;
+	};
+	struct LightItem
+	{
+		LightData Data;
 	};
 
 	class TestRenderer : public RendererBase
@@ -33,18 +37,21 @@ namespace Graphics
 
 	private:
 		void ProcessVisibility(World::Camera* camera, const std::vector<World::Actor*>& actors, std::vector<RenderItem>& renderItems);
-		void RenderItems(World::Camera* camera, std::vector<RenderItem>& renderSet);
+		void RenderItems(World::Camera* camera,const std::vector<RenderItem>& renderSet, const std::vector<LightItem>& lights);
 		void DrawOriginGizmo();
 
 		Graphics::TextureHandle mColourRt;
 		Graphics::TextureHandle mDepthRt;
 		Graphics::GraphicsPipeline mTestPipeline;
+		Graphics::GraphicsPipeline mSurfacePipeline;
 		Graphics::GraphicsPipeline mPresentPipeline;
 		Graphics::BufferHandle mPresentVtxBuffer;
 		CameraData mCameraData;
 		Graphics::BufferHandle mCameraDataCb;
 		ItemData mItemData;
 		Graphics::BufferHandle mItemDataCb;
+		LightData mLightData;
+		Graphics::BufferHandle mLightDataCb;
 
 		struct CameraState
 		{

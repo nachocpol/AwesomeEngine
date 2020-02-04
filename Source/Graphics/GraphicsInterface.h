@@ -8,6 +8,10 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/glm.hpp"
 
+#define NUM_SRVS 8
+#define NUM_UAVS 8
+#define NUM_CBVS 4
+
 namespace Graphics
 {
 	namespace Platform

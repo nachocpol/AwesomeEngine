@@ -3,6 +3,7 @@
 #include "World/Renderable.h"
 #include "World/Model.h"
 #include "World/Camera.h"
+#include "World/Light.h"
 #include "Core/App/AppBase.h"
 #include "Platform/BaseWindow.h"
 #include "DebugDraw.h"
@@ -40,15 +41,15 @@ void TestRenderer::Initialize(AppBase * app)
 	auto depthFlags = Graphics::TextureFlags::DepthStencil;
 	mDepthRt = mGraphicsInterface->CreateTexture2D(width, height, 1, 1, Graphics::Format::Depth24_Stencil8, depthFlags);
 
-	// Test pipeline
+	// Surface pipeline
 	{
 		Graphics::GraphicsPipelineDescription pdesc = {};
-		pdesc.PixelShader.ShaderEntryPoint = "PSSimple";
-		pdesc.PixelShader.ShaderPath = "Common.hlsl";
+		pdesc.PixelShader.ShaderEntryPoint = "PSSurface";
+		pdesc.PixelShader.ShaderPath = "Surface.hlsl";
 		pdesc.PixelShader.Type = Graphics::ShaderType::Pixel;
 
-		pdesc.VertexShader.ShaderEntryPoint = "VSSimple";
-		pdesc.VertexShader.ShaderPath = "Common.hlsl";
+		pdesc.VertexShader.ShaderEntryPoint = "VSSurface";
+		pdesc.VertexShader.ShaderPath = "Surface.hlsl";
 		pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
 
 		Graphics::VertexInputDescription::VertexInputElement eles[4] =
@@ -66,9 +67,19 @@ void TestRenderer::Initialize(AppBase * app)
 		pdesc.DepthFunction = Graphics::LessEqual;
 		pdesc.DepthFormat = Graphics::Depth24_Stencil8;
 		pdesc.ColorFormats[0] = Graphics::Format::RGBA_8_Unorm;
+		{
+			pdesc.BlendTargets[0].Enabled = true;
+			pdesc.BlendTargets[0].BlendOpColor = BlendOperation::BlendOpAdd;
+			pdesc.BlendTargets[0].SrcBlendColor = BlendFunction::BlendOne;
+			pdesc.BlendTargets[0].DstBlendColor = BlendFunction::BlendDstAlpha;
+
+			pdesc.BlendTargets[0].BlendOpAlpha = BlendOperation::BlendOpAdd;
+			pdesc.BlendTargets[0].SrcBlendAlpha = BlendFunction::BlendOne;
+			pdesc.BlendTargets[0].DstBlendAlpha = BlendFunction::BlendOne;
+		}
 		pdesc.DepthFormat = Graphics::Format::Depth24_Stencil8;
 
-		mTestPipeline = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
+		mSurfacePipeline = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
 	}
 
 	// Present pipeline:
@@ -110,6 +121,7 @@ void TestRenderer::Initialize(AppBase * app)
 
 	mCameraDataCb = mGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(CameraData));
 	mItemDataCb = mGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(ItemData));
+	mLightDataCb = mGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(LightData));
 }
 
 void TestRenderer::Release()
@@ -157,8 +169,22 @@ void TestRenderer::Render(SceneGraph* scene)
 		std::vector<RenderItem> renderSet;
 		ProcessVisibility(camera, rootActor->GetChilds(), renderSet);
 
+		// Gather lights: TO-DO: check visibility (we could do per object vis)
+		std::vector<LightItem> lights;
+		for (const auto light : scene->GetLights())
+		{
+			LightItem lightData;
+			lightData.Data.LightColor = light->GetColor();
+			lightData.Data.LightIntensity = light->GetIntensity();
+			lightData.Data.LightRadius = light->GetRadius();
+			lightData.Data.LightType = (float)light->GetLightType();
+			lightData.Data.LightPosDirection = light->GetPosition();
+			lights.push_back(lightData);
+			DebugDraw::GetInstance()->DrawWireSphere(lightData.Data.LightPosDirection, lightData.Data.LightRadius);
+		}
+
 		// Render items:
-		RenderItems(camera, renderSet);
+		RenderItems(camera, renderSet, lights);
 
 		DrawOriginGizmo();
 		
@@ -244,29 +270,33 @@ void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<Wo
 	}
 }
 
-void TestRenderer::RenderItems(World::Camera* camera, std::vector<RenderItem>& renderSet)
+void TestRenderer::RenderItems(World::Camera* camera, const std::vector<RenderItem>& renderSet, const std::vector<LightItem>& lights)
 {
 	Platform::BaseWindow* outputWindow = mOwnerApp->GetWindow();
 
 	mGraphicsInterface->SetScissor(0, 0, outputWindow->GetWidth(), outputWindow->GetHeight());
 	mGraphicsInterface->SetTargets(1, &mColourRt, &mDepthRt);
-	float clear[4] = { 0.4f,0.4f,0.6f,1.0f };
+	float clear[4] = { 0.4f,0.4f,0.6f,0.0f };
 	mGraphicsInterface->ClearTargets(1, &mColourRt, clear, &mDepthRt, 1.0f, 0);
 	{
 		mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
-		mGraphicsInterface->SetGraphicsPipeline(mTestPipeline);
+		mGraphicsInterface->SetGraphicsPipeline(mSurfacePipeline);
 		mCameraData.InvViewProj = camera->GetProjection() * camera->GetInvViewTransform();
-
-		for (const RenderItem& item : renderSet)
+		for (const LightItem& light : lights)
 		{
-			mItemData.World = item.WorldMatrix;
+			mLightData = light.Data;
+			for (const RenderItem& item : renderSet)
+			{
+				mItemData.World = item.WorldMatrix;
 
-			Mesh* meshes = item.Meshes;
-			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, kCameraDataSlot, sizeof(CameraData), &mCameraData);
-			mGraphicsInterface->SetConstantBuffer(mItemDataCb, kItemDataSlot, sizeof(ItemData), &mItemData);
-			mGraphicsInterface->SetVertexBuffer(meshes[0].VertexBuffer, meshes[0].VertexSize * meshes[0].NumVertex, meshes[0].VertexSize);
-			mGraphicsInterface->SetIndexBuffer(meshes[0].IndexBuffer, meshes[0].NumIndices * sizeof(uint32_t), Graphics::Format::R_32_Uint);
-			mGraphicsInterface->DrawIndexed(meshes[0].NumIndices);
+				Mesh* meshes = item.Meshes;
+				mGraphicsInterface->SetConstantBuffer(mCameraDataCb, kCameraDataSlot, sizeof(CameraData), &mCameraData);
+				mGraphicsInterface->SetConstantBuffer(mItemDataCb, kItemDataSlot, sizeof(ItemData), &mItemData);
+				mGraphicsInterface->SetConstantBuffer(mLightDataCb, kLightDataSlot, sizeof(LightData), &mLightData);
+				mGraphicsInterface->SetVertexBuffer(meshes[0].VertexBuffer, meshes[0].VertexSize * meshes[0].NumVertex, meshes[0].VertexSize);
+				mGraphicsInterface->SetIndexBuffer(meshes[0].IndexBuffer, meshes[0].NumIndices * sizeof(uint32_t), Graphics::Format::R_32_Uint);
+				mGraphicsInterface->DrawIndexed(meshes[0].NumIndices);
+			}
 		}
 	}
 }

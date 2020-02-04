@@ -9,6 +9,7 @@
 #include "Graphics/World/Actor.h"
 #include "Graphics/World/Renderable.h"
 #include "Graphics/World/Camera.h"
+#include "Graphics/World/Light.h"
 #include "Graphics/TestRenderer.h"
 #include "Graphics/UI/IMGUI/imgui.h"
 #include "glm/glm.hpp"
@@ -36,6 +37,9 @@ private:
 	World::Renderable* sun;
 	World::Renderable* earth;
 	World::Renderable* moon;
+
+	World::Light* pointLight;
+	World::Light* pointLight2;
 };
 
 void AdvancedApp::Init()
@@ -56,6 +60,18 @@ void AdvancedApp::Init()
 			curCube->SetModel(mCube);
 		}
 	}	
+
+	pointLight = mScene.SpawnLight();
+	pointLight->SetLightType(World::Light::LightType::Point);
+	pointLight->SetPosition(0.0f, 1.0f, 0.0f);
+	pointLight->SetColor(glm::vec3(1.0f, 0.0f, 1.0f));
+	pointLight->SetIntensity(3.0f);
+
+	pointLight2 = mScene.SpawnLight();
+	pointLight2->SetLightType(World::Light::LightType::Point);
+	pointLight2->SetPosition(4.0f, 1.0f, 0.0f);
+	pointLight2->SetColor(glm::vec3(0.0f, 1.0f, 1.0f));
+	pointLight2->SetIntensity(3.0f);
 
 	//sun = mScene.SpawnRenderable();
 	//earth = mScene.SpawnRenderable(sun);
