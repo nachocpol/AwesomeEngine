@@ -87,11 +87,14 @@ namespace Graphics{ namespace DX12
 		ID3D12Resource* Buffer;
 		ID3D12Resource* UploadHeap;
 		D3D12_RESOURCE_STATES State;
-		BufferType Type;
-		CPUAccess Access;
+		BufferType::T Type;
+		CPUAccess::T CPUAccessMode;
+		GPUAccess::T GPUAccessMode;
 		uint64_t LastFrame;
 		uint64_t CopyCount; // Used to track how many times we bind a Constant Buffer 
 		D3D12_CPU_DESCRIPTOR_HANDLE CBV;
+		D3D12_CPU_DESCRIPTOR_HANDLE GPUBufferView;
+		D3D12_CPU_DESCRIPTOR_HANDLE GPURWBufferView;
 	};
 	
 	struct GraphicsPipelineEntry
@@ -138,7 +141,7 @@ namespace Graphics{ namespace DX12
 		void StartFrame()final override;
 		void EndFrame()final override;
 		void FlushAndWait()final override;
-		BufferHandle CreateBuffer(BufferType type, CPUAccess cpuAccess, uint64_t size, void* data = nullptr)final override;
+		BufferHandle CreateBuffer(BufferType::T type, CPUAccess::T cpuAccess, GPUAccess::T gpuAccess, uint64_t size, uint32_t stride = 0, void* data = nullptr)final override;
 		TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
 		TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
 		GPUQueryHandle CreateQuery(const GPUQueryType::T& type)final override;

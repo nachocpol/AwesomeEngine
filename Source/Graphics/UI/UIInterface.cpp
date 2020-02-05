@@ -188,13 +188,13 @@ namespace Graphics{namespace UI{
 		// Buffers
 		mMaxVertices = 10000;
 		uint64_t vtxBufferSize = sizeof(ImDrawVert) * mMaxVertices;
-		mVertexBuffer = mGraphicsInterface->CreateBuffer(BufferType::VertexBuffer, CPUAccess::Write, vtxBufferSize);
+		mVertexBuffer = mGraphicsInterface->CreateBuffer(BufferType::VertexBuffer, CPUAccess::Write, GPUAccess::Read, vtxBufferSize);
 
 		mMaxIndices = 10000;
 		uint64_t idxBufferSize = sizeof(ImDrawIdx) * mMaxIndices;
-		mIndexBuffer = mGraphicsInterface->CreateBuffer(BufferType::IndexBuffer, CPUAccess::Write, idxBufferSize);
+		mIndexBuffer = mGraphicsInterface->CreateBuffer(BufferType::IndexBuffer, CPUAccess::Write, GPUAccess::Read, idxBufferSize);
 
-		mUIDataHandle = mGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, CPUAccess::None, sizeof(mUIData));
+		mUIDataHandle = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(mUIData));
 
 		// Render pipeline
 		Graphics::GraphicsPipelineDescription pdesc;

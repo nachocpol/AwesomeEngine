@@ -133,10 +133,10 @@ Model* Graphics::ModelFactory::LoadFromFile(std::string path, GraphicsInterface*
 		}
 
 		// Setup the Mesh
-		model->Meshes[i].VertexBuffer = graphicsInterface->CreateBuffer(Graphics::BufferType::VertexBuffer, Graphics::CPUAccess::None, vtxSize, vertices.data());
+		model->Meshes[i].VertexBuffer = graphicsInterface->CreateBuffer(BufferType::VertexBuffer, CPUAccess::None, GPUAccess::Read, vtxSize, 0,vertices.data());
 		model->Meshes[i].NumVertex = numVertices;
 		model->Meshes[i].VertexSize = sizeof(PosNorTanTexc_Vertex);
-		model->Meshes[i].IndexBuffer = graphicsInterface->CreateBuffer(Graphics::BufferType::IndexBuffer, Graphics::CPUAccess::None, sizeof(unsigned int) * loadedIndices.size(), loadedIndices.data());
+		model->Meshes[i].IndexBuffer = graphicsInterface->CreateBuffer(BufferType::IndexBuffer, CPUAccess::None, GPUAccess::Read, sizeof(unsigned int) * loadedIndices.size(), 0, loadedIndices.data());
 		model->Meshes[i].NumIndices = (uint32_t)loadedIndices.size();
 		
 		model->Meshes[i].AABB.Min = minVtx;

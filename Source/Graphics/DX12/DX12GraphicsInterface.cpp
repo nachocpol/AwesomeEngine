@@ -572,17 +572,29 @@ namespace Graphics { namespace DX12 {
 		tmpFence->Release();
 	}
 
-	BufferHandle DX12GraphicsInterface::CreateBuffer(BufferType type, CPUAccess cpuAccess, uint64_t size, void* data /*= nullptr*/)
+	BufferHandle DX12GraphicsInterface::CreateBuffer(BufferType::T type, CPUAccess::T cpuAccess, GPUAccess::T gpuAccess, uint64_t size, uint32_t stride /*= 0*/, void* data /*= nullptr*/)
 	{
+		// TO-DO: If CPU read none (static buffer) we could delete upload buffer once done with it.
+
 		bool isIndex = type == BufferType::IndexBuffer;
-		bool isWrite = cpuAccess == CPUAccess::Write;
+		bool isStructuredBuffer = type == BufferType::GPUBuffer;
+		bool isGPURw = gpuAccess == GPUAccess::ReadWrite;
+		bool isCPUWrite = cpuAccess == CPUAccess::Write;
 
 		BufferHandle handle;
 		BufferEntry& bufferEntry = mBuffersPool.GetFreeEntry(handle.Handle);
 		bufferEntry.Type = type;
-		bufferEntry.Access = cpuAccess;
+		bufferEntry.CPUAccessMode = cpuAccess;
+		bufferEntry.GPUAccessMode = gpuAccess;
 		bufferEntry.LastFrame = mFrame;
-		bufferEntry.State = isIndex ? INDEX_READ : VERTEX_CB_READ;
+		if (isStructuredBuffer)
+		{
+			bufferEntry.State = isGPURw ? UNORDERED_ACCESS : SRV_READ;
+		}
+		else
+		{
+			bufferEntry.State = isIndex ? INDEX_READ : VERTEX_CB_READ;
+		}
 
 		// Size should be multiple of 256
 		if (type == BufferType::ConstantBuffer)
@@ -605,9 +617,10 @@ namespace Graphics { namespace DX12 {
 		);
 		
 		// Upload resource
+		uint32_t resourceSize = isStructuredBuffer ? size * stride : size;
 		heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-		desc = CD3DX12_RESOURCE_DESC::Buffer(size);
-		if (type == Graphics::ConstantBuffer)
+		desc = CD3DX12_RESOURCE_DESC::Buffer(resourceSize);
+		if (type == BufferType::ConstantBuffer)
 		{
 			desc = CD3DX12_RESOURCE_DESC::Buffer(CB_INTERMIDIATE_SIZE);
 
@@ -619,7 +632,38 @@ namespace Graphics { namespace DX12 {
 			mDevice->CreateConstantBufferView(&cbvDesc, bufferEntry.CBV);
 			mViewsHeap.OffsetHandles(1);
 		}
-		else if(type != Graphics::ConstantBuffer && isWrite)
+		else if (type == BufferType::GPUBuffer)
+		{
+			// Create views:
+			if (gpuAccess == GPUAccess::Read)
+			{
+				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+				srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+				srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+				srvDesc.Buffer.FirstElement = 0;
+				srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+				srvDesc.Buffer.NumElements = size;
+				srvDesc.Buffer.StructureByteStride = stride;
+				bufferEntry.GPUBufferView = mViewsHeap.GetCPU();
+				mDevice->CreateShaderResourceView(bufferEntry.Buffer, &srvDesc, bufferEntry.GPUBufferView);
+				mViewsHeap.OffsetHandles(1);
+			}
+			else if (gpuAccess == GPUAccess::ReadWrite)
+			{
+				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+				uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+				uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+				uavDesc.Buffer.FirstElement = 0;
+				uavDesc.Buffer.NumElements = size;
+				uavDesc.Buffer.StructureByteStride = stride;
+				uavDesc.Buffer.CounterOffsetInBytes = 0;
+				uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+				bufferEntry.GPURWBufferView = mViewsHeap.GetCPU();
+				mDevice->CreateUnorderedAccessView(bufferEntry.Buffer, nullptr, &uavDesc, bufferEntry.GPURWBufferView);
+				mViewsHeap.OffsetHandles(1);
+			}
+		}
+		if (type != BufferType::ConstantBuffer && isCPUWrite)
 		{
 			// CPUAccess::Write, we can now Map the buffer, but we need to do it
 			// in a safer way so we do not override data
@@ -635,9 +679,9 @@ namespace Graphics { namespace DX12 {
 			IID_PPV_ARGS(&bufferEntry.UploadHeap)
 		);
 		
-		if (data && type != Graphics::ConstantBuffer)
+		if (data && type != BufferType::ConstantBuffer)
 		{
-			SetBufferData(handle, (int)size, 0, data);
+			SetBufferData(handle, (int)resourceSize, 0, data);
 		}
 		
 		return handle;
@@ -682,7 +726,7 @@ namespace Graphics { namespace DX12 {
 		);
 		CD3DX12_HEAP_PROPERTIES heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 		auto& state = curTexEntry.State;
-		state = isUav ? UNORDERED_ACCESS : TEXTURE_READ;
+		state = isUav ? UNORDERED_ACCESS : SRV_READ;
 		mDevice->CreateCommittedResource
 		(
 			&heapP, D3D12_HEAP_FLAG_NONE,
@@ -868,7 +912,7 @@ namespace Graphics { namespace DX12 {
 		);
 		CD3DX12_HEAP_PROPERTIES heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 		auto& state = curTexEntry.State;
-		state = TEXTURE_READ;
+		state = SRV_READ;
 		mDevice->CreateCommittedResource
 		(
 			&heapP, D3D12_HEAP_FLAG_NONE,
@@ -1079,7 +1123,7 @@ namespace Graphics { namespace DX12 {
 		int numTargets = 0;
 		for (int i = 0; i < 8; i++)
 		{
-			if (desc.ColorFormats[i] != None)
+			if (desc.ColorFormats[i] != Unknown)
 			{
 				psoDesc.RTVFormats[i] = ToDXGIFormat(desc.ColorFormats[i]);
 				psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
@@ -1189,7 +1233,7 @@ namespace Graphics { namespace DX12 {
 	void DX12GraphicsInterface::SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)
 	{
 		BufferEntry& bufferEntry = mBuffersPool.GetEntry(buffer.Handle);
-		if (bufferEntry.Type == ConstantBuffer)
+		if (bufferEntry.Type == BufferType::ConstantBuffer)
 		{
 			std::cout << "Do not call SetBufferData on a Constant buffer, just use the SetConstantBuffer method. \n";
 			return;
@@ -1403,11 +1447,11 @@ namespace Graphics { namespace DX12 {
 		ID3D12Resource* res = entry.Resource;
 		if (texture.Handle != InvalidTexture.Handle && res != nullptr)
 		{
-			if (entry.State != (TEXTURE_READ))
+			if (entry.State != (SRV_READ))
 			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, entry.State, TEXTURE_READ));
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, entry.State, SRV_READ));
 			}
-			entry.State = TEXTURE_READ;
+			entry.State = SRV_READ;
 
 			// Copy descriptor:
 			auto slotHandle = mFrameHeap[idx]->GetCPU();
@@ -1498,7 +1542,7 @@ namespace Graphics { namespace DX12 {
 	{
 		D3D12_RANGE range = CD3DX12_RANGE(0, 0);
 		BufferEntry& bufferEntry = mBuffersPool.GetEntry(buffer.Handle);
-		if ((bufferEntry.Access != CPUAccess::Write && bufferEntry.Access != CPUAccess::ReadWrite))
+		if ((bufferEntry.CPUAccessMode != CPUAccess::Write && bufferEntry.CPUAccessMode != CPUAccess::ReadWrite))
 		{
 			outPtr = nullptr;
 			assert(false);
@@ -1524,6 +1568,7 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::UnMapBuffer(BufferHandle buffer, bool writeOnly/*=true*/)
 	{
+		// TO-DO: What if the user doesn't unmap.
 		BufferEntry& bufferEntry = mBuffersPool.GetEntry(buffer.Handle);
 		if (bufferEntry.UploadHeap)
 		{

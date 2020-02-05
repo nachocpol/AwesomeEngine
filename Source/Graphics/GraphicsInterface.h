@@ -29,11 +29,15 @@ namespace Graphics
 		};
 	};
 
-	enum BufferType
+	struct BufferType
 	{
-		VertexBuffer = 0,
-		IndexBuffer = 1,
-		ConstantBuffer = 2
+		enum T
+		{
+			VertexBuffer,
+			IndexBuffer,
+			ConstantBuffer,
+			GPUBuffer
+		};
 	};
 
 	struct GPUQueryType
@@ -44,13 +48,27 @@ namespace Graphics
 		};
 	};
 
-	enum CPUAccess
+	struct CPUAccess
 	{
-		Read = 0,
-		Write = 1,
-		ReadWrite = 2,
-		None = 3
+		enum T
+		{
+			Read,
+			Write,
+			ReadWrite,
+			None
+		};
 	};
+
+	struct GPUAccess
+	{
+		enum T
+		{
+			Read,
+			ReadWrite,
+			None
+		};
+	};
+
 
 	enum Format
 	{
@@ -258,7 +276,9 @@ namespace Graphics
 		virtual void StartFrame() = 0;
 		virtual void EndFrame() = 0;
 		virtual void FlushAndWait() = 0;
-		virtual BufferHandle CreateBuffer(BufferType type, CPUAccess cpuAccess, uint64_t size,void* data = nullptr) = 0;
+		// If it is a GPUBuffer, size is the number of elements, and user should
+		// provide a stride. For other buffer types, stride will be ignored.
+		virtual BufferHandle CreateBuffer(BufferType::T type, CPUAccess::T cpuAccess, GPUAccess::T gpuAccess, uint64_t size, uint32_t stride = 0, void* data = nullptr) = 0;
 		virtual TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips,uint32_t layers,Format format,TextureFlags flags = TextureFlagNone, void* data = nullptr) = 0;
 		virtual TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr) = 0;
 		virtual GPUQueryHandle CreateQuery(const GPUQueryType::T& type) = 0;

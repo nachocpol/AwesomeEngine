@@ -59,11 +59,11 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 	mDebugPipeline = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
 
 	// Init constant buffers:
-	mCameraDataCb = mGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(CameraData));
-	mItemDataCb = mGraphicsInterface->CreateBuffer(Graphics::ConstantBuffer, Graphics::None, sizeof(ItemData));
+	mCameraDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(CameraData));
+	mItemDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(ItemData));
 
 	// Init vertex buffers
-	mLinesVtxBuffer = mGraphicsInterface->CreateBuffer(Graphics::VertexBuffer, CPUAccess::Write, MAX_LINES * 2 * sizeof(DebugVertex));
+	mLinesVtxBuffer = mGraphicsInterface->CreateBuffer(BufferType::VertexBuffer, CPUAccess::Write, GPUAccess::Read, MAX_LINES * 2 * sizeof(DebugVertex));
 
 	// Wire sphere:
 	{
@@ -121,7 +121,7 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 		}
 
 		mWireSphereNumVtx = (uint32_t)sphereVtx.size();
-		mWireSphereVtxBuffer = mGraphicsInterface->CreateBuffer(Graphics::VertexBuffer, CPUAccess::None, sizeof(DebugVertex) * mWireSphereNumVtx, &sphereVtx[0]);
+		mWireSphereVtxBuffer = mGraphicsInterface->CreateBuffer(BufferType::VertexBuffer, CPUAccess::None, GPUAccess::Read, sizeof(DebugVertex) * mWireSphereNumVtx, 0, &sphereVtx[0]);
 	}
 }
 

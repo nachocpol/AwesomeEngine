@@ -88,7 +88,7 @@ namespace Graphics
 			mCloudsCompositePipeline = mGraphicsInterface->CreateGraphicsPipeline(desc);
 		}
 
-		mCloudsDataHandle = mGraphicsInterface->CreateBuffer(Graphics::BufferType::ConstantBuffer, Graphics::CPUAccess::None, sizeof(mCloudsData));
+		mCloudsDataHandle = mGraphicsInterface->CreateBuffer(Graphics::BufferType::ConstantBuffer, Graphics::CPUAccess::None, Graphics::GPUAccess::Read, sizeof(mCloudsData));
 
 
 		// Render clouds CS
