@@ -43,7 +43,8 @@ namespace Graphics
 		Graphics::TextureHandle mColourRt;
 		Graphics::TextureHandle mDepthRt;
 		Graphics::GraphicsPipeline mTestPipeline;
-		Graphics::GraphicsPipeline mSurfacePipeline;
+		Graphics::GraphicsPipeline mSurfacePipelineBase;
+		Graphics::GraphicsPipeline mSurfacePipelineBlend;
 		Graphics::GraphicsPipeline mPresentPipeline;
 		Graphics::BufferHandle mPresentVtxBuffer;
 		CameraData mCameraData;

@@ -32,6 +32,7 @@ CBUFFER(CameraData, 0)
 CBUFFER(ItemData, 1)
 {
 	float4x4 World;
+	float4 DebugColor;
 };
 
 CBUFFER(LightData, 2)

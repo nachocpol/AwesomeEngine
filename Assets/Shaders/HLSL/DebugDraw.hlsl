@@ -33,5 +33,5 @@ DebugDrawVSOut VSDebugDraw(DebugDrawVSIn i)
 
 float4 PSDebugDraw(DebugDrawVSOut i) : SV_Target0
 {
-	return i.Color;
+	return i.Color * DebugColor;
 }

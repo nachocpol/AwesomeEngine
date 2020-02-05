@@ -160,6 +160,7 @@ void Graphics::DebugDraw::Flush(World::Camera* camera)
 
 			mCameraData.InvViewProj = camera->GetProjection() * camera->GetInvViewTransform();
 			mItemData.World = glm::mat4(1.0f);
+			mItemData.DebugColor = glm::vec4(1.0f);
 			mGraphicsInterface->SetGraphicsPipeline(mDebugPipeline);
 			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, kCameraDataSlot, sizeof(CameraData), &mCameraData);
 			mGraphicsInterface->SetConstantBuffer(mItemDataCb, kItemDataSlot, sizeof(ItemData), &mItemData);
@@ -177,6 +178,8 @@ void Graphics::DebugDraw::Flush(World::Camera* camera)
 			mItemData.World = glm::mat4(1.0f);
 			mItemData.World = glm::translate(mItemData.World, sphere.Center);
 			mItemData.World = glm::scale(mItemData.World, glm::vec3(sphere.Radius));
+
+			mItemData.DebugColor = sphere.Color;
 
 			mGraphicsInterface->SetGraphicsPipeline(mDebugPipeline);
 			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, kCameraDataSlot, sizeof(CameraData), &mCameraData);

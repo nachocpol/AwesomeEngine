@@ -298,7 +298,7 @@ namespace Graphics { namespace DX12 {
 		for (int i = 0; i < NUM_BACK_BUFFERS; i++)
 		{
 			mFrameHeap[i] = new DX12Heap;
-			mFrameHeap[i]->Initialize(mDevice, 16096, true, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			mFrameHeap[i]->Initialize(mDevice, 1000000, true, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
 
 		// And some storage heaps

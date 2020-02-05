@@ -37,9 +37,6 @@ private:
 	World::Renderable* sun;
 	World::Renderable* earth;
 	World::Renderable* moon;
-
-	World::Light* pointLight;
-	World::Light* pointLight2;
 };
 
 void AdvancedApp::Init()
@@ -50,28 +47,24 @@ void AdvancedApp::Init()
 
 	// Spawn some stuff
 	mCube = Graphics::ModelFactory::Get()->LoadFromFile("Meshes\\cube.obj", mGraphicsInterface);
-	for (uint32_t x = 0; x < 16; ++x)
+	for (uint32_t x = 0; x < 7; ++x)
 	{
-		for (uint32_t y = 0; y < 16; ++y)
+		for (uint32_t y = 0; y < 7; ++y)
 		{
 			World::Renderable* curCube = mScene.SpawnRenderable();
-			curCube->SetPosition(((float)x * 2.0f) - 16.0f, -2.0f, ((float)y * 2.0f) - 16.0f);
+			glm::vec3 curPos = glm::vec3(((float)x * 2.0f) - 7.0f, -2.0f, ((float)y * 2.0f) - 7.0f);
+			curCube->SetPosition(curPos);
 			curCube->SetRotation(glm::vec3(x+1,x,y+1));
 			curCube->SetModel(mCube);
+
+			World::Light* pointLight = mScene.SpawnLight();
+			pointLight->SetLightType(World::Light::LightType::Point);
+			pointLight->SetPosition(curPos + glm::vec3(0.0f,glm::linearRand(0.0f,4.0f),0.0f));
+			pointLight->SetColor(glm::vec3(glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f)));
+			pointLight->SetIntensity(glm::linearRand(0.5f, 8.0f));
+			pointLight->SetRadius(glm::linearRand(0.5f, 4.0f));
 		}
 	}	
-
-	pointLight = mScene.SpawnLight();
-	pointLight->SetLightType(World::Light::LightType::Point);
-	pointLight->SetPosition(0.0f, 1.0f, 0.0f);
-	pointLight->SetColor(glm::vec3(1.0f, 0.0f, 1.0f));
-	pointLight->SetIntensity(3.0f);
-
-	pointLight2 = mScene.SpawnLight();
-	pointLight2->SetLightType(World::Light::LightType::Point);
-	pointLight2->SetPosition(4.0f, 1.0f, 0.0f);
-	pointLight2->SetColor(glm::vec3(0.0f, 1.0f, 1.0f));
-	pointLight2->SetIntensity(3.0f);
 
 	//sun = mScene.SpawnRenderable();
 	//earth = mScene.SpawnRenderable(sun);

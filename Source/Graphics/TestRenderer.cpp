@@ -71,15 +71,19 @@ void TestRenderer::Initialize(AppBase * app)
 			pdesc.BlendTargets[0].Enabled = true;
 			pdesc.BlendTargets[0].BlendOpColor = BlendOperation::BlendOpAdd;
 			pdesc.BlendTargets[0].SrcBlendColor = BlendFunction::BlendOne;
-			pdesc.BlendTargets[0].DstBlendColor = BlendFunction::BlendDstAlpha;
+			pdesc.BlendTargets[0].DstBlendColor = BlendFunction::BlendOne;
 
 			pdesc.BlendTargets[0].BlendOpAlpha = BlendOperation::BlendOpAdd;
-			pdesc.BlendTargets[0].SrcBlendAlpha = BlendFunction::BlendOne;
-			pdesc.BlendTargets[0].DstBlendAlpha = BlendFunction::BlendOne;
+			pdesc.BlendTargets[0].SrcBlendAlpha = BlendFunction::BlendZero;
+			pdesc.BlendTargets[0].DstBlendAlpha = BlendFunction::BlendZero;
+			pdesc.BlendTargets[0].WriteMask = 14;
 		}
 		pdesc.DepthFormat = Graphics::Format::Depth24_Stencil8;
 
-		mSurfacePipeline = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
+		mSurfacePipelineBlend = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
+
+		pdesc.BlendTargets[0].Enabled = false;
+		mSurfacePipelineBase = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
 	}
 
 	// Present pipeline:
@@ -180,7 +184,10 @@ void TestRenderer::Render(SceneGraph* scene)
 			lightData.Data.LightType = (float)light->GetLightType();
 			lightData.Data.LightPosDirection = light->GetPosition();
 			lights.push_back(lightData);
-			DebugDraw::GetInstance()->DrawWireSphere(lightData.Data.LightPosDirection, lightData.Data.LightRadius);
+			//DebugDraw::GetInstance()->DrawWireSphere(
+			//	lightData.Data.LightPosDirection, lightData.Data.LightRadius, 
+			//	glm::vec4(light->GetColor(), 1.0f)
+			//);
 		}
 
 		// Render items:
@@ -280,10 +287,12 @@ void TestRenderer::RenderItems(World::Camera* camera, const std::vector<RenderIt
 	mGraphicsInterface->ClearTargets(1, &mColourRt, clear, &mDepthRt, 1.0f, 0);
 	{
 		mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
-		mGraphicsInterface->SetGraphicsPipeline(mSurfacePipeline);
 		mCameraData.InvViewProj = camera->GetProjection() * camera->GetInvViewTransform();
+		bool basePass = true;
 		for (const LightItem& light : lights)
 		{
+			mGraphicsInterface->SetGraphicsPipeline(basePass ? mSurfacePipelineBase : mSurfacePipelineBlend);
+			basePass = false;
 			mLightData = light.Data;
 			for (const RenderItem& item : renderSet)
 			{
