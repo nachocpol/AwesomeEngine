@@ -126,6 +126,20 @@ void TestRenderer::Initialize(AppBase * app)
 	mCameraDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(CameraData));
 	mItemDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(ItemData));
 	mLightDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(LightData));
+
+	// Test buffer
+	struct TestStruct
+	{
+		TestStruct()
+		{
+			Type = 42.0f;
+			Pos = glm::vec3(1.0f, 0.0f, 1.0f);
+		}
+		float Type;
+		glm::vec3 Pos;
+	};
+	TestStruct paco[5];
+	auto bu = mGraphicsInterface->CreateBuffer(BufferType::GPUBuffer, CPUAccess::None, GPUAccess::ReadWrite, 5, sizeof(TestStruct), paco);
 }
 
 void TestRenderer::Release()

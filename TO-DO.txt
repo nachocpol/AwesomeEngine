@@ -2,6 +2,7 @@ DOING:
 + Proper asset import: model class, model factory
 + Tiled rendering, in prep for clustered rendering.
 + Create light actor
++ Structured buffers
 
 TO-DO:
 + Auto magic PSO without setting render target and depth formats..

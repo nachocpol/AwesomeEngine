@@ -166,7 +166,9 @@ namespace Graphics{ namespace DX12
 		void SetScissor(uint32_t x, uint32_t y, uint32_t w, uint32_t h)final override;
 		void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data)final override;
 		void SetResource(const TextureHandle& texture, uint8_t slot)final override;
+		void SetResource(const BufferHandle& buffer, uint8_t slot)final override;
 		void SetRWResource(const TextureHandle& texture, uint8_t slot)final override;
+		void SetRWResource(const BufferHandle& buffer, uint8_t slot)final override;
 		void SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth) final override;
 		void ClearTargets(uint8_t num, TextureHandle* colorTargets, float clear[4], TextureHandle* depth, float d, uint8_t stencil)final override;
 		void DisableAllTargets()final override;

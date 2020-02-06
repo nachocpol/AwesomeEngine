@@ -266,6 +266,7 @@ namespace Graphics
 	static const ComputePipeline InvalidComputePipeline = { UINT64_MAX };
 
 	#define CHECK_TEXTURE(h) (h.Handle != Graphics::InvalidTexture.Handle)
+	#define CHECK_BUFFER(h)  (h.Handle != Graphics::InvalidBuffer.Handle)
 
 	class GraphicsInterface
 	{
@@ -303,7 +304,9 @@ namespace Graphics
 		virtual void SetScissor(uint32_t x, uint32_t y, uint32_t w, uint32_t h) = 0;
 		virtual void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data) = 0;
 		virtual void SetResource(const TextureHandle& texture, uint8_t slot) = 0;
+		virtual void SetResource(const BufferHandle& buffer, uint8_t slot) = 0;
 		virtual void SetRWResource(const TextureHandle& texture, uint8_t slot) = 0;
+		virtual void SetRWResource(const BufferHandle& buffer, uint8_t slot) = 0;
 		virtual void SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth) = 0;
 		virtual void ClearTargets(uint8_t num, TextureHandle* colorTargets,float clear[4], TextureHandle* depth,float d, uint8_t stencil) = 0;
 		virtual void DisableAllTargets() = 0;

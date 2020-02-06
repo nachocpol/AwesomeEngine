@@ -596,16 +596,20 @@ namespace Graphics { namespace DX12 {
 			bufferEntry.State = isIndex ? INDEX_READ : VERTEX_CB_READ;
 		}
 
+
 		// Size should be multiple of 256
 		if (type == BufferType::ConstantBuffer)
 		{
 			size = ((size + 255) & ~255);
 		}
 
+		uint32_t resourceSize = isStructuredBuffer ? size * stride : size;
+
 		// GPU resource
 		D3D12_HEAP_PROPERTIES heapDesc = {};
 		auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		auto desc = CD3DX12_RESOURCE_DESC::Buffer(size);
+		auto desc = CD3DX12_RESOURCE_DESC::Buffer(resourceSize);
+		desc.Flags = isGPURw ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
 		mDevice->CreateCommittedResource
 		(
 			&heapProp, 
@@ -617,7 +621,6 @@ namespace Graphics { namespace DX12 {
 		);
 		
 		// Upload resource
-		uint32_t resourceSize = isStructuredBuffer ? size * stride : size;
 		heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		desc = CD3DX12_RESOURCE_DESC::Buffer(resourceSize);
 		if (type == BufferType::ConstantBuffer)
@@ -627,7 +630,7 @@ namespace Graphics { namespace DX12 {
 			// Also create a view for the resource:
 			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
 			cbvDesc.BufferLocation = bufferEntry.Buffer->GetGPUVirtualAddress();
-			cbvDesc.SizeInBytes = size;
+			cbvDesc.SizeInBytes = resourceSize;
 			bufferEntry.CBV = mViewsHeap.GetCPU();
 			mDevice->CreateConstantBufferView(&cbvDesc, bufferEntry.CBV);
 			mViewsHeap.OffsetHandles(1);
@@ -635,7 +638,7 @@ namespace Graphics { namespace DX12 {
 		else if (type == BufferType::GPUBuffer)
 		{
 			// Create views:
-			if (gpuAccess == GPUAccess::Read)
+			if (gpuAccess == GPUAccess::Read || gpuAccess == GPUAccess::ReadWrite)
 			{
 				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 				srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
@@ -644,11 +647,12 @@ namespace Graphics { namespace DX12 {
 				srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 				srvDesc.Buffer.NumElements = size;
 				srvDesc.Buffer.StructureByteStride = stride;
+				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 				bufferEntry.GPUBufferView = mViewsHeap.GetCPU();
 				mDevice->CreateShaderResourceView(bufferEntry.Buffer, &srvDesc, bufferEntry.GPUBufferView);
 				mViewsHeap.OffsetHandles(1);
 			}
-			else if (gpuAccess == GPUAccess::ReadWrite)
+			if (gpuAccess == GPUAccess::ReadWrite)
 			{
 				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 				uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
@@ -1439,50 +1443,95 @@ namespace Graphics { namespace DX12 {
 	{
 		if (!CHECK_TEXTURE(texture))
 		{
-			std::cout << "Trying to set an invalid texture! \n";
+			ERR("Trying to set an invalid texture!");
 			return;
 		}
+
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 		TextureEntry& entry = mTexturesPool.GetEntry(texture.Handle);
 		ID3D12Resource* res = entry.Resource;
-		if (texture.Handle != InvalidTexture.Handle && res != nullptr)
-		{
-			if (entry.State != (SRV_READ))
-			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, entry.State, SRV_READ));
-			}
-			entry.State = SRV_READ;
 
-			// Copy descriptor:
-			auto slotHandle = mFrameHeap[idx]->GetCPU();
-			slotHandle.Offset(slot + NUM_CBVS, mFrameHeap[idx]->GetIncrementSize());
-			mDevice->CopyDescriptorsSimple(1, slotHandle, entry.FullView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		if (entry.State != (SRV_READ))
+		{
+			mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, entry.State, SRV_READ));
 		}
+		entry.State = SRV_READ;
+
+		// Copy descriptor:
+		auto slotHandle = mFrameHeap[idx]->GetCPU();
+		slotHandle.Offset(slot + NUM_CBVS, mFrameHeap[idx]->GetIncrementSize());
+		mDevice->CopyDescriptorsSimple(1, slotHandle, entry.FullView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
+
+	void DX12GraphicsInterface::SetResource(const BufferHandle& buffer, uint8_t slot)
+	{
+		if (!CHECK_BUFFER(buffer))
+		{
+			ERR("Trying to set an invalid buffer!");
+			return;
+		}
+
+		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
+		BufferEntry& entry = mBuffersPool.GetEntry(buffer.Handle);
+		ID3D12Resource* res = entry.Buffer;
+
+		if (entry.State != (SRV_READ))
+		{
+			mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, entry.State, SRV_READ));
+		}
+		entry.State = SRV_READ;
+
+		// Copy descriptor:
+		auto slotHandle = mFrameHeap[idx]->GetCPU();
+		slotHandle.Offset(slot + NUM_CBVS, mFrameHeap[idx]->GetIncrementSize());
+		mDevice->CopyDescriptorsSimple(1, slotHandle, entry.GPUBufferView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 
 	void DX12GraphicsInterface::SetRWResource(const TextureHandle& texture, uint8_t slot)
 	{
 		if (!CHECK_TEXTURE(texture))
 		{
-			std::cout << "Trying to set an invalid texture! \n";
+			ERR("Trying to set invalid RWTexture!");
 			return;
 		}
 		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 		TextureEntry& entry = mTexturesPool.GetEntry(texture.Handle);
 		ID3D12Resource* res = entry.Resource;
-		if (texture.Handle != InvalidTexture.Handle && res != nullptr)
+		
+		if (entry.State != (UNORDERED_ACCESS))
 		{
-			if (entry.State != (UNORDERED_ACCESS))
-			{
-				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, entry.State, UNORDERED_ACCESS));
-			}
-			entry.State = UNORDERED_ACCESS;
-
-			// Copy descriptor:
-			auto slotHandle = mFrameHeap[idx]->GetCPU();
-			slotHandle.Offset(slot + NUM_CBVS + NUM_SRVS, mFrameHeap[idx]->GetIncrementSize());
-			mDevice->CopyDescriptorsSimple(1, slotHandle, entry.MipViewsRW[0], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, entry.State, UNORDERED_ACCESS));
 		}
+		entry.State = UNORDERED_ACCESS;
+
+		// Copy descriptor:
+		auto slotHandle = mFrameHeap[idx]->GetCPU();
+		slotHandle.Offset(slot + NUM_CBVS + NUM_SRVS, mFrameHeap[idx]->GetIncrementSize());
+		mDevice->CopyDescriptorsSimple(1, slotHandle, entry.MipViewsRW[0], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
+
+	void DX12GraphicsInterface::SetRWResource(const BufferHandle& buffer, uint8_t slot)
+	{
+		if (!CHECK_BUFFER(buffer))
+		{
+			ERR("Trying to set invalid RWBuffer!");
+			return;
+		}
+		
+		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
+		BufferEntry& entry = mBuffersPool.GetEntry(buffer.Handle);
+		ID3D12Resource* res = entry.Buffer;
+
+		if (entry.State != (UNORDERED_ACCESS))
+		{
+			mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res, entry.State, UNORDERED_ACCESS));
+		}
+		entry.State = UNORDERED_ACCESS;
+
+		// Copy descriptor:
+		auto slotHandle = mFrameHeap[idx]->GetCPU();
+		slotHandle.Offset(slot + NUM_CBVS + NUM_SRVS, mFrameHeap[idx]->GetIncrementSize());
+		mDevice->CopyDescriptorsSimple(1, slotHandle, entry.GPURWBufferView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 
 	void DX12GraphicsInterface::SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth)
