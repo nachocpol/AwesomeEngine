@@ -136,7 +136,7 @@ namespace Graphics{namespace UI{
 					const ImDrawCmd* curCmd = &cmdList->CmdBuffer[j];
 					if(curCmd->UserCallback)
 					{
-						mGraphicsInterface->SetConstantBuffer(mUIDataHandle, kUIDataSlot, sizeof(mUIData), &mUIData.ProjectionUI);
+						mGraphicsInterface->SetConstantBuffer(mUIDataHandle, Declarations::kUIDataSlot, sizeof(mUIData), &mUIData.ProjectionUI);
 						curCmd->UserCallback(cmdList, curCmd);
 					}
 					else
@@ -144,7 +144,7 @@ namespace Graphics{namespace UI{
 						const Graphics::TextureHandle iTex = { (uint64_t)curCmd->TextureId };
 						if (CHECK_TEXTURE(iTex))
 						{
-							mGraphicsInterface->SetConstantBuffer(mUIDataHandle, kUIDataSlot, sizeof(mUIData), &mUIData.ProjectionUI);
+							mGraphicsInterface->SetConstantBuffer(mUIDataHandle, Declarations::kUIDataSlot, sizeof(mUIData), &mUIData.ProjectionUI);
 							mGraphicsInterface->SetScissor
 							(
 								curCmd->ClipRect.x - displayPos.x, curCmd->ClipRect.y - displayPos.y, 

@@ -1,3 +1,5 @@
+#define NOMINMAX
+
 #include "TestRenderer.h"
 #include "World/SceneGraph.h"
 #include "World/Renderable.h"
@@ -67,22 +69,9 @@ void TestRenderer::Initialize(AppBase * app)
 		pdesc.DepthFunction = Graphics::LessEqual;
 		pdesc.DepthFormat = Graphics::Depth24_Stencil8;
 		pdesc.ColorFormats[0] = Graphics::Format::RGBA_8_Unorm;
-		{
-			pdesc.BlendTargets[0].Enabled = true;
-			pdesc.BlendTargets[0].BlendOpColor = BlendOperation::BlendOpAdd;
-			pdesc.BlendTargets[0].SrcBlendColor = BlendFunction::BlendOne;
-			pdesc.BlendTargets[0].DstBlendColor = BlendFunction::BlendOne;
-
-			pdesc.BlendTargets[0].BlendOpAlpha = BlendOperation::BlendOpAdd;
-			pdesc.BlendTargets[0].SrcBlendAlpha = BlendFunction::BlendZero;
-			pdesc.BlendTargets[0].DstBlendAlpha = BlendFunction::BlendZero;
-			pdesc.BlendTargets[0].WriteMask = 14;
-		}
+		pdesc.BlendTargets[0].Enabled = false;
 		pdesc.DepthFormat = Graphics::Format::Depth24_Stencil8;
 
-		mSurfacePipelineBlend = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
-
-		pdesc.BlendTargets[0].Enabled = false;
 		mSurfacePipelineBase = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
 	}
 
@@ -123,23 +112,10 @@ void TestRenderer::Initialize(AppBase * app)
 		mPresentVtxBuffer = mGraphicsInterface->CreateBuffer(BufferType::VertexBuffer, CPUAccess::None, GPUAccess::Read, sizeof(VertexScreen) * 6, 0, &vtxData);
 	}
 
-	mCameraDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(CameraData));
-	mItemDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(ItemData));
-	mLightDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(LightData));
+	mCameraDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(Declarations::CameraData));
+	mItemDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(Declarations::ItemData));
 
-	// Test buffer
-	struct TestStruct
-	{
-		TestStruct()
-		{
-			Type = 42.0f;
-			Pos = glm::vec3(1.0f, 0.0f, 1.0f);
-		}
-		float Type;
-		glm::vec3 Pos;
-	};
-	TestStruct paco[5];
-	auto bu = mGraphicsInterface->CreateBuffer(BufferType::GPUBuffer, CPUAccess::None, GPUAccess::ReadWrite, 5, sizeof(TestStruct), paco);
+	mLightsListSB = mGraphicsInterface->CreateBuffer(BufferType::GPUBuffer, CPUAccess::None, GPUAccess::Read, kMaxLightsPerDraw, Declarations::kLightsStride);
 }
 
 void TestRenderer::Release()
@@ -188,24 +164,29 @@ void TestRenderer::Render(SceneGraph* scene)
 		ProcessVisibility(camera, rootActor->GetChilds(), renderSet);
 
 		// Gather lights: TO-DO: check visibility (we could do per object vis)
-		std::vector<LightItem> lights;
-		for (const auto light : scene->GetLights())
+		auto sceneLights = scene->GetLights();
+		mCurLightsData.resize(glm::min(kMaxLightsPerDraw, (int)sceneLights.size()));
+		for (uint32_t i = 0; i < mCurLightsData.size(); ++i)
 		{
-			LightItem lightData;
-			lightData.Data.LightColor = light->GetColor();
-			lightData.Data.LightIntensity = light->GetIntensity();
-			lightData.Data.LightRadius = light->GetRadius();
-			lightData.Data.LightType = (float)light->GetLightType();
-			lightData.Data.LightPosDirection = light->GetPosition();
-			lights.push_back(lightData);
-			//DebugDraw::GetInstance()->DrawWireSphere(
-			//	lightData.Data.LightPosDirection, lightData.Data.LightRadius, 
-			//	glm::vec4(light->GetColor(), 1.0f)
-			//);
+			const auto light = sceneLights[i];
+			Declarations::Light dataLight;
+			dataLight.Color = light->GetColor();
+			dataLight.Type = (int)light->GetLightType();
+			dataLight.Radius = light->GetRadius();
+			dataLight.Intensity = light->GetIntensity();
+			dataLight.PosDirection = light->GetPosition();
+			mCurLightsData[i] = dataLight;
+
+			DebugDraw::GetInstance()->DrawWireSphere(
+				dataLight.PosDirection, dataLight.Radius,
+				glm::vec4(light->GetColor(), 1.0f)
+			);
 		}
+		mCurLightCount = mCurLightsData.size();
+		mGraphicsInterface->SetBufferData(mLightsListSB, Declarations::kLightsStride * mCurLightCount, 0, mCurLightsData.data());
 
 		// Render items:
-		RenderItems(camera, renderSet, lights);
+		RenderItems(camera, renderSet);
 
 		DrawOriginGizmo();
 		
@@ -291,7 +272,7 @@ void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<Wo
 	}
 }
 
-void TestRenderer::RenderItems(World::Camera* camera, const std::vector<RenderItem>& renderSet, const std::vector<LightItem>& lights)
+void TestRenderer::RenderItems(World::Camera* camera, const std::vector<RenderItem>& renderSet)
 {
 	Platform::BaseWindow* outputWindow = mOwnerApp->GetWindow();
 
@@ -300,26 +281,22 @@ void TestRenderer::RenderItems(World::Camera* camera, const std::vector<RenderIt
 	float clear[4] = { 0.4f,0.4f,0.6f,0.0f };
 	mGraphicsInterface->ClearTargets(1, &mColourRt, clear, &mDepthRt, 1.0f, 0);
 	{
+		mGraphicsInterface->SetGraphicsPipeline(mSurfacePipelineBase);
 		mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
 		mCameraData.InvViewProj = camera->GetProjection() * camera->GetInvViewTransform();
-		bool basePass = true;
-		for (const LightItem& light : lights)
-		{
-			mGraphicsInterface->SetGraphicsPipeline(basePass ? mSurfacePipelineBase : mSurfacePipelineBlend);
-			basePass = false;
-			mLightData = light.Data;
-			for (const RenderItem& item : renderSet)
-			{
-				mItemData.World = item.WorldMatrix;
 
-				Mesh* meshes = item.Meshes;
-				mGraphicsInterface->SetConstantBuffer(mCameraDataCb, kCameraDataSlot, sizeof(CameraData), &mCameraData);
-				mGraphicsInterface->SetConstantBuffer(mItemDataCb, kItemDataSlot, sizeof(ItemData), &mItemData);
-				mGraphicsInterface->SetConstantBuffer(mLightDataCb, kLightDataSlot, sizeof(LightData), &mLightData);
-				mGraphicsInterface->SetVertexBuffer(meshes[0].VertexBuffer, meshes[0].VertexSize * meshes[0].NumVertex, meshes[0].VertexSize);
-				mGraphicsInterface->SetIndexBuffer(meshes[0].IndexBuffer, meshes[0].NumIndices * sizeof(uint32_t), Graphics::Format::R_32_Uint);
-				mGraphicsInterface->DrawIndexed(meshes[0].NumIndices);
-			}
+		for (const RenderItem& item : renderSet)
+		{
+			mItemData.World = item.WorldMatrix;
+			mItemData.NumLights = mCurLightCount;
+
+			Mesh* meshes = item.Meshes;
+			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, Declarations::kCameraDataSlot, sizeof(Declarations::CameraData), &mCameraData);
+			mGraphicsInterface->SetConstantBuffer(mItemDataCb, Declarations::kItemDataSlot, sizeof(Declarations::ItemData), &mItemData);
+			mGraphicsInterface->SetResource(mLightsListSB, Declarations::kLightsSlot);
+			mGraphicsInterface->SetVertexBuffer(meshes[0].VertexBuffer, meshes[0].VertexSize * meshes[0].NumVertex, meshes[0].VertexSize);
+			mGraphicsInterface->SetIndexBuffer(meshes[0].IndexBuffer, meshes[0].NumIndices * sizeof(uint32_t), Graphics::Format::R_32_Uint);
+			mGraphicsInterface->DrawIndexed(meshes[0].NumIndices);
 		}
 	}
 }

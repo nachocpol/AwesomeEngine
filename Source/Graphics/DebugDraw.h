@@ -43,10 +43,10 @@ namespace Graphics
 		GraphicsInterface* mGraphicsInterface;
 		GraphicsPipeline mDebugPipeline;
 
-		CameraData mCameraData;
+		Declarations::CameraData mCameraData;
 		BufferHandle mCameraDataCb;
 
-		ItemData mItemData;
+		Declarations::ItemData mItemData;
 		BufferHandle mItemDataCb;
 
 		struct LineItem

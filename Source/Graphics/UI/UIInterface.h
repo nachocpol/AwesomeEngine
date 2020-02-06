@@ -33,7 +33,7 @@ namespace Graphics
 			Graphics::BufferHandle mVertexBuffer;
 			Graphics::BufferHandle mIndexBuffer;
 			Graphics::GraphicsPipeline mGraphicsPipeline;
-			UIData mUIData;
+			Declarations::UIData mUIData;
 			Graphics::BufferHandle mUIDataHandle;
 
 			uint32_t mMaxVertices;

@@ -59,8 +59,8 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 	mDebugPipeline = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
 
 	// Init constant buffers:
-	mCameraDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(CameraData));
-	mItemDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(ItemData));
+	mCameraDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(Declarations::CameraData));
+	mItemDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(Declarations::ItemData));
 
 	// Init vertex buffers
 	mLinesVtxBuffer = mGraphicsInterface->CreateBuffer(BufferType::VertexBuffer, CPUAccess::Write, GPUAccess::Read, MAX_LINES * 2 * sizeof(DebugVertex));
@@ -162,8 +162,8 @@ void Graphics::DebugDraw::Flush(World::Camera* camera)
 			mItemData.World = glm::mat4(1.0f);
 			mItemData.DebugColor = glm::vec4(1.0f);
 			mGraphicsInterface->SetGraphicsPipeline(mDebugPipeline);
-			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, kCameraDataSlot, sizeof(CameraData), &mCameraData);
-			mGraphicsInterface->SetConstantBuffer(mItemDataCb, kItemDataSlot, sizeof(ItemData), &mItemData);
+			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, Declarations::kCameraDataSlot, sizeof(Declarations::CameraData), &mCameraData);
+			mGraphicsInterface->SetConstantBuffer(mItemDataCb, Declarations::kItemDataSlot, sizeof(Declarations::ItemData), &mItemData);
 			mGraphicsInterface->SetTopology(Topology::LineList);
 			mGraphicsInterface->SetVertexBuffer(mLinesVtxBuffer, sizeof(DebugVertex) * 2 * numLines, sizeof(DebugVertex));
 			mGraphicsInterface->Draw(numLines * 2, 0);
@@ -182,8 +182,8 @@ void Graphics::DebugDraw::Flush(World::Camera* camera)
 			mItemData.DebugColor = sphere.Color;
 
 			mGraphicsInterface->SetGraphicsPipeline(mDebugPipeline);
-			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, kCameraDataSlot, sizeof(CameraData), &mCameraData);
-			mGraphicsInterface->SetConstantBuffer(mItemDataCb, kItemDataSlot, sizeof(ItemData), &mItemData);
+			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, Declarations::kCameraDataSlot, sizeof(Declarations::CameraData), &mCameraData);
+			mGraphicsInterface->SetConstantBuffer(mItemDataCb, Declarations::kItemDataSlot, sizeof(Declarations::ItemData), &mItemData);
 			mGraphicsInterface->SetTopology(Topology::LineList);
 			mGraphicsInterface->SetVertexBuffer(mWireSphereVtxBuffer, sizeof(DebugVertex) * mWireSphereNumVtx, sizeof(DebugVertex));
 			mGraphicsInterface->Draw(mWireSphereNumVtx, 0);

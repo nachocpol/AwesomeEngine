@@ -37,22 +37,29 @@ SurfaceVSOut VSSurface(SurfaceVSIn input)
 float4 PSSurface(SurfaceVSOut input) : SV_Target0
 {
 	float3 baseColor = 1.0;
-	float3 diffuse = 0.0;
-	float3 specular = 0.0;
 	float3 N = normalize(input.WorldNormal);
+	float3 total = 0.0;
 
-	if(LightType == 0.0)
+	for(int lightIdx = 0; lightIdx < NumLights; ++lightIdx)
 	{
-		float3 lightPos = LightPosDirection;
-		float3 L = normalize(lightPos - input.WorldPos);
-		float NdotL = max(dot(N,L), 0.0);
+		Light light = Lights[lightIdx];
+		
+		float3 diffuse = 0.0;
+		float3 specular = 0.0;
 
-		float dist = distance(lightPos, input.WorldPos);
-		float attenuation = 1.0 - saturate(dist / LightRadius);
-		diffuse = LightColor * LightIntensity * attenuation * NdotL;
+		if(light.Type == 0.0)
+		{
+			float3 L = normalize(light.PosDirection - input.WorldPos);
+			float NdotL = max(dot(N,L), 0.0);
+	
+			float dist = distance(light.PosDirection, input.WorldPos);
+			float attenuation = 1.0 - saturate(dist / light.Radius);
+			diffuse = light.Color * light.Intensity * attenuation * NdotL;
+		}
+
+		total += diffuse + specular;
 	}
+	
 
-	float3 brdf = diffuse + specular;
-
-	return float4(brdf, 1.0);
+	return float4(total, 1.0);
 }

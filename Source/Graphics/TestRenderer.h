@@ -21,10 +21,6 @@ namespace Graphics
 		Mesh* Meshes;// this should be 1 mesh (so rendereables with more that 1 mesh should split)
 		uint32_t NumMeshes;
 	};
-	struct LightItem
-	{
-		LightData Data;
-	};
 
 	class TestRenderer : public RendererBase
 	{
@@ -37,22 +33,24 @@ namespace Graphics
 
 	private:
 		void ProcessVisibility(World::Camera* camera, const std::vector<World::Actor*>& actors, std::vector<RenderItem>& renderItems);
-		void RenderItems(World::Camera* camera,const std::vector<RenderItem>& renderSet, const std::vector<LightItem>& lights);
+		void RenderItems(World::Camera* camera,const std::vector<RenderItem>& renderSet);
 		void DrawOriginGizmo();
 
 		Graphics::TextureHandle mColourRt;
 		Graphics::TextureHandle mDepthRt;
 		Graphics::GraphicsPipeline mTestPipeline;
 		Graphics::GraphicsPipeline mSurfacePipelineBase;
-		Graphics::GraphicsPipeline mSurfacePipelineBlend;
 		Graphics::GraphicsPipeline mPresentPipeline;
 		Graphics::BufferHandle mPresentVtxBuffer;
-		CameraData mCameraData;
+		Declarations::CameraData mCameraData;
 		Graphics::BufferHandle mCameraDataCb;
-		ItemData mItemData;
+		Declarations::ItemData mItemData;
 		Graphics::BufferHandle mItemDataCb;
-		LightData mLightData;
-		Graphics::BufferHandle mLightDataCb;
+
+		int mCurLightCount;
+		int kMaxLightsPerDraw = 36;
+		std::vector<Declarations::Light> mCurLightsData;
+		Graphics::BufferHandle mLightsListSB;
 
 		struct CameraState
 		{
