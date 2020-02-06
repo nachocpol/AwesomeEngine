@@ -1,10 +1,11 @@
 DOING:
 + Proper asset import: model class, model factory
 + Tiled rendering, in prep for clustered rendering.
-+ Create light actor
-+ Structured buffers
 
 TO-DO:
++ Maybe have a Metadata system from CB and SB (annoying to set all the properties when binding >_>)
++ Batch barriers
++ Timing events (for pix)
 + Auto magic PSO without setting render target and depth formats..
 + Make constant buffer binding more clever, as in, if we don´t change a slot ,do not trash it...
 + Console to display logs
@@ -22,6 +23,8 @@ TO-DO:
 + Clustered renderer.
 
 DONE:
++ Create light actor
++ Structured buffers
 + Constant buffer in one file (as in dont have the declaration in cpp and hlsl) use some #define trickery to do it. (check render doc hlsl_cbuffers.h)
 + Frustum culling
 + Debug camera that we can eject
