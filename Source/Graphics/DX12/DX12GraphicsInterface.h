@@ -187,6 +187,8 @@ namespace Graphics{ namespace DX12
 		void InitRootSignature();
 		bool LoadShader(const ShaderDescription& desc, D3D12_SHADER_BYTECODE& outShader);
 		void FlushHeap(bool graphics = true);
+		void TransitionResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, bool forceFlush = false, uint32_t subResource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+		void FlushBarriers();
 		static DXGI_FORMAT ToDXGIFormat(const Graphics::Format& format);
 		static DXGI_FORMAT ToDXGIFormatTypeless(const Graphics::Format& format);
 		static D3D12_PRIMITIVE_TOPOLOGY ToDXGITopology(const Graphics::Topology::T& topology);
@@ -243,6 +245,8 @@ namespace Graphics{ namespace DX12
 		DX12ReleaseManager mReleaseManager;
 
 		bool mCurrentIsCompute = false;
+
+		std::vector<CD3DX12_RESOURCE_BARRIER> mPendingBarriers;
 	};
 
 }
