@@ -3,8 +3,9 @@ DOING:
 + Tiled rendering, in prep for clustered rendering.
 
 TO-DO:
++ Clear render targets, should check that the resources are in write state
++ Checking for descriptor re-use!
 + Maybe have a Metadata system from CB and SB (annoying to set all the properties when binding >_>)
-+ Batch barriers
 + Timing events (for pix)
 + Auto magic PSO without setting render target and depth formats..
 + Make constant buffer binding more clever, as in, if we don´t change a slot ,do not trash it...
@@ -23,6 +24,7 @@ TO-DO:
 + Clustered renderer.
 
 DONE:
++ Batch barriers
 + Create light actor
 + Structured buffers
 + Constant buffer in one file (as in dont have the declaration in cpp and hlsl) use some #define trickery to do it. (check render doc hlsl_cbuffers.h)
