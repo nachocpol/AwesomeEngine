@@ -78,7 +78,7 @@ void AdvancedApp::Init()
 
 	mCamera = mScene.SpawnCamera();
 	mCamera->ConfigureProjection(
-		(float)mWindow->GetWidth() / (float)mWindow->GetHeight(), 75.0f, 0.1f, 100.0f
+		(float)mWindow->GetWidth() / (float)mWindow->GetHeight(), 75.0f, 0.1f, 40.0f
 	);
 
 	mGraphicsInterface->FlushAndWait();

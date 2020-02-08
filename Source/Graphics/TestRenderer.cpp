@@ -124,12 +124,14 @@ void TestRenderer::Release()
 
 static bool kFreezeCulling = false;
 static bool kRenderBounds = false;
+static bool kRenderLightBounds = false;
 
 void TestRenderer::Render(SceneGraph* scene)
 { 
 	// Render UI:
 	ImGui::Begin("Renderer");
 	ImGui::Checkbox("Render Bounds", &kRenderBounds);
+	ImGui::Checkbox("Render Light Bounds", &kRenderLightBounds);
 	ImGui::Checkbox("Freeze Culling", &kFreezeCulling);
 	ImGui::End();
 
@@ -177,12 +179,12 @@ void TestRenderer::Render(SceneGraph* scene)
 			dataLight.PosDirection = light->GetPosition();
 			mCurLightsData[i] = dataLight;
 
-			DebugDraw::GetInstance()->DrawWireSphere(
-				dataLight.PosDirection, dataLight.Radius,
-				glm::vec4(light->GetColor(), 1.0f)
-			);
+			if (kRenderLightBounds)
+			{
+				DebugDraw::GetInstance()->DrawWireSphere(dataLight.PosDirection, dataLight.Radius, glm::vec4(light->GetColor(), 1.0f));
+			}
 		}
-		mCurLightCount = mCurLightsData.size();
+		mCurLightCount = (int)mCurLightsData.size();
 		mGraphicsInterface->SetBufferData(mLightsListSB, Declarations::kLightsStride * mCurLightCount, 0, mCurLightsData.data());
 
 		// Render items:
@@ -214,6 +216,8 @@ void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<Wo
 		glm::mat4 viewToWorld = glm::inverse(mFreezeCullingState.InverseView);
 		DebugDraw::GetInstance()->DrawFrustum(viewToWorld, projProps.Aspect, projProps.VFov, projProps.Near, projProps.Far, glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
 	}
+
+	DrawTiledCamera(camera);
 
 	// Camera frustum planes in viewspace. TO-DO: this could be computed just once
 	Math::Plane cameraFrustumPlanes[6];
@@ -306,4 +310,89 @@ void TestRenderer::DrawOriginGizmo()
 	DebugDraw::GetInstance()->DrawLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
 	DebugDraw::GetInstance()->DrawLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 	DebugDraw::GetInstance()->DrawLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+}
+
+void Graphics::TestRenderer::DrawTiledCamera(World::Camera* camera)
+{
+	Camera::ProjectionProps camProperties = camera->GetProjectionProps();
+	glm::mat4 invView = camera->GetInvViewTransform();
+	if (mFreezeCullingState.Enabled)
+	{
+		invView = mFreezeCullingState.InverseView;
+	}
+	glm::mat4 viewTrans = glm::inverse(invView);
+
+	glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	camProperties.Far *= 0.5f;
+
+	// TO-DO: there is some miss match btw this and the camera frustum debug draw...
+	// also, seems that having even numbers ends up with one extra tile!!
+	int numTilesW = 11;
+	int numTilesH = 5;
+
+	// Base properties of the near plane:
+	float halfVFOV = glm::radians(camProperties.VFov * 0.5f);
+	float nearH = glm::tan(halfVFOV) * camProperties.Near * 2.0f;
+	float nearW = camProperties.Aspect * nearH;
+
+	float deltaW = nearW / (float)numTilesW;
+	float deltaH = nearH / (float)numTilesH;
+
+	float curW = -(nearW * 0.5f);
+	float curH = nearH * 0.5f;
+
+	float farOveNear = camProperties.Far / camProperties.Near;
+
+	for (float x = curW; x < -curW; x += deltaW)
+	{
+		for (float y = curH; y > -curH; y -= deltaH)
+		{
+			// Near
+			glm::vec3 TLN = glm::vec3(x, y, camProperties.Near);
+			glm::vec3 TRN = glm::vec3(x + deltaW, y, camProperties.Near);
+
+			glm::vec3 BLN = glm::vec3(x, y - deltaH, camProperties.Near);
+			glm::vec3 BRN = glm::vec3(x + deltaW, y - deltaH, camProperties.Near);
+
+			// Far
+			float TLFDist = farOveNear * glm::length(TLN);
+			glm::vec3 TLF = TLN + glm::normalize(TLN) * TLFDist;
+			float TRFDist = farOveNear * glm::length(TRN);
+			glm::vec3 TRF = TRN + glm::normalize(TRN) * TRFDist;
+
+			float BLFDist = farOveNear * glm::length(BLN);
+			glm::vec3 BLF = BLN + glm::normalize(BLN) * BLFDist;
+			float BRFDist = farOveNear * glm::length(BRN);
+			glm::vec3 BRF = BRN + glm::normalize(BRN) * BRFDist;
+
+			TLN = viewTrans * glm::vec4(TLN, 1.0f);
+			TRN = viewTrans * glm::vec4(TRN, 1.0f);
+			BLN = viewTrans * glm::vec4(BLN, 1.0f);
+			BRN = viewTrans * glm::vec4(BRN, 1.0f);
+
+			TLF = viewTrans * glm::vec4(TLF, 1.0f);
+			TRF = viewTrans * glm::vec4(TRF, 1.0f);
+			BLF = viewTrans * glm::vec4(BLF, 1.0f);
+			BRF = viewTrans * glm::vec4(BRF, 1.0f);
+
+			// Near
+			DebugDraw::GetInstance()->DrawLine(TLN, TRN, color);
+			DebugDraw::GetInstance()->DrawLine(TRN, BRN, color);
+			DebugDraw::GetInstance()->DrawLine(BRN, BLN, color);
+			DebugDraw::GetInstance()->DrawLine(BLN, TLN, color);
+
+			// Far
+			DebugDraw::GetInstance()->DrawLine(TLF, TRF, color);
+			DebugDraw::GetInstance()->DrawLine(TRF, BRF, color);
+			DebugDraw::GetInstance()->DrawLine(BRF, BLF, color);
+			DebugDraw::GetInstance()->DrawLine(BLF, TLF, color);
+
+			// Sides
+			DebugDraw::GetInstance()->DrawLine(TLN, TLF, color);
+			DebugDraw::GetInstance()->DrawLine(TRN, TRF, color);
+			DebugDraw::GetInstance()->DrawLine(BLN, BLF, color);
+			DebugDraw::GetInstance()->DrawLine(BRN, BRF, color);
+		}
+	}
 }

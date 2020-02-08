@@ -47,7 +47,7 @@ float4 PSSurface(SurfaceVSOut input) : SV_Target0
 		float3 diffuse = 0.0;
 		float3 specular = 0.0;
 
-		if(light.Type == 0.0)
+		if(light.Type == 0)
 		{
 			float3 L = normalize(light.PosDirection - input.WorldPos);
 			float NdotL = max(dot(N,L), 0.0);

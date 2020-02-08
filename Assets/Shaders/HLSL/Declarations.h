@@ -23,7 +23,7 @@
 
 struct Light
 {
-	float Type; // Should match Light::LightType::T 
+	int Type; // Should match Light::LightType::T 
 	float3 Color;
 	float3 PosDirection;
 	float Intensity;

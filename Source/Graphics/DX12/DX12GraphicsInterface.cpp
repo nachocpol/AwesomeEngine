@@ -1140,6 +1140,11 @@ namespace Graphics { namespace DX12 {
 		psoDesc.SampleDesc.Quality		= 0;
 		psoDesc.SampleMask				= 0xffffffff;
 
+		if (desc.PrimitiveType == Primitive::Line)
+		{
+			psoDesc.RasterizerState.AntialiasedLineEnable = true;
+		}
+
 		GraphicsPipelineEntry& entry = mGraphicsPipelines[mCurGraphicsPipeline];
 		mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
 		
