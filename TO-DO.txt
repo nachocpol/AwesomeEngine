@@ -3,6 +3,7 @@ DOING:
 + Tiled rendering, in prep for clustered rendering.
 
 TO-DO:
++ Heap descriptor flush, make just one device call (CPU perf)
 + Unify nulls views compute!
 + Implement system to check if Null views are required (https://docs.microsoft.com/en-us/windows/win32/direct3d12/hardware-support)
 + Clear render targets, should check that the resources are in write state
