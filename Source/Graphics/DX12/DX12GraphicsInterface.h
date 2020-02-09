@@ -130,6 +130,21 @@ namespace Graphics{ namespace DX12
 		std::vector<T> mEntries;
 	};
 
+	struct BindingState
+	{
+		BindingState() :Dirty(true) {};
+		struct Slot
+		{
+			Slot() :Null(true) {};
+			CD3DX12_CPU_DESCRIPTOR_HANDLE CPUView;
+			bool Null;
+		};
+		Slot CBSlots[NUM_CBVS];
+		Slot SRSlots[NUM_SRVS];
+		Slot UASlots[NUM_UAVS];
+		bool Dirty;
+	};
+
 	class DX12GraphicsInterface : public GraphicsInterface
 	{
 		friend class DX12ReleaseManager;
@@ -247,6 +262,8 @@ namespace Graphics{ namespace DX12
 		bool mCurrentIsCompute = false;
 
 		std::vector<CD3DX12_RESOURCE_BARRIER> mPendingBarriers;
+
+		BindingState mBindingState;
 	};
 
 }

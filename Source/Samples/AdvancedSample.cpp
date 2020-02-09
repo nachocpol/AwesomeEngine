@@ -47,12 +47,12 @@ void AdvancedApp::Init()
 
 	// Spawn some stuff
 	mCube = Graphics::ModelFactory::Get()->LoadFromFile("Meshes\\cube.obj", mGraphicsInterface);
-	for (uint32_t x = 0; x < 6; ++x)
+	for (uint32_t x = 0; x < 7; ++x)
 	{
-		for (uint32_t y = 0; y < 6; ++y)
+		for (uint32_t y = 0; y < 7; ++y)
 		{
 			World::Renderable* curCube = mScene.SpawnRenderable();
-			glm::vec3 curPos = glm::vec3(((float)x * 2.0f) - 6.0f, -2.0f, ((float)y * 2.0f) - 6.0f);
+			glm::vec3 curPos = glm::vec3(((float)x * 2.0f) - 7.0f, -2.0f, ((float)y * 2.0f) - 7.0f);
 			curCube->SetPosition(curPos);
 			curCube->SetRotation(glm::vec3(x+1,x,y+1));
 			curCube->SetModel(mCube);

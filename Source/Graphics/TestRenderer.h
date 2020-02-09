@@ -49,7 +49,7 @@ namespace Graphics
 		Graphics::BufferHandle mItemDataCb;
 
 		int mCurLightCount;
-		int kMaxLightsPerDraw = 36;
+		int kMaxLightsPerDraw = 49;
 		std::vector<Declarations::Light> mCurLightsData;
 		Graphics::BufferHandle mLightsListSB;
 

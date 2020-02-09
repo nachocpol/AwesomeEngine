@@ -3,8 +3,9 @@ DOING:
 + Tiled rendering, in prep for clustered rendering.
 
 TO-DO:
++ Unify nulls views compute!
++ Implement system to check if Null views are required (https://docs.microsoft.com/en-us/windows/win32/direct3d12/hardware-support)
 + Clear render targets, should check that the resources are in write state
-+ Checking for descriptor re-use!
 + Maybe have a Metadata system from CB and SB (annoying to set all the properties when binding >_>)
 + Timing events (for pix)
 + Auto magic PSO without setting render target and depth formats..
@@ -24,6 +25,7 @@ TO-DO:
 + Clustered renderer.
 
 DONE:
++ Checking for descriptor re-use!
 + Batch barriers
 + Create light actor
 + Structured buffers

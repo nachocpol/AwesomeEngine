@@ -324,7 +324,6 @@ void Graphics::TestRenderer::DrawTiledCamera(World::Camera* camera)
 
 	glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	camProperties.Far *= 0.5f;
 
 	// TO-DO: there is some miss match btw this and the camera frustum debug draw...
 	// also, seems that having even numbers ends up with one extra tile!!
@@ -362,9 +361,9 @@ void Graphics::TestRenderer::DrawTiledCamera(World::Camera* camera)
 			glm::vec3 TRF = TRN + glm::normalize(TRN) * TRFDist;
 
 			float BLFDist = farOveNear * glm::length(BLN);
-			glm::vec3 BLF = BLN + glm::normalize(BLN) * BLFDist;
+			glm::vec3 BLF = BLN + glm::normalize(BLN) * (BLFDist - camProperties.Near);
 			float BRFDist = farOveNear * glm::length(BRN);
-			glm::vec3 BRF = BRN + glm::normalize(BRN) * BRFDist;
+			glm::vec3 BRF = BRN + glm::normalize(BRN) * (BRFDist - camProperties.Near);
 
 			TLN = viewTrans * glm::vec4(TLN, 1.0f);
 			TRN = viewTrans * glm::vec4(TRN, 1.0f);

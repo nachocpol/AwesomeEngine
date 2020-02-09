@@ -11,7 +11,7 @@ Camera::Camera():
 	 mYaw(0.0f)
 	,mPitch(0.0f)
 {
-
+	SetPosition(glm::vec3(-12.0f, 1.0f, 0.0f));
 }
 
 Camera::~Camera()
