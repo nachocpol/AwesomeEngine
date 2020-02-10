@@ -394,6 +394,7 @@ namespace Graphics { namespace DX12 {
 				destHandle.Offset(1, mFrameHeap[idx]->GetIncrementSize());
 			}
 
+
 			// Now set the root parameter:
 			if (graphics)
 			{

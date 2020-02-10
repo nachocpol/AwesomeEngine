@@ -38,7 +38,7 @@ void TestRenderer::Initialize(AppBase * app)
 	int height = 1080;
 
 	auto colFlags = Graphics::TextureFlags::RenderTarget;
-	mColourRt = mGraphicsInterface->CreateTexture2D(width, height, 1, 1, Graphics::Format::RGBA_8_Unorm, colFlags);
+	mColourRt = mGraphicsInterface->CreateTexture2D(width, height, 1, 1, Graphics::Format::RGBA_16_Float, colFlags);
 
 	auto depthFlags = Graphics::TextureFlags::DepthStencil;
 	mDepthRt = mGraphicsInterface->CreateTexture2D(width, height, 1, 1, Graphics::Format::Depth24_Stencil8, depthFlags);
@@ -68,7 +68,7 @@ void TestRenderer::Initialize(AppBase * app)
 		pdesc.DepthWriteEnabled = true;
 		pdesc.DepthFunction = Graphics::LessEqual;
 		pdesc.DepthFormat = Graphics::Depth24_Stencil8;
-		pdesc.ColorFormats[0] = Graphics::Format::RGBA_8_Unorm;
+		pdesc.ColorFormats[0] = Graphics::Format::RGBA_16_Float;
 		pdesc.BlendTargets[0].Enabled = false;
 		pdesc.DepthFormat = Graphics::Format::Depth24_Stencil8;
 

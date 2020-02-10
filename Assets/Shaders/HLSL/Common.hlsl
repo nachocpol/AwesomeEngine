@@ -82,7 +82,6 @@ float4 PSFullScreen(FullscrenVSOut i): SV_Target0
 float4 PSToneGamma(FullscrenVSOut i): SV_Target0
 {
 	float4 base = MainTex.Sample(LinearWrapSampler, i.TexCoord);
-	//base *= 8.0;
 	base.rgb = ReinhardTonemap(base.rgb);
 	base.a = 1.0;
 	base = ToSRGB(base,2.2);

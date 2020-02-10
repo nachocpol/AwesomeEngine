@@ -53,7 +53,7 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 	pdesc.DepthEnabled = true;
 	pdesc.DepthWriteEnabled = false;
 	pdesc.DepthFunction = Graphics::LessEqual;
-	pdesc.ColorFormats[0] = Graphics::Format::RGBA_8_Unorm;
+	pdesc.ColorFormats[0] =Graphics::Format::RGBA_16_Float;
 	pdesc.DepthFormat = Graphics::Format::Depth24_Stencil8;
 
 	mDebugPipeline = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
