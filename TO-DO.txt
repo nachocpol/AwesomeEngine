@@ -3,9 +3,12 @@ DOING:
 + Tiled rendering, in prep for clustered rendering.
 
 TO-DO:
+<<<<<<< HEAD
 + Integrate PhysicsX
 + Move towars ECS
 + Better build system for assimp and directx tex
+=======
++ Remove optimize offs.
 + Heap descriptor flush, make just one device call (CPU perf)
 + Unify nulls views compute!
 + Implement system to check if Null views are required (https://docs.microsoft.com/en-us/windows/win32/direct3d12/hardware-support)
