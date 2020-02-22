@@ -14,3 +14,7 @@
 [submodule "Depen/bullet"]
 	path = Depen/bullet
 	url = https://github.com/bulletphysics/bullet3.git
+[submodule "Depen/PhysX"]
+	path = Depen/PhysX
+	url = https://github.com/NVIDIAGameWorks/PhysX.git
+	branch = 4.1
