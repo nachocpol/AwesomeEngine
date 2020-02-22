@@ -15,7 +15,8 @@ filter { "platforms:x64" }
 		"Depen/STB",
 		"Assets/Shaders",
 		"Depen/DirectXTex/DirectXTex",
-		"Depen/assimp/include"
+		"Depen/assimp/include",
+		"Depen/bullet/src"
 	}
 	files
 	{
@@ -26,28 +27,36 @@ filter {"configurations:Debug"}
 	libdirs
 	{
 		"Depen/DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Debug",
-		"Depen/assimp/lib/Debug"
+		"Depen/assimp/lib/Debug",
+		"Depen/bullet/bin",
 	}
 	links
 	{
 		"DirectXTex",
 		"assimp-vc141-mtd",
 		"IrrXMLd",
-		"zlibstaticd"
+		"zlibstaticd",
+		"BulletDynamics_vs2010_x64_debug",
+		"BulletCollision_vs2010_x64_debug",
+		"LinearMath_vs2010_x64_debug",
 	}
 
 filter {"configurations:Release"}
 	libdirs
 	{
 		"Depen/DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Release",
-		"Depen/assimp/lib/Release"
+		"Depen/assimp/lib/Release",
+		"Depen/bullet/bin",
 	}
 	links
 	{
 		"DirectXTex",
 		"assimp-vc141-mt",
 		"IrrXML",
-		"zlibstatic"
+		"zlibstatic",
+		"BulletDynamics_vs2010_x64_debug",
+		"BulletCollision_vs2010_x64_debug",
+		"LinearMath_vs2010_x64_debug",
 	}
 
 project "Core"

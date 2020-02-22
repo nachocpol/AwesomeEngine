@@ -11,3 +11,6 @@
 [submodule "Depen/assimp"]
 	path = Depen/assimp
 	url = https://github.com/assimp/assimp.git
+[submodule "Depen/bullet"]
+	path = Depen/bullet
+	url = https://github.com/bulletphysics/bullet3.git

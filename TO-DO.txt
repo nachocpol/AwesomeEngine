@@ -1,13 +1,11 @@
 DOING:
++ Setup bullet
+
+TO-DO:
 + Proper asset import: model class, model factory
 + Tiled rendering, in prep for clustered rendering.
 
-TO-DO:
-<<<<<<< HEAD
-+ Integrate PhysicsX
-+ Move towars ECS
-+ Better build system for assimp and directx tex
-=======
++ Call bullet gen script!
 + Remove optimize offs.
 + Heap descriptor flush, make just one device call (CPU perf)
 + Unify nulls views compute!
@@ -32,6 +30,8 @@ TO-DO:
 + Clustered renderer.
 
 DONE:
++ Better build system for assimp and directx tex
++ Integrate bullet
 + Checking for descriptor re-use!
 + Batch barriers
 + Create light actor
