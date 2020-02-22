@@ -18,7 +18,7 @@
 	{
 #else
 	#define CBUFFER(name, slot) cbuffer name : register(b##slot)
-#define STRUCTUREDBUFFER(name, type, slot) StructuredBuffer<type> name : register(t##slot); RWStructuredBuffer<type> RW##name : register(u##slot);
+	#define STRUCTUREDBUFFER(name, type, slot) StructuredBuffer<type> name : register(t##slot); RWStructuredBuffer<type> RW##name : register(u##slot);
 #endif
 
 struct Light
@@ -30,6 +30,13 @@ struct Light
 	float Radius;
 };
 STRUCTUREDBUFFER(Lights, Light, 0);
+
+struct Tile
+{
+	int Lights[32]; // kMaxLightsPerTile
+	int NumLights;
+};
+STRUCTUREDBUFFER(Tiles, Tile, 1);
 
 CBUFFER(UIData, 0)
 {

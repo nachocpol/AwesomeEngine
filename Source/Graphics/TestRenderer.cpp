@@ -115,7 +115,7 @@ void TestRenderer::Initialize(AppBase * app)
 	mCameraDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(Declarations::CameraData));
 	mItemDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(Declarations::ItemData));
 
-	mLightsListSB = mGraphicsInterface->CreateBuffer(BufferType::GPUBuffer, CPUAccess::None, GPUAccess::Read, kMaxLightsPerDraw, Declarations::kLightsStride);
+	mLightsListSB = mGraphicsInterface->CreateBuffer(BufferType::GPUBuffer, CPUAccess::None, GPUAccess::Read, kMaxLights, Declarations::kLightsStride);
 }
 
 void TestRenderer::Release()
@@ -165,9 +165,12 @@ void TestRenderer::Render(SceneGraph* scene)
 		std::vector<RenderItem> renderSet;
 		ProcessVisibility(camera, rootActor->GetChilds(), renderSet);
 
-		// Gather lights: TO-DO: check visibility (we could do per object vis)
-		auto sceneLights = scene->GetLights();
-		mCurLightsData.resize(glm::min(kMaxLightsPerDraw, (int)sceneLights.size()));
+		// Gather lights:
+		PrepareTiledCamera(camera);
+
+		auto& sceneLights = scene->GetLights();
+
+		mCurLightsData.resize(glm::min(kMaxLights, (int)sceneLights.size()));
 		for (uint32_t i = 0; i < mCurLightsData.size(); ++i)
 		{
 			const auto light = sceneLights[i];
@@ -272,6 +275,63 @@ void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<Wo
 		if (actor->GetNumChilds() > 0)
 		{
 			ProcessVisibility(camera, actor->GetChilds(), renderItems);
+		}
+	}
+}
+
+void TestRenderer::PrepareTiledCamera(World::Camera* camera)
+{
+	if (!mTiledCamera.Tiles)
+	{
+		mTiledCamera.Tiles = new TiledCamera::Tile[kNumTilesW * kNumTilesH];
+	}
+
+	Camera::ProjectionProps camProperties = camera->GetProjectionProps();
+
+	// Base properties of the near plane:
+	float halfVFOV = glm::radians(camProperties.VFov * 0.5f);
+	float nearH = glm::tan(halfVFOV) * camProperties.Near * 2.0f;
+	float nearW = camProperties.Aspect * nearH;
+
+	float deltaW = nearW / (float)kNumTilesW;
+	float deltaH = nearH / (float)kNumTilesH;
+
+	float curW = -(nearW * 0.5f);
+	float curH = nearH * 0.5f;
+
+	float farOveNear = camProperties.Far / camProperties.Near;
+
+	for (float x = curW; x < -curW; x += deltaW)
+	{
+		for (float y = curH; y > -curH; y -= deltaH)
+		{
+			// Near
+			//glm::vec3 TLN = glm::vec3(x, y, camProperties.Near);
+			//glm::vec3 TRN = glm::vec3(x + deltaW, y, camProperties.Near);
+			//
+			//glm::vec3 BLN = glm::vec3(x, y - deltaH, camProperties.Near);
+			//glm::vec3 BRN = glm::vec3(x + deltaW, y - deltaH, camProperties.Near);
+			//
+			//// Far
+			//float TLFDist = farOveNear * glm::length(TLN);
+			//glm::vec3 TLF = TLN + glm::normalize(TLN) * TLFDist;
+			//float TRFDist = farOveNear * glm::length(TRN);
+			//glm::vec3 TRF = TRN + glm::normalize(TRN) * TRFDist;
+			//
+			//float BLFDist = farOveNear * glm::length(BLN);
+			//glm::vec3 BLF = BLN + glm::normalize(BLN) * (BLFDist - camProperties.Near);
+			//float BRFDist = farOveNear * glm::length(BRN);
+			//glm::vec3 BRF = BRN + glm::normalize(BRN) * (BRFDist - camProperties.Near);
+			//
+			//TLN = viewTrans * glm::vec4(TLN, 1.0f);
+			//TRN = viewTrans * glm::vec4(TRN, 1.0f);
+			//BLN = viewTrans * glm::vec4(BLN, 1.0f);
+			//BRN = viewTrans * glm::vec4(BRN, 1.0f);
+			//
+			//TLF = viewTrans * glm::vec4(TLF, 1.0f);
+			//TRF = viewTrans * glm::vec4(TRF, 1.0f);
+			//BLF = viewTrans * glm::vec4(BLF, 1.0f);
+			//BRF = viewTrans * glm::vec4(BRF, 1.0f);
 		}
 	}
 }

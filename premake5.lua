@@ -14,12 +14,40 @@ filter { "platforms:x64" }
 		"Depen/GLM",
 		"Depen/STB",
 		"Assets/Shaders",
-		"../DirectXTex/DirectXTex",
-		"../assimp/include"
+		"Depen/DirectXTex/DirectXTex",
+		"Depen/assimp/include"
 	}
 	files
 	{
 		"Assets/Shaders/**.h"
+	}
+
+filter {"configurations:Debug"}
+	libdirs
+	{
+		"Depen/DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Debug",
+		"Depen/assimp/lib/Debug"
+	}
+	links
+	{
+		"DirectXTex",
+		"assimp-vc141-mtd",
+		"IrrXMLd",
+		"zlibstaticd"
+	}
+
+filter {"configurations:Release"}
+	libdirs
+	{
+		"Depen/DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Release",
+		"Depen/assimp/lib/Release"
+	}
+	links
+	{
+		"DirectXTex",
+		"assimp-vc141-mt",
+		"IrrXML",
+		"zlibstatic"
 	}
 
 project "Core"
@@ -35,30 +63,8 @@ project "Core"
 	filter "configurations:Debug"
 		symbols "On"
 	
-		libdirs
-		{
-			"../DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Debug",
-			"../assimp/lib/Debug"
-		}
-		links
-		{
-			"DirectXTex",
-			"assimp-vc140-mt",
-			"IrrXML",
-			"zlibstaticd"
-		}
 	filter "configurations:Release"
 		optimize "On"
-		libdirs
-		{
-			"../DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Release",
-			"../assimp/lib/Release"
-		}
-		links
-		{
-			"DirectXTex",
-			"assimp-vc140-mt"
-		}
 
 project "Graphics"
 	kind "StaticLib"
@@ -72,30 +78,15 @@ project "Graphics"
 	}
 	filter "configurations:Debug"
 		symbols "On"
-		libdirs
-		{
-			"../DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Debug",
-			"../assimp/lib/Debug"
-		}
 		links
 		{
-			"DirectXTex",
-			"assimp-vc140-mt",
-			"IrrXML",
-			"zlibstaticd",
 			"Core"
 		}
 	filter "configurations:Release"
 		optimize "On"
-		libdirs
-		{
-			"../DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Release",
-			"../assimp/lib/Release"
-		}
 		links
 		{
-			"DirectXTex",
-			"assimp-vc140-mt"
+			"Core"
 		}
 
 project "AwesomeTriangle"
@@ -110,18 +101,12 @@ project "AwesomeTriangle"
 	}
 	filter "configurations:Debug"
 		symbols "On"
-		libdirs
-		{
-		}
 		links
 		{
 			"Graphics", "Core"
 		}
 	filter "configurations:Release"
 		optimize "On"
-		libdirs
-		{
-		}
 		links
 		{
 			"Graphics", "Core"
@@ -139,22 +124,25 @@ project "AwesomeAdvanced"
 	}
 	filter "configurations:Debug"
 		symbols "On"
-		libdirs
-		{
-		}
 		links
 		{
 			"Graphics", "Core"
+		}
+		postbuildcommands 
+		{
+			"copy %{wks.location}Depen\\assimp\\bin\\%{cfg.buildcfg}\\assimp-vc141-mtd.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\assimp-vc141-mtd.dll"
 		}
 	filter "configurations:Release"
 		optimize "On"
-		libdirs
-		{
-		}
 		links
 		{
 			"Graphics", "Core"
 		}
+		postbuildcommands 
+		{
+			"copy %{wks.location}Depen\\assimp\\bin\\%{cfg.buildcfg}\\assimp-vc141-mt.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\assimp-vc141-mt.dll"
+		}
+
 --[[
 project "AwesomeShowcase"
 	kind "ConsoleApp"
