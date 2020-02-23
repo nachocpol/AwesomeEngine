@@ -14,3 +14,6 @@
 [submodule "Depen/bullet"]
 	path = Depen/bullet
 	url = https://github.com/bulletphysics/bullet3.git
+[submodule "Depen/reactphysics3d"]
+	path = Depen/reactphysics3d
+	url = https://github.com/DanielChappuis/reactphysics3d.git

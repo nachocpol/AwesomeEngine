@@ -16,7 +16,7 @@ filter { "platforms:x64" }
 		"Assets/Shaders",
 		"Depen/DirectXTex/DirectXTex",
 		"Depen/assimp/include",
-		"Depen/bullet/src"
+		"Depen/reactphysics3d/src"
 	}
 	files
 	{
@@ -28,7 +28,7 @@ filter {"configurations:Debug"}
 	{
 		"Depen/DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Debug",
 		"Depen/assimp/lib/Debug",
-		"Depen/bullet/bin",
+		"Depen/reactphysics3d/lib/Debug"
 	}
 	links
 	{
@@ -36,9 +36,7 @@ filter {"configurations:Debug"}
 		"assimp-vc141-mtd",
 		"IrrXMLd",
 		"zlibstaticd",
-		"BulletDynamics_vs2010_x64_debug",
-		"BulletCollision_vs2010_x64_debug",
-		"LinearMath_vs2010_x64_debug",
+		"reactphysics3d"
 	}
 
 filter {"configurations:Release"}
@@ -46,7 +44,7 @@ filter {"configurations:Release"}
 	{
 		"Depen/DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Release",
 		"Depen/assimp/lib/Release",
-		"Depen/bullet/bin",
+		"Depen/reactphysics3d/lib/Release"
 	}
 	links
 	{
@@ -54,9 +52,7 @@ filter {"configurations:Release"}
 		"assimp-vc141-mt",
 		"IrrXML",
 		"zlibstatic",
-		"BulletDynamics_vs2010_x64_debug",
-		"BulletCollision_vs2010_x64_debug",
-		"LinearMath_vs2010_x64_debug",
+		"reactphysics3d"
 	}
 
 project "Core"
