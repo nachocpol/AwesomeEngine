@@ -172,3 +172,25 @@ Model* Graphics::ModelFactory::LoadFromAsset(std::string path, GraphicsInterface
 {
 	return nullptr;
 }
+
+using namespace World;
+
+ModelComponent::ModelComponent():
+	mModel(nullptr)
+{
+}
+
+void ModelComponent::Update(float deltaTime)
+{
+
+}
+
+void ModelComponent::SetModel(Model* model)
+{
+	mModel = model;
+}
+
+Graphics::Model* World::ModelComponent::GetModel() const
+{
+	return mModel;
+}

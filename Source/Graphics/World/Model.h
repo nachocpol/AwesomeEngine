@@ -2,6 +2,7 @@
 
 #include "Graphics/GraphicsInterface.h"
 #include "Core/Math.h"
+#include "Component.h"
 
 #include <string>
 #include <map>
@@ -51,5 +52,22 @@ namespace Graphics
 
 	private:
 		std::map<std::string, Model*> mModelCache;
+	};
+}
+
+namespace World
+{
+	class ModelComponent : public Component
+	{
+	public:
+		ModelComponent();
+		void Update(float deltaTime);
+	
+		void SetModel(Graphics::Model* model);
+		Graphics::Model* GetModel()const;
+
+	private:
+		Graphics::Model* mModel;
+	
 	};
 }

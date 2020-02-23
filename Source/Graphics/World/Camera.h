@@ -1,10 +1,11 @@
 #pragma once
 
-#include "Actor.h"
+#include "glm/glm.hpp"
+#include "Component.h"
 
 namespace World
 {
-	class Camera : public Actor
+	class CameraComponent : public Component
 	{
 	public:
 		struct ProjectionProps
@@ -15,16 +16,14 @@ namespace World
 			float Far;
 		};
 
-		Camera();
-		~Camera();
+		CameraComponent();
+		~CameraComponent();
 		void Update(float deltaTime)override;
 		void ConfigureProjection(float aspect, float vfov, float near, float far);
 
 		glm::mat4 GetProjection()const;
 		glm::mat4 GetInvViewTransform()const;
 		ProjectionProps GetProjectionProps()const;
-
-		Type::T GetActorType() const { return Type::Camera; }
 
 	private:
 		glm::mat4 mProjection;

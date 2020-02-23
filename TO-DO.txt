@@ -1,5 +1,12 @@
 DOING:
-+ Setup bullet
++ Setup react physics 3D
+
++ ECS ! !
+++ Rename camera -> camera component (the files)
+++ Cleanup old "components"
+++ Figure out where to place world aabb
+++ Light code
+++ Culling code
 
 TO-DO:
 + Proper asset import: model class, model factory

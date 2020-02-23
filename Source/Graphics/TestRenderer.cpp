@@ -12,6 +12,8 @@
 #include "UI/IMGUI/imgui.h"
 #include "Core/Logging.h"
 
+#include "World/TransformComponent.h"
+
 using namespace Graphics;
 using namespace World;
 
@@ -135,8 +137,9 @@ void TestRenderer::Render(SceneGraph* scene)
 	ImGui::Checkbox("Freeze Culling", &kFreezeCulling);
 	ImGui::End();
 
-	const Actor* rootActor = scene->GetRoot();
-	const std::vector<Camera*> cameras = scene->GetCameras();
+	Actor* rootActor = scene->GetRoot();
+	std::vector <CameraComponent*> cameras;
+	rootActor->FindComponents<CameraComponent>(cameras, true);
 
 	// Early exit if nothing needs processing:
 	if (cameras.empty() || rootActor == nullptr || rootActor->GetNumChilds() == 0)
@@ -145,7 +148,7 @@ void TestRenderer::Render(SceneGraph* scene)
 	}
 
 	// For each camera:
-	for (Camera* camera : cameras)
+	for (CameraComponent* camera : cameras)
 	{
 		// Cache culling:
 		if (kFreezeCulling)
@@ -168,23 +171,25 @@ void TestRenderer::Render(SceneGraph* scene)
 		// Gather lights:
 		PrepareTiledCamera(camera);
 
-		auto& sceneLights = scene->GetLights();
+		// auto& sceneLights = scene->GetLights();
 
-		mCurLightsData.resize(glm::min(kMaxLights, (int)sceneLights.size()));
-		for (uint32_t i = 0; i < mCurLightsData.size(); ++i)
+		// mCurLightsData.resize(glm::min(kMaxLights, (int)sceneLights.size()));
+		mCurLightsData.resize(1);
+		// for (uint32_t i = 0; i < mCurLightsData.size(); ++i)
 		{
-			const auto light = sceneLights[i];
+			//const auto light = sceneLights[i];
+			auto light = Light();
 			Declarations::Light dataLight;
-			dataLight.Color = light->GetColor();
-			dataLight.Type = (int)light->GetLightType();
-			dataLight.Radius = light->GetRadius();
-			dataLight.Intensity = light->GetIntensity();
-			dataLight.PosDirection = light->GetPosition();
-			mCurLightsData[i] = dataLight;
+			dataLight.Color = light.GetColor();
+			dataLight.Type = (int)light.GetLightType();
+			dataLight.Radius = light.GetRadius();
+			dataLight.Intensity = light.GetIntensity();
+			dataLight.PosDirection = glm::vec3(0.0f);// light.GetPosition();
+			mCurLightsData[0] = dataLight;
 
 			if (kRenderLightBounds)
 			{
-				DebugDraw::GetInstance()->DrawWireSphere(dataLight.PosDirection, dataLight.Radius, glm::vec4(light->GetColor(), 1.0f));
+				//DebugDraw::GetInstance()->DrawWireSphere(dataLight.PosDirection, dataLight.Radius, glm::vec4(light->GetColor(), 1.0f));
 			}
 		}
 		mCurLightCount = (int)mCurLightsData.size();
@@ -196,7 +201,7 @@ void TestRenderer::Render(SceneGraph* scene)
 		DrawOriginGizmo();
 		
 		// Flush debug draw
-		DebugDraw::GetInstance()->Flush(camera);
+		// DebugDraw::GetInstance()->Flush(camera);
 
 		mGraphicsInterface->DisableAllTargets();
 
@@ -208,7 +213,7 @@ void TestRenderer::Render(SceneGraph* scene)
 	}
 }
 
-void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<World::Actor*>& actors, std::vector<RenderItem>& renderItems)
+void TestRenderer::ProcessVisibility(World::CameraComponent* camera, const std::vector<World::Actor*>& actors, std::vector<RenderItem>& renderItems)
 {
 	const auto projProps = camera->GetProjectionProps();
 	glm::mat4 curInvView = mFreezeCullingState.Enabled ? mFreezeCullingState.InverseView : camera->GetInvViewTransform();
@@ -229,48 +234,50 @@ void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<Wo
 	// Check for each actor if it is inside the view frustum:
 	for (Actor* actor : actors)
 	{
-		// Check if we can render current actor:
-		if (actor->GetActorType() == Actor::Type::Renderable)
+		ModelComponent* modelComponent = actor->FindComponent<ModelComponent>();
+		if (modelComponent)
 		{
-			Renderable* renderable = (Renderable*)actor;
 			RenderItem item;
-			
-			const auto aabb = renderable->GetWorldAABB(0);
-			const auto sb = renderable->GetWorldBS(0);
-			
-			Math::BSData bsViewSpace;
-			bsViewSpace.Center = curInvView * glm::vec4(sb.Center, 1.0f);
-			bsViewSpace.Radius = sb.Radius;
-			
+
+			// TO-DO: I need to think where to put the World AABB and BS...
+			//
+			//const auto aabb = renderable->GetWorldAABB(0);
+			//const auto sb = renderable->GetWorldBS(0);
+			//
+			//Math::BSData bsViewSpace;
+			//bsViewSpace.Center = curInvView * glm::vec4(sb.Center, 1.0f);
+			//bsViewSpace.Radius = sb.Radius;
+
 			bool inside = true;
-			for (uint32_t i = 0; i < 6; ++i)
-			{
-				auto res = Math::PlaneSphereIntersection(cameraFrustumPlanes[i], bsViewSpace);
-				bool curInside = (res == Math::IntersectionResult::Inside) || (res == Math::IntersectionResult::Touching);
-				inside &= curInside;
-				if (!inside)
-				{
-					break;
-				}
-			}
+			//for (uint32_t i = 0; i < 6; ++i)
+			//{
+			//	auto res = Math::PlaneSphereIntersection(cameraFrustumPlanes[i], bsViewSpace);
+			//	bool curInside = (res == Math::IntersectionResult::Inside) || (res == Math::IntersectionResult::Touching);
+			//	inside &= curInside;
+			//	if (!inside)
+			//	{
+			//		break;
+			//	}
+			//}
 
 			// Mesh is visible, so add it to the render items:
 			if (inside)
 			{
-				item.Meshes = renderable->GetModel()->Meshes;
-				item.NumMeshes = renderable->GetModel()->NumMeshes;
-				item.WorldMatrix = renderable->GetWorldTransform();
-				
+				item.Meshes = modelComponent->GetModel()->Meshes;
+				item.NumMeshes = modelComponent->GetModel()->NumMeshes;
+				item.WorldMatrix = actor->FindComponent<TransformComponent>()->GetWorldTransform();
+
 				renderItems.push_back(item);
 
 				// Draw actor bounds:
 				if (kRenderBounds)
 				{
-					DebugDraw::GetInstance()->DrawAABB(aabb.Min, aabb.Max);
-					DebugDraw::GetInstance()->DrawWireSphere(sb.Center, sb.Radius);
+					//DebugDraw::GetInstance()->DrawAABB(aabb.Min, aabb.Max);
+					//DebugDraw::GetInstance()->DrawWireSphere(sb.Center, sb.Radius);
 				}
 			}
 		}
+		
 		
 		if (actor->GetNumChilds() > 0)
 		{
@@ -279,14 +286,14 @@ void TestRenderer::ProcessVisibility(World::Camera* camera, const std::vector<Wo
 	}
 }
 
-void TestRenderer::PrepareTiledCamera(World::Camera* camera)
+void TestRenderer::PrepareTiledCamera(World::CameraComponent* camera)
 {
 	if (!mTiledCamera.Tiles)
 	{
 		mTiledCamera.Tiles = new TiledCamera::Tile[kNumTilesW * kNumTilesH];
 	}
 
-	Camera::ProjectionProps camProperties = camera->GetProjectionProps();
+	CameraComponent::ProjectionProps camProperties = camera->GetProjectionProps();
 
 	// Base properties of the near plane:
 	float halfVFOV = glm::radians(camProperties.VFov * 0.5f);
@@ -336,7 +343,7 @@ void TestRenderer::PrepareTiledCamera(World::Camera* camera)
 	}
 }
 
-void TestRenderer::RenderItems(World::Camera* camera, const std::vector<RenderItem>& renderSet)
+void TestRenderer::RenderItems(World::CameraComponent* camera, const std::vector<RenderItem>& renderSet)
 {
 	Platform::BaseWindow* outputWindow = mOwnerApp->GetWindow();
 
@@ -372,9 +379,9 @@ void TestRenderer::DrawOriginGizmo()
 	DebugDraw::GetInstance()->DrawLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
 }
 
-void Graphics::TestRenderer::DrawTiledCamera(World::Camera* camera)
+void Graphics::TestRenderer::DrawTiledCamera(World::CameraComponent* camera)
 {
-	Camera::ProjectionProps camProperties = camera->GetProjectionProps();
+	CameraComponent::ProjectionProps camProperties = camera->GetProjectionProps();
 	glm::mat4 invView = camera->GetInvViewTransform();
 	if (mFreezeCullingState.Enabled)
 	{

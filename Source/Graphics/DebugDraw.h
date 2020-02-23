@@ -9,7 +9,7 @@
 
 namespace World
 {
-	class Camera;
+	class CameraComponent;
 }
 
 #define MAX_LINES		 4096
@@ -31,7 +31,7 @@ namespace Graphics
 		void Release();
 
 		void StartFrame();
-		void Flush(World::Camera* camera);
+		void Flush(World::CameraComponent* camera);
 		void EndFrame();
 		
 		void DrawLine(glm::vec3 start, glm::vec3 end, glm::vec4 color = glm::vec4(1.0f));

@@ -1,11 +1,14 @@
 #pragma once
 
+#include "Component.h"
+
 #include "glm/glm.hpp"
 #include <vector>
 
 namespace World
 {
 	class SceneGraph;
+	class TransformComponent;
 	class Actor
 	{
 		friend SceneGraph;
@@ -13,24 +16,22 @@ namespace World
 		Actor();
 		~Actor();
 
-		glm::vec3 GetPosition()const;
-		void SetPosition(const glm::vec3& position);
-		void SetPosition(const float& x, const float& y, const float& z);
-		void Translate(const glm::vec3& delta);
+		template<class T>
+		T* AddComponent();
 
-		glm::vec3 GetRotation()const;
-		void SetRotation(const glm::vec3& rotation);
-		void SetRotation(const float& x, const float& y, const float& z);
-		void Rotate(float x, float y, float z);
+		template<class T>
+		T* FindComponent(bool recursive = false);
 
-		glm::vec3 GetScale()const;
-		void SetScale(const glm::vec3& scale);
-		void SetScale(const float& x, const float& y, const float& z);
+		template<class T>
+		void FindComponents(std::vector<T*>& components, bool recursive = false);
 
 		uint32_t GetNumChilds()const;
 		Actor* GetChild(uint32_t index);
 		const std::vector<Actor*>& GetChilds()const;
 
+		Actor* GetParent()const;
+
+		virtual void UpdatePhysics();
 		virtual void Update(float deltaTime);
 		virtual void UpdateBounds() {}
 
@@ -47,17 +48,67 @@ namespace World
 		};
 		virtual Type::T GetActorType() const { return Type::Node; }
 
-		glm::mat4 GetWorldTransform()const;
+//		glm::mat4 GetWorldTransform()const;
 
-	private:
+	protected:
 		void AddChild(Actor* child);
 
-		glm::vec3 mPosition;
-		glm::vec3 mRotation;
-		glm::vec3 mScale;
 		Actor* mParent;
 		std::vector<Actor*> mChilds;
-
-		glm::mat4 mWorldTransform;
+		std::vector<Component*> mComponents;
 	};
+
+	template<class T>
+	inline T* Actor::AddComponent()
+	{
+		T* component = new T();
+		mComponents.push_back(component);
+		component->mParent = this;
+		return component;
+	}
+
+	template<class T>
+	inline T* Actor::FindComponent(bool recursive)
+	{
+		for (Component* c : mComponents)
+		{
+			T* casted = dynamic_cast<T*>(c);
+			if (casted)
+			{
+				return casted;
+			}
+		}
+		if (recursive)
+		{
+			for (Actor* child : mChilds)
+			{
+				T* childComp = child->FindComponent<T>(recursive);
+				if (childComp)
+				{
+					return childComp;
+				}
+			}
+		}
+		return nullptr;
+	}
+
+	template<class T>
+	inline void Actor::FindComponents(std::vector<T*>& components, bool recursive)
+	{
+		for (Component* c : mComponents)
+		{
+			T* casted = dynamic_cast<T*>(c);
+			if (casted)
+			{
+				components.push_back(casted);
+			}
+		}
+		if (recursive)
+		{
+			for (Actor* child : mChilds)
+			{
+				child->FindComponents<T>(components, recursive);
+			}
+		}
+	}
 }

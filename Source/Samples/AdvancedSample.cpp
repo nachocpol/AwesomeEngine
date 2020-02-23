@@ -15,6 +15,8 @@
 #include "glm/glm.hpp"
 #include "glm/ext.hpp"
 
+#include "Graphics/World/TransformComponent.h"
+
 #include <stdio.h>
 
 using namespace World;
@@ -32,7 +34,7 @@ private:
 	Graphics::Model* mCube;
 	World::SceneGraph mScene;
 	Graphics::TestRenderer mRenderer;
-	World::Camera* mCamera;
+	Actor* mCamera;
 
 	World::Renderable* sun;
 	World::Renderable* earth;
@@ -42,29 +44,36 @@ private:
 void AdvancedApp::Init()
 {
 	AppBase::Init();
-
+	mScene.Initialize();
 	mRenderer.Initialize(this);
 
 	// Spawn some stuff
 	mCube = Graphics::ModelFactory::Get()->LoadFromFile("Meshes\\cube.obj", mGraphicsInterface);
-	for (uint32_t x = 0; x < 7; ++x)
-	{
-		for (uint32_t y = 0; y < 7; ++y)
-		{
-			World::Renderable* curCube = mScene.SpawnRenderable();
-			glm::vec3 curPos = glm::vec3(((float)x * 2.0f) - 7.0f, -2.0f, ((float)y * 2.0f) - 7.0f);
-			curCube->SetPosition(curPos);
-			curCube->SetRotation(glm::vec3(x+1,x,y+1));
-			curCube->SetModel(mCube);
+	//for (uint32_t x = 0; x < 7; ++x)
+	//{
+	//	for (uint32_t y = 0; y < 7; ++y)
+	//	{
+	//		World::Renderable* curCube = mScene.SpawnRenderable();
+	//		glm::vec3 curPos = glm::vec3(((float)x * 2.0f) - 7.0f, -2.0f, ((float)y * 2.0f) - 7.0f);
+	//		curCube->SetPosition(curPos);
+	//		curCube->SetRotation(glm::vec3(x+1,x,y+1));
+	//		curCube->SetModel(mCube);
+	//
+	//		World::Light* pointLight = mScene.SpawnLight();
+	//		pointLight->SetLightType(World::Light::LightType::Point);
+	//		pointLight->SetPosition(curPos + glm::vec3(0.0f,glm::linearRand(1.0f,2.0f),0.0f));
+	//		pointLight->SetColor(glm::vec3(glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f)));
+	//		pointLight->SetIntensity(glm::linearRand(0.5f, 2.0f));
+	//		pointLight->SetRadius(glm::linearRand(1.0f, 2.5f));
+	//	}
+	//}	
 
-			World::Light* pointLight = mScene.SpawnLight();
-			pointLight->SetLightType(World::Light::LightType::Point);
-			pointLight->SetPosition(curPos + glm::vec3(0.0f,glm::linearRand(1.0f,2.0f),0.0f));
-			pointLight->SetColor(glm::vec3(glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f)));
-			pointLight->SetIntensity(glm::linearRand(0.5f, 2.0f));
-			pointLight->SetRadius(glm::linearRand(1.0f, 2.5f));
-		}
-	}	
+	// Ground
+	Actor* ground = mScene.SpawnActor();
+	TransformComponent* groundTransform = ground->AddComponent<TransformComponent>();
+	groundTransform->SetScale(20.0f, 0.1f, 20.0f);
+	ModelComponent* groundModel = ground->AddComponent<ModelComponent>();
+	groundModel->SetModel(mCube);
 
 	//sun = mScene.SpawnRenderable();
 	//earth = mScene.SpawnRenderable(sun);
@@ -76,8 +85,12 @@ void AdvancedApp::Init()
 	//moon->SetModel(mCube);
 	//moon->SetPosition(glm::vec3(3.0f, 0.0f, 0.0f));
 
-	mCamera = mScene.SpawnCamera();
-	mCamera->ConfigureProjection(
+	mCamera = mScene.SpawnActor();
+	TransformComponent* camTransform = mCamera->AddComponent<TransformComponent>();
+	camTransform->SetPosition(glm::vec3(-12.0f, 1.0f, 0.0f));
+
+	CameraComponent* camComponent = mCamera->AddComponent<CameraComponent>();
+	camComponent->ConfigureProjection(
 		(float)mWindow->GetWidth() / (float)mWindow->GetHeight(), 75.0f, 0.1f, 40.0f
 	);
 
@@ -91,6 +104,7 @@ void AdvancedApp::Update()
 	//sun->Rotate(0.0f, 0.0005f * DeltaTime, 0.0f);
 	//earth->Rotate(0.0f, 0.001f * DeltaTime, 0.0f);
 
+	mScene.UpdatePhysics(DeltaTime);
 	mScene.Update(DeltaTime);
 	mRenderer.Render(&mScene);
 }

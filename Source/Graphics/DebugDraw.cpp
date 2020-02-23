@@ -136,7 +136,7 @@ void Graphics::DebugDraw::StartFrame()
 	mWireSpheres.clear();
 }
 
-void Graphics::DebugDraw::Flush(World::Camera* camera)
+void Graphics::DebugDraw::Flush(World::CameraComponent* camera)
 {
 	// Lines
 	if (!mLines.empty())

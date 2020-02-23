@@ -10,6 +10,7 @@ namespace World
 {
 	class Actor;
 	class Camera;
+	class CameraComponent;
 }
 
 namespace Graphics
@@ -44,11 +45,11 @@ namespace Graphics
 		void Render(World::SceneGraph* scene)override;
 
 	private:
-		void ProcessVisibility(World::Camera* camera, const std::vector<World::Actor*>& actors, std::vector<RenderItem>& renderItems);
-		void PrepareTiledCamera(World::Camera* camera);
-		void RenderItems(World::Camera* camera,const std::vector<RenderItem>& renderSet);
+		void ProcessVisibility(World::CameraComponent* camera, const std::vector<World::Actor*>& actors, std::vector<RenderItem>& renderItems);
+		void PrepareTiledCamera(World::CameraComponent* camera);
+		void RenderItems(World::CameraComponent* camera,const std::vector<RenderItem>& renderSet);
 		void DrawOriginGizmo();
-		void DrawTiledCamera(World::Camera* camera);
+		void DrawTiledCamera(World::CameraComponent* camera);
 
 		Graphics::TextureHandle mColourRt;
 		Graphics::TextureHandle mDepthRt;
