@@ -199,12 +199,6 @@ void ModelComponent::UpdateLate()
 		mWorldBS.resize(mModel->NumMeshes);
 	}
 
-	TransformComponent* transform = mParent->FindComponent<TransformComponent>();
-	if (!transform)
-	{
-		return;
-	}
-
 	for (uint32_t meshIdx = 0; meshIdx < mModel->NumMeshes; ++meshIdx)
 	{
 		// Should this be the other way around, as in, just transform the original aabb:
@@ -218,7 +212,7 @@ void ModelComponent::UpdateLate()
 		glm::vec3 BackBR = glm::vec3(aabb.Max.x, aabb.Min.y, aabb.Min.z);
 		glm::vec3 BackBL = glm::vec3(aabb.Min.x, aabb.Min.y, aabb.Min.z);
 	
-		const glm::mat4 worldMtx = transform->GetWorldTransform();
+		const glm::mat4 worldMtx = mParent->Transform->GetWorldTransform();
 		FrontTR = worldMtx * glm::vec4(FrontTR, 1.0f);
 		FrontTL = worldMtx * glm::vec4(FrontTL, 1.0f);
 		BackTR = worldMtx * glm::vec4(BackTR, 1.0f);

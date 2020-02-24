@@ -1,9 +1,13 @@
 #include "Actor.h"
+#include "TransformComponent.h"
+#include "SceneGraph.h"
+#include "PhysicsWorld.h"
 
 using namespace World;
 
 Actor::Actor():
-	mParent(nullptr)
+	 mParent(nullptr)
+	,mSceneOwner(nullptr)
 {
 }
 
@@ -33,6 +37,10 @@ Actor* World::Actor::GetParent() const
 
 void World::Actor::UpdatePhysics()
 {
+	for (Component* component : mComponents)
+	{
+		component->UpdatePhysics();
+	}
 	for (const auto c : mChilds)
 	{
 		c->UpdatePhysics();
@@ -67,4 +75,24 @@ void Actor::AddChild(Actor* child)
 {
 	child->mParent = this;
 	mChilds.push_back(child);
+}
+
+template<>
+TransformComponent* Actor::AddComponent<TransformComponent>()
+{
+	TransformComponent* transformComponent = new TransformComponent;
+	transformComponent->mParent = this;
+	Transform = transformComponent; // cache it.
+	mComponents.push_back(transformComponent);
+	return transformComponent;
+}
+
+template<>
+RigidBodyComponent* Actor::AddComponent<RigidBodyComponent>()
+{
+	RigidBodyComponent* rbComponent = new RigidBodyComponent;
+	rbComponent->mParent = this;
+	mComponents.push_back(rbComponent);
+	mSceneOwner->GetPhysicsWorld()->AddRigidBody(rbComponent);
+	return rbComponent;
 }

@@ -184,7 +184,7 @@ void TestRenderer::Render(SceneGraph* scene)
 			dataLight.Type = (int)light->GetLightType();
 			dataLight.Radius = light->GetRadius();
 			dataLight.Intensity = light->GetIntensity();
-			dataLight.PosDirection = light->GetParent()->FindComponent<TransformComponent>()->GetPosition();
+			dataLight.PosDirection = light->GetParent()->Transform->GetPosition();
 			mCurLightsData[i] = dataLight;
 
 			if (kRenderLightBounds)
@@ -265,7 +265,7 @@ void TestRenderer::ProcessVisibility(World::CameraComponent* camera, const std::
 				{
 					RenderItem item;
 					item.MeshItem = &model->Meshes[meshIdx];
-					item.WorldMatrix = actor->FindComponent<TransformComponent>()->GetWorldTransform();
+					item.WorldMatrix = actor->Transform->GetWorldTransform();
 					renderItems.push_back(item);
 
 					// Draw actor bounds:

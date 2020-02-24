@@ -8,6 +8,8 @@ namespace World
 		friend Actor;
 	public:
 		virtual ~Component() {}
+
+		virtual void UpdatePhysics() {};
 		virtual void Update(float deltaTime) = 0;
 		virtual void UpdateLate() {};
 

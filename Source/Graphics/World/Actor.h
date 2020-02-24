@@ -2,13 +2,13 @@
 
 #include "Component.h"
 
-#include "glm/glm.hpp"
 #include <vector>
 
 namespace World
 {
 	class SceneGraph;
 	class TransformComponent;
+	class RigidBodyComponent;
 	class Actor
 	{
 		friend SceneGraph;
@@ -35,13 +35,23 @@ namespace World
 		virtual void Update(float deltaTime);
 		virtual void UpdateLate();
 
+		// Simple getter for the transform component:
+		TransformComponent* Transform = nullptr;
+
 	protected:
 		void AddChild(Actor* child);
 
 		Actor* mParent;
 		std::vector<Actor*> mChilds;
 		std::vector<Component*> mComponents;
+		SceneGraph* mSceneOwner;
 	};
+
+	template<>
+	TransformComponent* Actor::AddComponent();
+
+	template<>
+	RigidBodyComponent* Actor::AddComponent();
 
 	template<class T>
 	inline T* Actor::AddComponent()

@@ -3,6 +3,7 @@
 #include "CameraComponent.h"
 #include "LightComponent.h"
 #include "TransformComponent.h"
+#include "PhysicsWorld.h"
 
 #include "reactphysics3d.h"
 
@@ -19,34 +20,38 @@ SceneGraph::~SceneGraph()
 
 void World::SceneGraph::Initialize()
 {
+	// Physics representation of this scene graph:
+	mPhysicsWorld = new PhysicsWorld;
+	mPhysicsWorld->Initialize();
+	
+	// Add root entity:
 	mRoot = new Actor;
 	mRoot->AddComponent<TransformComponent>();
-
-	// Setup physics world:
-	reactphysics3d::Vector3 kGravity(0.0f, -9.81f, 0.0f);
-	reactphysics3d::WorldSettings kPhysicsSettings = {};
-	mPhysicsWorld = new reactphysics3d::DynamicsWorld(kGravity, kPhysicsSettings);
+	mRoot->mSceneOwner = this;
 }
 
 void SceneGraph::UpdatePhysics(float deltaTime)
 {
-	// Start by stepping the physics world. deltaTime is not constant... We probably want to fix that!
-	mPhysicsWorld->update(deltaTime / 1000.0f);
+	// Update physics world:
+	mPhysicsWorld->Update(deltaTime);
 
-	// Now update actors, this will retrieve the values from the physics simulation:
+	// Then bring both in sync:
 	mRoot->UpdatePhysics();
 }
 
 void SceneGraph::Update(float deltaTime)
 {
+	// Generic component update, figure world transformations etc.
 	mRoot->Update(deltaTime);
 
+	// SceneGraph -> PhysicsWorld sync back. Also update things that need position/transforms to be ready.
 	mRoot->UpdateLate();
 }
 
 Actor* SceneGraph::SpawnActor(Actor* parent)
 {
 	Actor* actor = new Actor;
+	actor->mSceneOwner = this;
 	if (parent)
 	{
 		parent->AddChild(actor);
@@ -61,4 +66,9 @@ Actor* SceneGraph::SpawnActor(Actor* parent)
 Actor* World::SceneGraph::GetRoot() const
 {
 	return mRoot;
+}
+
+PhysicsWorld* SceneGraph::GetPhysicsWorld() const
+{
+	return mPhysicsWorld;
 }

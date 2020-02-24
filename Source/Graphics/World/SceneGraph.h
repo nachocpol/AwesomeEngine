@@ -21,6 +21,7 @@ namespace World
 	class Camera;
 	class Actor;
 	class Light;
+	class PhysicsWorld;
 	class SceneGraph
 	{
 	public:
@@ -32,18 +33,13 @@ namespace World
 		void Update(float deltaTime);
 		
 		Actor* SpawnActor(Actor* parent = nullptr);
-		//Renderable* SpawnRenderable(Actor* parent = nullptr);
-		//Camera* SpawnCamera(Actor* parent = nullptr);
-		//Light* SpawnLight(Actor* parent = nullptr);
 
 		Actor* GetRoot()const;
-		//const std::vector<Camera*>& GetCameras()const;
-		//const std::vector<Light*>& GetLights()const;
+
+		PhysicsWorld* GetPhysicsWorld()const;
 
 	private:
 		Actor* mRoot;
-		//std::vector<Camera*> mCameras;
-		//std::vector<Light*> mLights;
-		reactphysics3d::DynamicsWorld* mPhysicsWorld;
+		PhysicsWorld* mPhysicsWorld;
 	};
 }

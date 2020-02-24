@@ -9,6 +9,7 @@
 #include "Graphics/World/Actor.h"
 #include "Graphics/World/CameraComponent.h"
 #include "Graphics/World/LightComponent.h"
+#include "Graphics/World/PhysicsWorld.h"
 #include "Graphics/TestRenderer.h"
 #include "Graphics/UI/IMGUI/imgui.h"
 #include "glm/glm.hpp"
@@ -62,6 +63,8 @@ void AdvancedApp::Init()
 
 			ModelComponent* modelComponent = curCube->AddComponent<ModelComponent>();
 			modelComponent->SetModel(mCube);
+
+			RigidBodyComponent* rbComp = curCube->AddComponent<RigidBodyComponent>();
 		
 			// Add a light:
 			Actor* curLight = mScene.SpawnActor();
