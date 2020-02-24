@@ -33,22 +33,7 @@ namespace World
 
 		virtual void UpdatePhysics();
 		virtual void Update(float deltaTime);
-		virtual void UpdateBounds() {}
-
-		struct Type
-		{
-			enum T
-			{
-				Renderable, // Actor that can be rendered
-				Camera,		
-				Light,		
-				Node,		// Empty actor (just a transform)
-				COUNT
-			};
-		};
-		virtual Type::T GetActorType() const { return Type::Node; }
-
-//		glm::mat4 GetWorldTransform()const;
+		virtual void UpdateLate();
 
 	protected:
 		void AddChild(Actor* child);

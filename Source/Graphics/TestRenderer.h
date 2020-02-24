@@ -19,8 +19,7 @@ namespace Graphics
 	struct RenderItem
 	{
 		glm::mat4 WorldMatrix;
-		Mesh* Meshes;// this should be 1 mesh (so rendereables with more that 1 mesh should split)
-		uint32_t NumMeshes;
+		Mesh* MeshItem;
 	};
 
 	struct TiledCamera

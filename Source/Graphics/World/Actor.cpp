@@ -45,19 +45,23 @@ void Actor::Update(float deltaTime)
 	{
 		component->Update(deltaTime);
 	}
-
-	UpdateBounds();
-
 	for (const auto c : mChilds)
 	{
 		c->Update(deltaTime);
 	}
 }
 
-//glm::mat4 Actor::GetWorldTransform()const
-//{
-//	return mWorldTransform;
-//}
+void Actor::UpdateLate()
+{
+	for (Component* component : mComponents)
+	{
+		component->UpdateLate();
+	}
+	for (const auto c : mChilds)
+	{
+		c->UpdateLate();
+	}
+}
 
 void Actor::AddChild(Actor* child)
 {

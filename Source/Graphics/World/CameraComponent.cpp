@@ -1,4 +1,4 @@
-#include "Camera.h"
+#include "CameraComponent.h"
 #include "Graphics/World/Actor.h"
 #include "Graphics/World/TransformComponent.h"
 

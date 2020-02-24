@@ -1,14 +1,15 @@
 #pragma once
 
-#include "Actor.h"
+#include "Component.h"
+#include "glm/glm.hpp"
 
 namespace World
 {
-	class Light : public Actor
+	class LightComponent : public Component
 	{
 	public:
-		Light();
-		~Light();
+		LightComponent();
+		~LightComponent();
 		
 		struct LightType
 		{
@@ -19,6 +20,8 @@ namespace World
 				COUNT
 			};
 		};
+
+		void Update(float deltaTime);
 
 		void SetLightType(LightType::T type);
 		LightType::T GetLightType()const;
@@ -31,8 +34,6 @@ namespace World
 
 		void SetRadius(float radius);
 		float GetRadius()const;
-
-		Type::T GetActorType() const override { return Type::Camera; };
 
 	private:
 		// Generic:

@@ -9,6 +9,10 @@ namespace World
 	public:
 		virtual ~Component() {}
 		virtual void Update(float deltaTime) = 0;
+		virtual void UpdateLate() {};
+
+		Actor* GetParent()const { return mParent; }
+
 	protected:
 		Actor* mParent = nullptr;
 	};

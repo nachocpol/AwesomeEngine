@@ -1,11 +1,9 @@
 #include "AssetImporter.h"
 #include "GraphicsInterface.h"
+#include "Graphics/World/SceneGraph.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
-
-#include "Graphics/World/SceneGraph.h"
 
 #include "DirectXTex.h"
 
@@ -14,9 +12,6 @@
 #include "assimp/postprocess.h"
 
 #include <stdint.h>
-
-
-#pragma optimize("",off)
 
 namespace Graphics
 {

@@ -6,6 +6,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 namespace Graphics
 {
@@ -62,12 +63,17 @@ namespace World
 	public:
 		ModelComponent();
 		void Update(float deltaTime);
-	
+		void UpdateLate();
+
 		void SetModel(Graphics::Model* model);
 		Graphics::Model* GetModel()const;
 
+		Math::AABBData GetWorldAABB(uint32_t meshIdx = 0)const;
+		Math::BSData GetWorldBS(uint32_t meshIdx = 0)const;
+
 	private:
 		Graphics::Model* mModel;
-	
+		std::vector<Math::AABBData> mWorldAABB;
+		std::vector<Math::BSData> mWorldBS;
 	};
 }

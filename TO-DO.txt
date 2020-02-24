@@ -1,19 +1,10 @@
 DOING:
 + Setup react physics 3D
 
-+ ECS ! !
-++ Rename camera -> camera component (the files)
-++ Cleanup old "components"
-++ Figure out where to place world aabb
-++ Light code
-++ Culling code
-
 TO-DO:
 + Proper asset import: model class, model factory
 + Tiled rendering, in prep for clustered rendering.
-
-+ Call bullet gen script!
-+ Remove optimize offs.
++ Model Component to another file.
 + Heap descriptor flush, make just one device call (CPU perf)
 + Unify nulls views compute!
 + Implement system to check if Null views are required (https://docs.microsoft.com/en-us/windows/win32/direct3d12/hardware-support)
@@ -37,6 +28,13 @@ TO-DO:
 + Clustered renderer.
 
 DONE:
++ Remove optimize offs.
++ ECS ! !
+++ Rename camera -> camera component (the files)
+++ Cleanup old "components"
+++ Figure out where to place world aabb
+++ Light code
+++ Culling code
 + Better build system for assimp and directx tex
 + Integrate bullet
 + Checking for descriptor re-use!

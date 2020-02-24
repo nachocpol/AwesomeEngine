@@ -7,9 +7,8 @@
 #include "Graphics/World/Model.h"
 #include "Graphics/World/SceneGraph.h"
 #include "Graphics/World/Actor.h"
-#include "Graphics/World/Renderable.h"
-#include "Graphics/World/Camera.h"
-#include "Graphics/World/Light.h"
+#include "Graphics/World/CameraComponent.h"
+#include "Graphics/World/LightComponent.h"
 #include "Graphics/TestRenderer.h"
 #include "Graphics/UI/IMGUI/imgui.h"
 #include "glm/glm.hpp"
@@ -49,29 +48,40 @@ void AdvancedApp::Init()
 
 	// Spawn some stuff
 	mCube = Graphics::ModelFactory::Get()->LoadFromFile("Meshes\\cube.obj", mGraphicsInterface);
-	//for (uint32_t x = 0; x < 7; ++x)
-	//{
-	//	for (uint32_t y = 0; y < 7; ++y)
-	//	{
-	//		World::Renderable* curCube = mScene.SpawnRenderable();
-	//		glm::vec3 curPos = glm::vec3(((float)x * 2.0f) - 7.0f, -2.0f, ((float)y * 2.0f) - 7.0f);
-	//		curCube->SetPosition(curPos);
-	//		curCube->SetRotation(glm::vec3(x+1,x,y+1));
-	//		curCube->SetModel(mCube);
-	//
-	//		World::Light* pointLight = mScene.SpawnLight();
-	//		pointLight->SetLightType(World::Light::LightType::Point);
-	//		pointLight->SetPosition(curPos + glm::vec3(0.0f,glm::linearRand(1.0f,2.0f),0.0f));
-	//		pointLight->SetColor(glm::vec3(glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f)));
-	//		pointLight->SetIntensity(glm::linearRand(0.5f, 2.0f));
-	//		pointLight->SetRadius(glm::linearRand(1.0f, 2.5f));
-	//	}
-	//}	
+	for (uint32_t x = 0; x < 7; ++x)
+	{
+		for (uint32_t y = 0; y < 7; ++y)
+		{
+			// Add a cube:
+			Actor* curCube = mScene.SpawnActor();
+
+			TransformComponent* curTransform = curCube->AddComponent<TransformComponent>();
+			glm::vec3 curPos = glm::vec3(((float)x * 2.0f) - 7.0f, -2.0f, ((float)y * 2.0f) - 7.0f);
+			curTransform->SetPosition(curPos);
+			curTransform->SetRotation(glm::vec3(x+1,x,y+1));
+
+			ModelComponent* modelComponent = curCube->AddComponent<ModelComponent>();
+			modelComponent->SetModel(mCube);
+		
+			// Add a light:
+			Actor* curLight = mScene.SpawnActor();
+
+			TransformComponent* lightTrans = curLight->AddComponent<TransformComponent>();
+			lightTrans->SetPosition(curPos + glm::vec3(0.0f,glm::linearRand(1.0f,2.0f),0.0f));
+
+			LightComponent* pointComp = curLight->AddComponent<LightComponent>();
+			pointComp->SetLightType(LightComponent::LightType::Point);
+			pointComp->SetColor(glm::vec3(glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f)));
+			pointComp->SetIntensity(glm::linearRand(0.5f, 2.0f));
+			pointComp->SetRadius(glm::linearRand(1.0f, 2.5f));
+		}
+	}	
 
 	// Ground
 	Actor* ground = mScene.SpawnActor();
 	TransformComponent* groundTransform = ground->AddComponent<TransformComponent>();
 	groundTransform->SetScale(20.0f, 0.1f, 20.0f);
+	groundTransform->SetPosition(0.0f, -5.0f, 0.0f);
 	ModelComponent* groundModel = ground->AddComponent<ModelComponent>();
 	groundModel->SetModel(mCube);
 

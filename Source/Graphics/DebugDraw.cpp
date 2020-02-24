@@ -1,5 +1,5 @@
 #include "DebugDraw.h"
-#include "World/Camera.h"
+#include "World/CameraComponent.h"	
 #include "Core/Logging.h"
 
 using namespace Graphics;

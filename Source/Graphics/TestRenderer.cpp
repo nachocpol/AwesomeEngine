@@ -1,11 +1,11 @@
 #define NOMINMAX
 
 #include "TestRenderer.h"
+#include "World/Actor.h"
 #include "World/SceneGraph.h"
-#include "World/Renderable.h"
 #include "World/Model.h"
-#include "World/Camera.h"
-#include "World/Light.h"
+#include "World/CameraComponent.h"
+#include "World/LightComponent.h"
 #include "Core/App/AppBase.h"
 #include "Platform/BaseWindow.h"
 #include "DebugDraw.h"
@@ -168,28 +168,28 @@ void TestRenderer::Render(SceneGraph* scene)
 		std::vector<RenderItem> renderSet;
 		ProcessVisibility(camera, rootActor->GetChilds(), renderSet);
 
-		// Gather lights:
+		// ! ! !
 		PrepareTiledCamera(camera);
 
-		// auto& sceneLights = scene->GetLights();
+		// Gather lights:
+		std::vector<LightComponent*> lights;
+		rootActor->FindComponents<LightComponent>(lights, true);
 
-		// mCurLightsData.resize(glm::min(kMaxLights, (int)sceneLights.size()));
-		mCurLightsData.resize(1);
-		// for (uint32_t i = 0; i < mCurLightsData.size(); ++i)
+		mCurLightsData.resize(glm::min(kMaxLights, (int)lights.size()));
+		for (uint32_t i = 0; i < mCurLightsData.size(); ++i)
 		{
-			//const auto light = sceneLights[i];
-			auto light = Light();
+			const auto light = lights[i];
 			Declarations::Light dataLight;
-			dataLight.Color = light.GetColor();
-			dataLight.Type = (int)light.GetLightType();
-			dataLight.Radius = light.GetRadius();
-			dataLight.Intensity = light.GetIntensity();
-			dataLight.PosDirection = glm::vec3(0.0f);// light.GetPosition();
-			mCurLightsData[0] = dataLight;
+			dataLight.Color = light->GetColor();
+			dataLight.Type = (int)light->GetLightType();
+			dataLight.Radius = light->GetRadius();
+			dataLight.Intensity = light->GetIntensity();
+			dataLight.PosDirection = light->GetParent()->FindComponent<TransformComponent>()->GetPosition();
+			mCurLightsData[i] = dataLight;
 
 			if (kRenderLightBounds)
 			{
-				//DebugDraw::GetInstance()->DrawWireSphere(dataLight.PosDirection, dataLight.Radius, glm::vec4(light->GetColor(), 1.0f));
+				DebugDraw::GetInstance()->DrawWireSphere(dataLight.PosDirection, dataLight.Radius, glm::vec4(light->GetColor(), 1.0f));
 			}
 		}
 		mCurLightCount = (int)mCurLightsData.size();
@@ -201,7 +201,7 @@ void TestRenderer::Render(SceneGraph* scene)
 		DrawOriginGizmo();
 		
 		// Flush debug draw
-		// DebugDraw::GetInstance()->Flush(camera);
+		DebugDraw::GetInstance()->Flush(camera);
 
 		mGraphicsInterface->DisableAllTargets();
 
@@ -237,48 +237,48 @@ void TestRenderer::ProcessVisibility(World::CameraComponent* camera, const std::
 		ModelComponent* modelComponent = actor->FindComponent<ModelComponent>();
 		if (modelComponent)
 		{
-			RenderItem item;
-
-			// TO-DO: I need to think where to put the World AABB and BS...
-			//
-			//const auto aabb = renderable->GetWorldAABB(0);
-			//const auto sb = renderable->GetWorldBS(0);
-			//
-			//Math::BSData bsViewSpace;
-			//bsViewSpace.Center = curInvView * glm::vec4(sb.Center, 1.0f);
-			//bsViewSpace.Radius = sb.Radius;
-
-			bool inside = true;
-			//for (uint32_t i = 0; i < 6; ++i)
-			//{
-			//	auto res = Math::PlaneSphereIntersection(cameraFrustumPlanes[i], bsViewSpace);
-			//	bool curInside = (res == Math::IntersectionResult::Inside) || (res == Math::IntersectionResult::Touching);
-			//	inside &= curInside;
-			//	if (!inside)
-			//	{
-			//		break;
-			//	}
-			//}
-
-			// Mesh is visible, so add it to the render items:
-			if (inside)
+			Model* model = modelComponent->GetModel();
+			for (uint32_t meshIdx = 0; meshIdx < model->NumMeshes; ++meshIdx)
 			{
-				item.Meshes = modelComponent->GetModel()->Meshes;
-				item.NumMeshes = modelComponent->GetModel()->NumMeshes;
-				item.WorldMatrix = actor->FindComponent<TransformComponent>()->GetWorldTransform();
+				const auto aabb = modelComponent->GetWorldAABB(meshIdx);
+				const auto sb = modelComponent->GetWorldBS(meshIdx);
 
-				renderItems.push_back(item);
+				Math::BSData bsViewSpace;
+				bsViewSpace.Center = curInvView * glm::vec4(sb.Center, 1.0f);
+				bsViewSpace.Radius = sb.Radius;
 
-				// Draw actor bounds:
-				if (kRenderBounds)
+				// Check that the BS is inside the camera frustum:
+				bool inside = true;
+				for (uint32_t i = 0; i < 6; ++i)
 				{
-					//DebugDraw::GetInstance()->DrawAABB(aabb.Min, aabb.Max);
-					//DebugDraw::GetInstance()->DrawWireSphere(sb.Center, sb.Radius);
+					auto res = Math::PlaneSphereIntersection(cameraFrustumPlanes[i], bsViewSpace);
+					bool curInside = (res == Math::IntersectionResult::Inside) || (res == Math::IntersectionResult::Touching);
+					inside &= curInside;
+					if (!inside)
+					{
+						break;
+					}
+				}
+
+				// Mesh is visible, so add it to the render items:
+				if (inside)
+				{
+					RenderItem item;
+					item.MeshItem = &model->Meshes[meshIdx];
+					item.WorldMatrix = actor->FindComponent<TransformComponent>()->GetWorldTransform();
+					renderItems.push_back(item);
+
+					// Draw actor bounds:
+					if (kRenderBounds)
+					{
+						DebugDraw::GetInstance()->DrawAABB(aabb.Min, aabb.Max);
+						DebugDraw::GetInstance()->DrawWireSphere(sb.Center, sb.Radius);
+					}
 				}
 			}
 		}
 		
-		
+		// Process child visibility:
 		if (actor->GetNumChilds() > 0)
 		{
 			ProcessVisibility(camera, actor->GetChilds(), renderItems);
@@ -361,13 +361,13 @@ void TestRenderer::RenderItems(World::CameraComponent* camera, const std::vector
 			mItemData.World = item.WorldMatrix;
 			mItemData.NumLights = mCurLightCount;
 
-			Mesh* meshes = item.Meshes;
+			Mesh* mesh = item.MeshItem;
 			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, Declarations::kCameraDataSlot, sizeof(Declarations::CameraData), &mCameraData);
 			mGraphicsInterface->SetConstantBuffer(mItemDataCb, Declarations::kItemDataSlot, sizeof(Declarations::ItemData), &mItemData);
 			mGraphicsInterface->SetResource(mLightsListSB, Declarations::kLightsSlot);
-			mGraphicsInterface->SetVertexBuffer(meshes[0].VertexBuffer, meshes[0].VertexSize * meshes[0].NumVertex, meshes[0].VertexSize);
-			mGraphicsInterface->SetIndexBuffer(meshes[0].IndexBuffer, meshes[0].NumIndices * sizeof(uint32_t), Graphics::Format::R_32_Uint);
-			mGraphicsInterface->DrawIndexed(meshes[0].NumIndices);
+			mGraphicsInterface->SetVertexBuffer(mesh->VertexBuffer, mesh->VertexSize * mesh->NumVertex, mesh->VertexSize);
+			mGraphicsInterface->SetIndexBuffer(mesh->IndexBuffer, mesh->NumIndices * sizeof(uint32_t), Graphics::Format::R_32_Uint);
+			mGraphicsInterface->DrawIndexed(mesh->NumIndices);
 		}
 	}
 }
