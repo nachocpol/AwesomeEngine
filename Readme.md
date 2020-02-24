@@ -11,9 +11,9 @@ This is my DX12 rendering framework.
 
 **To build:**
 
-1. First, you will need to generate the assimp solution using CMake GUI. Set generator to: **Visual Studio 15 2017 Win64**. Then go ahead and generate the solution.
+1. Generate the assimp solution using CMake.
 
-2. Go into Depen/bullet and run *build_visual_studio_vr_pybullet_double.bat*.
+2. Do the same for reactphysics3D.
 
 3. Run *BuildDepen.bat* this will compile the dependencies.
 
