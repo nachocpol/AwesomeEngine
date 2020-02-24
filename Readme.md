@@ -9,7 +9,7 @@ This is my DX12 rendering framework.
 * MSBuild 15.0 (it should be added to your PATH)
 * CMake
 
-** Dependencies ** 
+**Dependencies:** 
 * Premake
 * DirectX Tex
 * GLM
@@ -17,7 +17,7 @@ This is my DX12 rendering framework.
 * Assimp
 * ReactPhysics3D
 
-**To build:**
+**How to build:**
 
 1. Generate the assimp solution using CMake.
 
