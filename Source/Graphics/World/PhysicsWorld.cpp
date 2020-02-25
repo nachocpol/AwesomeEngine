@@ -96,3 +96,38 @@ void World::RigidBodyComponent::SetBodyType(const RigidBodyComponent::Type::T& t
 		mRigidBody->setType(t == Type::Dynamic ? BodyType::DYNAMIC : (t == Type::Kinematic ? BodyType::KINEMATIC : BodyType::STATIC));
 	}
 }
+
+void RigidBodyComponent::AddCollider(ColliderComponent* collider, float mass, glm::mat4 transform)
+{
+	Transform colliderTransform;
+	colliderTransform.setFromOpenGL(&transform[0][0]);
+
+	ProxyShape* proxy = mRigidBody->addCollisionShape(collider->GetCollisionShape(), colliderTransform, mass);
+}
+
+void RigidBodyComponent::RemoveCollider(ColliderComponent* collider)
+{
+}
+
+SphereColliderComponent::SphereColliderComponent() :
+	 mSphereShape(nullptr)
+{
+	mSphereShape = new SphereShape(1.0f);
+}
+
+reactphysics3d::CollisionShape* SphereColliderComponent::GetCollisionShape()
+{
+	return mSphereShape;
+}
+
+BoxColliderComponent::BoxColliderComponent():
+	mBoxShape(nullptr)
+{
+	// 1x1x1 box
+	mBoxShape = new BoxShape(Vector3(0.5f, 0.5f, 0.5f));
+}
+
+reactphysics3d::CollisionShape* BoxColliderComponent::GetCollisionShape()
+{
+	return mBoxShape;
+}

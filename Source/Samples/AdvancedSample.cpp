@@ -65,7 +65,9 @@ void AdvancedApp::Init()
 			modelComponent->SetModel(mCube);
 
 			RigidBodyComponent* rbComp = curCube->AddComponent<RigidBodyComponent>();
-		
+
+			rbComp->AddCollider(curCube->AddComponent<BoxColliderComponent>());
+
 			// Add a light:
 			Actor* curLight = mScene.SpawnActor();
 
@@ -81,12 +83,21 @@ void AdvancedApp::Init()
 	}	
 
 	// Ground
-	Actor* ground = mScene.SpawnActor();
-	TransformComponent* groundTransform = ground->AddComponent<TransformComponent>();
-	groundTransform->SetScale(20.0f, 0.1f, 20.0f);
-	groundTransform->SetPosition(0.0f, -5.0f, 0.0f);
-	ModelComponent* groundModel = ground->AddComponent<ModelComponent>();
-	groundModel->SetModel(mCube);
+	{
+		Actor* ground = mScene.SpawnActor();
+		
+		TransformComponent* groundTransform = ground->AddComponent<TransformComponent>();
+		groundTransform->SetScale(20.0f, 0.1f, 20.0f);
+		groundTransform->SetPosition(0.0f, -5.0f, 0.0f);
+
+		ModelComponent* groundModel = ground->AddComponent<ModelComponent>();
+		groundModel->SetModel(mCube);
+
+		RigidBodyComponent* groudRb = ground->AddComponent<RigidBodyComponent>();
+		groudRb->SetBodyType(RigidBodyComponent::Type::Static);
+
+		groudRb->AddCollider(ground->AddComponent<BoxColliderComponent>());
+	}
 
 	//sun = mScene.SpawnRenderable();
 	//earth = mScene.SpawnRenderable(sun);

@@ -94,5 +94,6 @@ RigidBodyComponent* Actor::AddComponent<RigidBodyComponent>()
 	rbComponent->mParent = this;
 	mComponents.push_back(rbComponent);
 	mSceneOwner->GetPhysicsWorld()->AddRigidBody(rbComponent);
+	RigidBody = rbComponent;
 	return rbComponent;
 }

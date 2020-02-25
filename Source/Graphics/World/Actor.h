@@ -35,8 +35,9 @@ namespace World
 		virtual void Update(float deltaTime);
 		virtual void UpdateLate();
 
-		// Simple getter for the transform component:
+		// Getters for components frequently used
 		TransformComponent* Transform = nullptr;
+		RigidBodyComponent* RigidBody = nullptr;
 
 	protected:
 		void AddChild(Actor* child);
