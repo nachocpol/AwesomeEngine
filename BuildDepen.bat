@@ -18,15 +18,15 @@ MSBuild.exe "Depen/assimp/Assimp.sln" /target:Build /p:Configuration=Release /p:
 
 echo "Reactphysics3D"
 
-MSBuild.exe "Depen/reactphysics3d/REACTPHYSICS3D.sln" /target:Build /p:Configuration=Debug /p:Platform=x64 /p:WindowsTargetPlatformVersion=10.0.16299.0 /p:PlatformToolset=v141 /nologo
+::MSBuild.exe "Depen/reactphysics3d/REACTPHYSICS3D.sln" /target:Build /p:Configuration=Debug /p:Platform=x64 /p:WindowsTargetPlatformVersion=10.0.16299.0 /p:PlatformToolset=v141 /nologo
 
-MSBuild.exe "Depen/reactphysics3d/REACTPHYSICS3D.sln" /target:Build /p:Configuration=Release /p:Platform=x64 /p:WindowsTargetPlatformVersion=10.0.16299.0 /p:PlatformToolset=v141 /nologo
+::MSBuild.exe "Depen/reactphysics3d/REACTPHYSICS3D.sln" /target:Build /p:Configuration=Release /p:Platform=x64 /p:WindowsTargetPlatformVersion=10.0.16299.0 /p:PlatformToolset=v141 /nologo
 
-:: echo "====== Bullet3 ======"
+echo "====== PhysX ======"
 
-:: MSBuild.exe "Depen/bullet/build3/vs2010/0_Bullet3Solution.sln" /target:Build /p:Configuration=Debug /p:Platform=x64 /p:WindowsTargetPlatformVersion=10.0.16299.0 /p:PlatformToolset=v141 /nologo
+MSBuild.exe "Depen/PhysX/physx/compiler/vc15win64/PhysXSDK.sln" /target:Build /p:Configuration=Debug /p:Platform=x64 /p:WindowsTargetPlatformVersion=10.0.16299.0 /p:PlatformToolset=v141 /nologo
 
-:: MSBuild.exe "Depen/bullet/build3/vs2010/0_Bullet3Solution.sln" /target:Build /p:Configuration=Release /p:Platform=x64 /p:WindowsTargetPlatformVersion=10.0.16299.0 /p:PlatformToolset=v141 /nologo
+MSBuild.exe "Depen/PhysX/physx/compiler/vc15win64/PhysXSDK.sln" /target:Build /p:Configuration=Release /p:Platform=x64 /p:WindowsTargetPlatformVersion=10.0.16299.0 /p:PlatformToolset=v141 /nologo
 
 
 pause

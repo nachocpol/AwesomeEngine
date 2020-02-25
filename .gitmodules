@@ -17,3 +17,7 @@
 [submodule "Depen/reactphysics3d"]
 	path = Depen/reactphysics3d
 	url = https://github.com/DanielChappuis/reactphysics3d.git
+[submodule "Depen/PhysX"]
+	path = Depen/PhysX
+	url = https://github.com/NVIDIAGameWorks/PhysX.git
+	branch = 4.1

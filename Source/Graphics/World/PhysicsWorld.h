@@ -36,6 +36,7 @@ namespace World
 	class RigidBodyComponent : public Component
 	{
 		friend PhysicsWorld;
+		friend ColliderComponent;
 	public:
 		RigidBodyComponent();
 
@@ -61,24 +62,26 @@ namespace World
 		Type::T GetBodyType()const;
 		void SetBodyType(const Type::T& t);
 
-		void AddCollider(ColliderComponent* collider, float mass = 1.0f, glm::mat4 transform = glm::mat4(1.0f));
+		void AddCollider(ColliderComponent* collider, glm::mat4 transform = glm::mat4(1.0f));
 		void RemoveCollider(ColliderComponent* collider);
 
 	private:
 		reactphysics3d::RigidBody* mRigidBody;
 		Type::T mBodyType;
+		float mMass;
 	};
 
 	class ColliderComponent : public Component
 	{
 		friend RigidBodyComponent;
 	public:
+		ColliderComponent();
 		void Update(float deltaTime) {};
 
 	protected:
 		virtual reactphysics3d::CollisionShape* GetCollisionShape() { return nullptr; }
-
-	private:
+		RigidBodyComponent* mRigidBodyOwner;
+		reactphysics3d::ProxyShape* mProxyShape;
 	};
 
 	class SphereColliderComponent : public ColliderComponent
@@ -100,11 +103,15 @@ namespace World
 		BoxColliderComponent();
 		void Update(float deltaTime) {};
 
+		void SetLocalExtents(const glm::vec3& extents);
+		glm::vec3 GetLocalExtents()const;
+
 	protected:
 		reactphysics3d::CollisionShape* GetCollisionShape()override;
 
 	private:
 		reactphysics3d::BoxShape* mBoxShape;
+		glm::vec3 mLocalExtents;
 	};
 
 }

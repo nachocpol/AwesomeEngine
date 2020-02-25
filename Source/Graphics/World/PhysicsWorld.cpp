@@ -50,15 +50,17 @@ void PhysicsWorld::AddRigidBody(RigidBodyComponent* rigidBodyComponent)
 	// Create the rigid body:
 	rigidBodyComponent->mRigidBody = mDynamicsWorld->createRigidBody(rbTransform);
 	rigidBodyComponent->SetBodyType(RigidBodyComponent::Type::Dynamic);
+	rigidBodyComponent->mRigidBody->set
 }
 
-RigidBodyComponent::RigidBodyComponent():
+RigidBodyComponent::RigidBodyComponent() :
 	 mRigidBody(nullptr)
 	,mBodyType(Type::Dynamic)
+	,mMass(1.0f)
 {
 }
 
-void World::RigidBodyComponent::UpdatePhysics()
+void RigidBodyComponent::UpdatePhysics()
 {
 	if (mRigidBody)
 	{
@@ -83,12 +85,12 @@ void RigidBodyComponent::UpdateLate()
 	}
 }
 
-RigidBodyComponent::Type::T World::RigidBodyComponent::GetBodyType() const
+RigidBodyComponent::Type::T RigidBodyComponent::GetBodyType() const
 {
 	return mBodyType;
 }
 
-void World::RigidBodyComponent::SetBodyType(const RigidBodyComponent::Type::T& t)
+void RigidBodyComponent::SetBodyType(const RigidBodyComponent::Type::T& t)
 {
 	if (t != mBodyType)
 	{
@@ -99,13 +101,21 @@ void World::RigidBodyComponent::SetBodyType(const RigidBodyComponent::Type::T& t
 
 void RigidBodyComponent::AddCollider(ColliderComponent* collider, float mass, glm::mat4 transform)
 {
+	// Note that this transform shouldn't have any scale.
 	Transform colliderTransform;
 	colliderTransform.setFromOpenGL(&transform[0][0]);
 
-	ProxyShape* proxy = mRigidBody->addCollisionShape(collider->GetCollisionShape(), colliderTransform, mass);
+	// The collider saves the proxy reference:
+	collider->mProxyShape = mRigidBody->addCollisionShape(collider->GetCollisionShape(), colliderTransform, mass);
 }
 
 void RigidBodyComponent::RemoveCollider(ColliderComponent* collider)
+{
+}
+
+ColliderComponent::ColliderComponent() :
+	 mProxyShape(nullptr)
+	,mRigidBodyOwner(nullptr)
 {
 }
 
@@ -121,10 +131,32 @@ reactphysics3d::CollisionShape* SphereColliderComponent::GetCollisionShape()
 }
 
 BoxColliderComponent::BoxColliderComponent():
-	mBoxShape(nullptr)
+	 mBoxShape(nullptr)
+	,mLocalExtents(0.5f,0.5f,0.5f)
 {
 	// 1x1x1 box
-	mBoxShape = new BoxShape(Vector3(0.5f, 0.5f, 0.5f));
+	mBoxShape = new BoxShape(Vector3(mLocalExtents.x, mLocalExtents.y, mLocalExtents.z));
+}
+
+void BoxColliderComponent::SetLocalExtents(const glm::vec3& extents)
+{
+	if (extents != mLocalExtents)
+	{
+		mLocalExtents = extents;
+		if (mRigidBodyOwner)
+		{
+			mRigidBodyOwner->mRigidBody->removeCollisionShape(mProxyShape);
+			mProxyShape = nullptr;
+		}
+		delete mBoxShape;
+		mBoxShape = new BoxShape(Vector3(mLocalExtents.x, mLocalExtents.y, mLocalExtents.z));
+		
+	}
+}
+
+glm::vec3 BoxColliderComponent::GetLocalExtents() const
+{
+	return mLocalExtents;
 }
 
 reactphysics3d::CollisionShape* BoxColliderComponent::GetCollisionShape()
