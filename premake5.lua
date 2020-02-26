@@ -53,6 +53,10 @@ filter {"configurations:Release"}
 		"IrrXML",
 		"zlibstatic"
 	}
+	defines
+	{
+		"NDEBUG"
+	}
 
 project "Core"
 	kind "StaticLib"

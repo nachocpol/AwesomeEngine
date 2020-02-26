@@ -16,6 +16,7 @@ namespace World
 
 		void Initialize();
 		void Update(float deltaTime);
+		void Release();
 
 		void AddRigidBody(RigidBodyComponent* rigidBodyComponent);
 
