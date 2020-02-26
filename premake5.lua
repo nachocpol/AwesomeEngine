@@ -2,9 +2,15 @@ workspace "AwesomeSolution"
 	configurations { "Debug", "Release"}
 	platforms "x64"
 	systemversion "10.0.16299.0"
+	staticruntime "on"
 
 filter { "platforms:x64" }
 	defines { "PLATFORM_WINDOWS" }
+	disablewarnings 
+	{
+		"4006",
+		"4221"
+	}
 	includedirs 
 	{
 		"Source",
@@ -36,7 +42,12 @@ filter {"configurations:Debug"}
 		"DirectXTex",
 		"assimp-vc141-mtd",
 		"IrrXMLd",
-		"zlibstaticd"
+		"zlibstaticd",
+		"PhysXCommon_64",
+		"PhysX_64",
+		"PhysXFoundation_64",
+		"PhysXExtensions_static_64",
+		"PhysXPvdSDK_static_64"
 	}
 
 filter {"configurations:Release"}
@@ -51,7 +62,12 @@ filter {"configurations:Release"}
 		"DirectXTex",
 		"assimp-vc141-mt",
 		"IrrXML",
-		"zlibstatic"
+		"zlibstatic",
+		"PhysXCommon_64",
+		"PhysX_64",
+		"PhysXFoundation_64",
+		"PhysXExtensions_static_64",
+		"PhysXPvdSDK_static_64"
 	}
 	defines
 	{

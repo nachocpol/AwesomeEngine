@@ -1,5 +1,6 @@
 DOING:
-+ Setup react physics 3D
++ Physx link warnings..
+
 
 TO-DO:
 + Proper asset import: model class, model factory
@@ -28,6 +29,7 @@ TO-DO:
 + Clustered renderer.
 
 DONE:
++ Physicsx linking and stuff
 + Remove optimize offs.
 + ECS ! !
 ++ Rename camera -> camera component (the files)

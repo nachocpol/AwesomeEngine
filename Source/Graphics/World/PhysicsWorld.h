@@ -4,6 +4,17 @@
 
 #include "glm/glm.hpp"
 
+namespace physx
+{
+	class PxFoundation;
+	class PxPhysics;
+	class PxScene;
+	class PxPvd;
+	class PxDefaultCpuDispatcher;
+	class PxMaterial;
+	class PxRigidActor;
+}
+
 namespace World
 {
 	class RigidBodyComponent;
@@ -21,6 +32,15 @@ namespace World
 		void AddRigidBody(RigidBodyComponent* rigidBodyComponent);
 
 	private:
+		// One per instance.
+		physx::PxFoundation* mFoundation;
+		physx::PxPhysics* mPhysics;
+		physx::PxScene* mScene;
+		// PhysX Visual Debugger
+		physx::PxPvd* mPvd;
+		physx::PxDefaultCpuDispatcher* mCpuDispatcher;
+		physx::PxMaterial* mMaterial;
+
 	};
 
 	class RigidBodyComponent : public Component
@@ -57,6 +77,7 @@ namespace World
 	private:
 		Type::T mBodyType;
 		float mMass;
+		physx::PxRigidActor* mRigidBody;
 	};
 
 	class ColliderComponent : public Component
