@@ -66,7 +66,7 @@ void AdvancedApp::Init()
 
 			RigidBodyComponent* rbComp = curCube->AddComponent<RigidBodyComponent>();
 
-			rbComp->AddCollider(curCube->AddComponent<BoxColliderComponent>());
+			//rbComp->AddCollider(curCube->AddComponent<BoxColliderComponent>());
 
 			// Add a light:
 			Actor* curLight = mScene.SpawnActor();
@@ -96,7 +96,7 @@ void AdvancedApp::Init()
 		RigidBodyComponent* groudRb = ground->AddComponent<RigidBodyComponent>();
 		groudRb->SetBodyType(RigidBodyComponent::Type::Static);
 
-		groudRb->AddCollider(ground->AddComponent<BoxColliderComponent>());
+		//groudRb->AddCollider(ground->AddComponent<BoxColliderComponent>());
 	}
 
 	//sun = mScene.SpawnRenderable();

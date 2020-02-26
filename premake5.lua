@@ -16,7 +16,8 @@ filter { "platforms:x64" }
 		"Assets/Shaders",
 		"Depen/DirectXTex/DirectXTex",
 		"Depen/assimp/include",
-		"Depen/PhysX/physx/include"
+		"Depen/PhysX/physx/include",
+		"Depen/PhysX/pxshared/include",
 	}
 	files
 	{
@@ -35,8 +36,7 @@ filter {"configurations:Debug"}
 		"DirectXTex",
 		"assimp-vc141-mtd",
 		"IrrXMLd",
-		"zlibstaticd",
-		"reactphysics3d"
+		"zlibstaticd"
 	}
 
 filter {"configurations:Release"}
@@ -51,8 +51,7 @@ filter {"configurations:Release"}
 		"DirectXTex",
 		"assimp-vc141-mt",
 		"IrrXML",
-		"zlibstatic",
-		"reactphysics3d"
+		"zlibstatic"
 	}
 
 project "Core"
@@ -136,7 +135,9 @@ project "AwesomeAdvanced"
 		postbuildcommands 
 		{
 			"copy %{wks.location}Depen\\assimp\\bin\\%{cfg.buildcfg}\\assimp-vc141-mtd.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\assimp-vc141-mtd.dll",
-			--"copy %{wks.location}Depen\\assimp\\bin\\%{cfg.buildcfg}\\assimp-vc141-mtd.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\assimp-vc141-mtd.dll",
+			"copy %{wks.location}Depen\\PhysX\\physX\\bin\\win.x86_64.vc141.mt\\debug\\PhysXCommon_64.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\PhysXCommon_64.dll",
+			"copy %{wks.location}Depen\\PhysX\\physX\\bin\\win.x86_64.vc141.mt\\debug\\PhysX_64.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\PhysX_64.dll",
+			"copy %{wks.location}Depen\\PhysX\\physX\\bin\\win.x86_64.vc141.mt\\debug\\PhysXFoundation_64.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\PhysXFoundation_64.dll"
 		}
 	filter "configurations:Release"
 		optimize "On"
@@ -146,7 +147,10 @@ project "AwesomeAdvanced"
 		}
 		postbuildcommands 
 		{
-			"copy %{wks.location}Depen\\assimp\\bin\\%{cfg.buildcfg}\\assimp-vc141-mt.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\assimp-vc141-mt.dll"
+			"copy %{wks.location}Depen\\assimp\\bin\\%{cfg.buildcfg}\\assimp-vc141-mt.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\assimp-vc141-mt.dll",
+			"copy %{wks.location}Depen\\PhysX\\physX\\bin\\win.x86_64.vc141.mt\\release\\PhysXCommon_64.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\PhysXCommon_64.dll",
+			"copy %{wks.location}Depen\\PhysX\\physX\\bin\\win.x86_64.vc141.mt\\release\\PhysX_64.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\PhysX_64.dll",
+			"copy %{wks.location}Depen\\PhysX\\physX\\bin\\win.x86_64.vc141.mt\\release\\PhysXFoundation_64.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\PhysXFoundation_64.dll",
 		}
 
 --[[

@@ -5,8 +5,6 @@
 #include "TransformComponent.h"
 #include "PhysicsWorld.h"
 
-#include "reactphysics3d.h"
-
 using namespace World;
 
 SceneGraph::SceneGraph():
