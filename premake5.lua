@@ -16,7 +16,7 @@ filter { "platforms:x64" }
 		"Assets/Shaders",
 		"Depen/DirectXTex/DirectXTex",
 		"Depen/assimp/include",
-		"Depen/reactphysics3d/src"
+		"Depen/PhysX/physx/include"
 	}
 	files
 	{
@@ -28,7 +28,7 @@ filter {"configurations:Debug"}
 	{
 		"Depen/DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Debug",
 		"Depen/assimp/lib/Debug",
-		"Depen/reactphysics3d/lib/Debug"
+		"Depen/PhysX/physx/bin/win.x86_64.vc141.mt/debug"
 	}
 	links
 	{
@@ -44,7 +44,7 @@ filter {"configurations:Release"}
 	{
 		"Depen/DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Release",
 		"Depen/assimp/lib/Release",
-		"Depen/reactphysics3d/lib/Release"
+		"Depen/PhysX/physx/bin/win.x86_64.vc141.mt/release"
 	}
 	links
 	{
@@ -135,7 +135,8 @@ project "AwesomeAdvanced"
 		}
 		postbuildcommands 
 		{
-			"copy %{wks.location}Depen\\assimp\\bin\\%{cfg.buildcfg}\\assimp-vc141-mtd.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\assimp-vc141-mtd.dll"
+			"copy %{wks.location}Depen\\assimp\\bin\\%{cfg.buildcfg}\\assimp-vc141-mtd.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\assimp-vc141-mtd.dll",
+			--"copy %{wks.location}Depen\\assimp\\bin\\%{cfg.buildcfg}\\assimp-vc141-mtd.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\assimp-vc141-mtd.dll",
 		}
 	filter "configurations:Release"
 		optimize "On"
