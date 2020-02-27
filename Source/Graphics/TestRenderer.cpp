@@ -225,7 +225,7 @@ void TestRenderer::ProcessVisibility(World::CameraComponent* camera, const std::
 		DebugDraw::GetInstance()->DrawFrustum(viewToWorld, projProps.Aspect, projProps.VFov, projProps.Near, projProps.Far, glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
 	}
 
-	DrawTiledCamera(camera);
+	// DrawTiledCamera(camera);
 
 	// Camera frustum planes in viewspace. TO-DO: this could be computed just once
 	Math::Plane cameraFrustumPlanes[6];

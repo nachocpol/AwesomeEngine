@@ -7,8 +7,7 @@
 
 using namespace World;
 
-SceneGraph::SceneGraph():
-	mPhysicsWorld(nullptr)
+SceneGraph::SceneGraph()
 {
 }
 
@@ -19,8 +18,7 @@ SceneGraph::~SceneGraph()
 void World::SceneGraph::Initialize()
 {
 	// Physics representation of this scene graph:
-	mPhysicsWorld = new PhysicsWorld;
-	mPhysicsWorld->Initialize();
+	PhysicsWorld::GetInstance()->Initialize();
 	
 	// Add root entity:
 	mRoot = new Actor;
@@ -31,7 +29,7 @@ void World::SceneGraph::Initialize()
 void SceneGraph::UpdatePhysics(float deltaTime)
 {
 	// Update physics world:
-	mPhysicsWorld->Update(deltaTime);
+	PhysicsWorld::GetInstance()->Update(deltaTime);
 
 	// Then bring both in sync:
 	mRoot->UpdatePhysics();
@@ -64,9 +62,4 @@ Actor* SceneGraph::SpawnActor(Actor* parent)
 Actor* World::SceneGraph::GetRoot() const
 {
 	return mRoot;
-}
-
-PhysicsWorld* SceneGraph::GetPhysicsWorld() const
-{
-	return mPhysicsWorld;
 }

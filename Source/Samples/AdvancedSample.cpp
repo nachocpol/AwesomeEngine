@@ -57,7 +57,7 @@ void AdvancedApp::Init()
 			Actor* curCube = mScene.SpawnActor();
 
 			TransformComponent* curTransform = curCube->AddComponent<TransformComponent>();
-			glm::vec3 curPos = glm::vec3(((float)x * 2.0f) - 7.0f, -2.0f, ((float)y * 2.0f) - 7.0f);
+			glm::vec3 curPos = glm::vec3(((float)x * 2.0f) - 7.0f, 4.0f, ((float)y * 2.0f) - 7.0f);
 			curTransform->SetPosition(curPos);
 			curTransform->SetRotation(glm::vec3(x+1,x,y+1));
 
@@ -66,21 +66,28 @@ void AdvancedApp::Init()
 
 			RigidBodyComponent* rbComp = curCube->AddComponent<RigidBodyComponent>();
 
-			//rbComp->AddCollider(curCube->AddComponent<BoxColliderComponent>());
+			rbComp->AddCollider(curCube->AddComponent<BoxColliderComponent>());
 
 			// Add a light:
-			Actor* curLight = mScene.SpawnActor();
-
-			TransformComponent* lightTrans = curLight->AddComponent<TransformComponent>();
-			lightTrans->SetPosition(curPos + glm::vec3(0.0f,glm::linearRand(1.0f,2.0f),0.0f));
-
-			LightComponent* pointComp = curLight->AddComponent<LightComponent>();
-			pointComp->SetLightType(LightComponent::LightType::Point);
-			pointComp->SetColor(glm::vec3(glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f)));
-			pointComp->SetIntensity(glm::linearRand(0.5f, 2.0f));
-			pointComp->SetRadius(glm::linearRand(1.0f, 2.5f));
+			//Actor* curLight = mScene.SpawnActor();
+			//
+			//TransformComponent* lightTrans = curLight->AddComponent<TransformComponent>();
+			//lightTrans->SetPosition(curPos + glm::vec3(0.0f,glm::linearRand(1.0f,2.0f),0.0f));
+			//
+			//LightComponent* pointComp = curLight->AddComponent<LightComponent>();
+			//pointComp->SetLightType(LightComponent::LightType::Point);
+			//pointComp->SetColor(glm::vec3(glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f)));
+			//pointComp->SetIntensity(glm::linearRand(0.5f, 2.0f));
+			//pointComp->SetRadius(glm::linearRand(1.0f, 5.5f));
 		}
 	}	
+
+	Actor* sceneLight = mScene.SpawnActor();
+	TransformComponent* lightTrans = sceneLight->AddComponent<TransformComponent>();
+	lightTrans->SetPosition(0.0f, 2.0f, 0.0f);
+	LightComponent* lightComp = sceneLight->AddComponent<LightComponent>();
+	lightComp->SetRadius(20.0f);
+	lightComp->SetColor(glm::vec3(0.8f, 0.8f, 0.95f));
 
 	// Ground
 	{
@@ -88,7 +95,7 @@ void AdvancedApp::Init()
 		
 		TransformComponent* groundTransform = ground->AddComponent<TransformComponent>();
 		groundTransform->SetScale(20.0f, 0.1f, 20.0f);
-		groundTransform->SetPosition(0.0f, -5.0f, 0.0f);
+		groundTransform->SetPosition(0.0f, -3.5f, 0.0f);
 
 		ModelComponent* groundModel = ground->AddComponent<ModelComponent>();
 		groundModel->SetModel(mCube);
@@ -96,7 +103,9 @@ void AdvancedApp::Init()
 		RigidBodyComponent* groudRb = ground->AddComponent<RigidBodyComponent>();
 		groudRb->SetBodyType(RigidBodyComponent::Type::Static);
 
-		//groudRb->AddCollider(ground->AddComponent<BoxColliderComponent>());
+		BoxColliderComponent* boxCol = ground->AddComponent<BoxColliderComponent>();
+		boxCol->SetLocalExtents(glm::vec3(10.0f, 0.05f, 10.0f));
+		groudRb->AddCollider(boxCol);
 	}
 
 	//sun = mScene.SpawnRenderable();

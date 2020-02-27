@@ -21,7 +21,6 @@ namespace World
 	class Camera;
 	class Actor;
 	class Light;
-	class PhysicsWorld;
 	class SceneGraph
 	{
 	public:
@@ -36,10 +35,7 @@ namespace World
 
 		Actor* GetRoot()const;
 
-		PhysicsWorld* GetPhysicsWorld()const;
-
 	private:
 		Actor* mRoot;
-		PhysicsWorld* mPhysicsWorld;
 	};
 }

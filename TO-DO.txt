@@ -1,8 +1,9 @@
 DOING:
 + Physx link warnings..
-
++ Test physix stuff...
 
 TO-DO:
++ Make all  components take parent in constructor... uhmmm
 + Proper asset import: model class, model factory
 + Tiled rendering, in prep for clustered rendering.
 + Model Component to another file.

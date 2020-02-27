@@ -13,23 +13,32 @@ namespace physx
 	class PxDefaultCpuDispatcher;
 	class PxMaterial;
 	class PxRigidActor;
+	class PxShape;
 }
 
 namespace World
 {
 	class RigidBodyComponent;
+	class BoxColliderComponent;
+	class SphereColliderComponent;
 	class ColliderComponent;
 	class PhysicsWorld
 	{
-	public:
+		friend RigidBodyComponent;
+		friend BoxColliderComponent;
+		friend SphereColliderComponent;
+	private:
 		PhysicsWorld();
+		PhysicsWorld(const PhysicsWorld& other) {};
 		~PhysicsWorld();
-
+	public:
+		static PhysicsWorld* GetInstance();
 		void Initialize();
 		void Update(float deltaTime);
 		void Release();
 
 		void AddRigidBody(RigidBodyComponent* rigidBodyComponent);
+		void RemoveRigidBody(RigidBodyComponent* rigidBodyComponent);
 
 	private:
 		// One per instance.
@@ -45,10 +54,8 @@ namespace World
 
 	class RigidBodyComponent : public Component
 	{
-		friend PhysicsWorld;
-		friend ColliderComponent;
 	public:
-		RigidBodyComponent();
+		RigidBodyComponent(Actor* parent);
 
 		// We just finished updating the physics world, now it's a good point
 		// to sync the transform with the physics
@@ -72,9 +79,13 @@ namespace World
 		Type::T GetBodyType()const;
 		void SetBodyType(const Type::T& t);
 
+		void AddCollider(ColliderComponent* collider);
 		void RemoveCollider(ColliderComponent* collider);
 
 	private:
+		void CreateRigidBody();
+		void ReleaseRigidBody();
+
 		Type::T mBodyType;
 		float mMass;
 		physx::PxRigidActor* mRigidBody;
@@ -89,6 +100,7 @@ namespace World
 
 	protected:
 		RigidBodyComponent* mRigidBodyOwner;
+		physx::PxShape* mColliderShape;
 	};
 
 	class SphereColliderComponent : public ColliderComponent

@@ -90,10 +90,8 @@ TransformComponent* Actor::AddComponent<TransformComponent>()
 template<>
 RigidBodyComponent* Actor::AddComponent<RigidBodyComponent>()
 {
-	RigidBodyComponent* rbComponent = new RigidBodyComponent;
-	rbComponent->mParent = this;
+	RigidBodyComponent* rbComponent = new RigidBodyComponent(this);
 	mComponents.push_back(rbComponent);
-	mSceneOwner->GetPhysicsWorld()->AddRigidBody(rbComponent);
 	RigidBody = rbComponent;
 	return rbComponent;
 }

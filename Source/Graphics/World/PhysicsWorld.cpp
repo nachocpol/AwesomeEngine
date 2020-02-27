@@ -48,6 +48,16 @@ PhysicsWorld::~PhysicsWorld()
 
 }
 
+PhysicsWorld* World::PhysicsWorld::GetInstance()
+{
+	static PhysicsWorld* kInstance = nullptr;
+	if (!kInstance)
+	{
+		kInstance = new	PhysicsWorld;
+	}
+	return kInstance;
+}
+
 void PhysicsWorld::Initialize()
 {
 	mFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, kAllocator, kCallback);
@@ -79,41 +89,35 @@ void PhysicsWorld::Initialize()
 
 void PhysicsWorld::Update(float deltaTime)
 {
-	mScene->simulate(deltaTime);
+	if (deltaTime == 0.0f)return;
+	mScene->simulate(deltaTime/1000.0f);
 	mScene->fetchResults(true);
 }
 
 void PhysicsWorld::AddRigidBody(RigidBodyComponent* rigidBodyComponent)
 {
-	// This creates the rigid body!
-	if (rigidBodyComponent->GetBodyType() == RigidBodyComponent::Type::Static)
-	{
-		rigidBodyComponent->mRigidBody = mPhysics->createRigidStatic(PxTransform());
-	}
-	else
-	{
-		bool kinematic = rigidBodyComponent->GetBodyType() == RigidBodyComponent::Type::Kinematic;
-		rigidBodyComponent->mRigidBody = mPhysics->createRigidDynamic(PxTransform());
-		if (kinematic)
-		{
-			// TO-DO..
-		}
-	}
-
-	//rigidBodyComponent->mRigidBody->setMass(1);
-	PxRigidBodyExt::updateMassAndInertia(*(PxRigidBody*)rigidBodyComponent->mRigidBody, 1.0f);
-	// Add it to the scene:
-	mScene->addActor(*rigidBodyComponent->mRigidBody);
 }
 
-RigidBodyComponent::RigidBodyComponent() :
+void PhysicsWorld::RemoveRigidBody(RigidBodyComponent* rigidBodyComponent)
+{
+}
+
+RigidBodyComponent::RigidBodyComponent(Actor* parent) :
 	mBodyType(Type::Dynamic)
 	,mMass(1.0f)
 {
+	mParent = parent;
+	CreateRigidBody();
 }
 
 void RigidBodyComponent::UpdatePhysics()
 {
+	PxTransform updatedTransform = mRigidBody->getGlobalPose();
+
+	mParent->Transform->SetPosition(updatedTransform.p.x, updatedTransform.p.y, updatedTransform.p.z);
+	mParent->Transform->SetRotation(
+		glm::eulerAngles(glm::fquat(updatedTransform.q.x, updatedTransform.q.y, updatedTransform.q.z, updatedTransform.q.w
+	)));
 }
 
 void RigidBodyComponent::UpdateLate()
@@ -127,15 +131,66 @@ RigidBodyComponent::Type::T RigidBodyComponent::GetBodyType() const
 
 void RigidBodyComponent::SetBodyType(const RigidBodyComponent::Type::T& t)
 {
+	if (t != mBodyType)
+	{
+		mBodyType = t;
+		ReleaseRigidBody();
+		CreateRigidBody();
+	}
 }
 
+
+void RigidBodyComponent::AddCollider(ColliderComponent* collider)
+{
+	mRigidBody->attachShape(*collider->mColliderShape);
+//	PxRigidBodyExt::updateMassAndInertia(*(PxRigidBody*)mRigidBody, 1.0f);
+}
 
 void RigidBodyComponent::RemoveCollider(ColliderComponent* collider)
 {
+	mRigidBody->detachShape(*collider->mColliderShape);
+}
+
+void RigidBodyComponent::CreateRigidBody()
+{
+	glm::vec3 pos = mParent->Transform->GetPosition();
+	glm::vec3 rot = mParent->Transform->GetRotation();
+	glm::fquat rotQuat = glm::quat(rot);
+
+	PxTransform initialTransform;
+	initialTransform.p = PxVec3(pos.x, pos.y, pos.z);
+	initialTransform.q = PxQuat(rotQuat.x, rotQuat.y, rotQuat.z, rotQuat.w);
+
+	PhysicsWorld* physWorld = PhysicsWorld::GetInstance();
+
+	// This creates the rigid body!
+	if (mBodyType == RigidBodyComponent::Type::Static)
+	{
+		mRigidBody = physWorld->mPhysics->createRigidStatic(initialTransform);
+	}
+	else
+	{
+		bool kinematic = mBodyType == RigidBodyComponent::Type::Kinematic;
+		mRigidBody = physWorld->mPhysics->createRigidDynamic(initialTransform);
+		if (kinematic)
+		{
+			// TO-DO..
+		}
+		((PxRigidDynamic*)mRigidBody)->setMass(1);
+		PxRigidBodyExt::updateMassAndInertia(*(PxRigidBody*)mRigidBody, 1.0f);
+	}
+	// Add it to the scene:
+	physWorld->mScene->addActor(*mRigidBody);
+}
+
+void RigidBodyComponent::ReleaseRigidBody()
+{
+	PhysicsWorld::GetInstance()->mScene->removeActor(*mRigidBody);
 }
 
 ColliderComponent::ColliderComponent() :
-	mRigidBodyOwner(nullptr)
+	 mRigidBodyOwner(nullptr)
+	,mColliderShape(nullptr)
 {
 }
 
@@ -147,10 +202,23 @@ SphereColliderComponent::SphereColliderComponent()
 BoxColliderComponent::BoxColliderComponent():
 	mLocalExtents(0.5f,0.5f,0.5f)
 {
+	PhysicsWorld* phys = PhysicsWorld::GetInstance();
+	mColliderShape = phys->mPhysics->createShape(
+		PxBoxGeometry(mLocalExtents.x, mLocalExtents.y, mLocalExtents.z), *phys->mMaterial
+	);
 }
 
 void BoxColliderComponent::SetLocalExtents(const glm::vec3& extents)
 {
+	PxBoxGeometry box;
+	if (mColliderShape->getBoxGeometry(box))
+	{
+		box.halfExtents.x = extents.x;
+		box.halfExtents.y = extents.y;
+		box.halfExtents.z = extents.z;
+		mColliderShape->setGeometry(box);
+	}
+	mLocalExtents = extents;
 }
 
 glm::vec3 BoxColliderComponent::GetLocalExtents() const
