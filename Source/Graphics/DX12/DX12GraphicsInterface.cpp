@@ -1,7 +1,10 @@
+
 #include "DX12GraphicsInterface.h"
 #include "Graphics/Platform/Windows/WWindow.h"
 #include "Core/Logging.h"
 #include "Graphics/Profiler.h"
+
+#include "Graphics/UI/IMGUI/imgui.h"
 
 #include <iostream>
 #include <vector>
@@ -590,6 +593,32 @@ namespace Graphics { namespace DX12 {
 		context->SetDescriptorHeaps(1, heaps);
 
 		mNumDrawCalls = 0;
+	}
+
+	void DX12GraphicsInterface::RenderUI()
+	{
+		if (ImGui::BeginMainMenuBar())
+		{
+			char filter[512];
+			if (ImGui::BeginMenu("Shaders"))
+			{
+				ImGui::InputText("Shader Filter", filter, 512);
+				if (ImGui::MenuItem("Recompile shader(s)!"))
+				{
+					INFO("Recompiling shaders");
+					for (int i = 0; i < MAX_GRAPHICS_PIPELINES; ++i)
+					{
+						if (mGraphicsPipelines[i].Pso)
+						{
+							//GraphicsPipelineEntry& p = mGraphicsPipelines[i];
+							//ReloadGraphicsPipeline(p);
+						}
+					}
+				}
+				ImGui::EndMenu();
+			}
+			ImGui::EndMainMenuBar();
+		}
 	}
 
 	void DX12GraphicsInterface::EndFrame()

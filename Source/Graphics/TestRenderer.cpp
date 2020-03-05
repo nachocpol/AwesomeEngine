@@ -131,11 +131,19 @@ static bool kRenderLightBounds = false;
 void TestRenderer::Render(SceneGraph* scene)
 { 
 	// Render UI:
-	ImGui::Begin("Renderer");
-	ImGui::Checkbox("Render Bounds", &kRenderBounds);
-	ImGui::Checkbox("Render Light Bounds", &kRenderLightBounds);
-	ImGui::Checkbox("Freeze Culling", &kFreezeCulling);
-	ImGui::End();
+	if (ImGui::BeginMainMenuBar())
+	{
+		if (ImGui::BeginMenu("Renderer"))
+		{
+			ImGui::Checkbox("Render Bounds", &kRenderBounds);
+			ImGui::Checkbox("Render Light Bounds", &kRenderLightBounds);
+			ImGui::Separator();
+			ImGui::Checkbox("Freeze Culling", &kFreezeCulling);
+			ImGui::EndMenu();
+		}
+		ImGui::EndMainMenuBar();
+	}
+	mGraphicsInterface->RenderUI();
 
 	Actor* rootActor = scene->GetRoot();
 	std::vector <CameraComponent*> cameras;
@@ -199,7 +207,9 @@ void TestRenderer::Render(SceneGraph* scene)
 		RenderItems(camera, renderSet);
 
 		DrawOriginGizmo();
-		
+	
+//		ImGui::ShowDemoWindow();
+
 		// Flush debug draw
 		DebugDraw::GetInstance()->Flush(camera);
 

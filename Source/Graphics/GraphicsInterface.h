@@ -275,6 +275,7 @@ namespace Graphics
 		~GraphicsInterface() {};
 		virtual bool Initialize(Platform::BaseWindow* ) = 0;
 		virtual void StartFrame() = 0;
+		virtual void RenderUI() = 0;
 		virtual void EndFrame() = 0;
 		virtual void FlushAndWait() = 0;
 		// If it is a GPUBuffer, size is the number of elements, and user should

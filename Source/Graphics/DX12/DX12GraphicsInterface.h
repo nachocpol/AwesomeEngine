@@ -154,6 +154,7 @@ namespace Graphics{ namespace DX12
 		~DX12GraphicsInterface();
 		bool Initialize(Platform::BaseWindow* targetWindow)final override;
 		void StartFrame()final override;
+		void RenderUI() final override;
 		void EndFrame()final override;
 		void FlushAndWait()final override;
 		BufferHandle CreateBuffer(BufferType::T type, CPUAccess::T cpuAccess, GPUAccess::T gpuAccess, uint64_t size, uint32_t stride = 0, void* data = nullptr)final override;
