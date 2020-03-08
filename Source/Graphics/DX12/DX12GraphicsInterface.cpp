@@ -338,7 +338,11 @@ namespace Graphics { namespace DX12 {
 		ID3D10Blob* error;
 		ID3D10Blob* sblob;
 
+#ifdef ROOT_SHADER_SOURCE
+		std::string path = std::string(ROOT_SHADER_SOURCE) + desc.ShaderPath;
+#else
 		std::string path = "../../Assets/Shaders/HLSL/" + desc.ShaderPath;
+#endif
 		std::wstring wpath(path.begin(), path.end());
 		std::string target;
 		switch (desc.Type)
