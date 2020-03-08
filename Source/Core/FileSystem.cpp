@@ -27,8 +27,13 @@ FileSystem* FileSystem::GetInstance()
 
 void FileSystem::Initialize()
 {
-	AddFileDevice({ "../../Assets/", FileDevice::Type::Assets, "assets" });
-	AddFileDevice({ "../../Assets/Shaders/HLSL/", FileDevice::Type::ShaderSource, "shadersrc" });
+	static bool kInitialized = false;
+	if (!kInitialized)
+	{
+		AddFileDevice({ "../../Assets/", FileDevice::Type::Assets, "assets" });
+		AddFileDevice({ "../../Assets/Shaders/HLSL/", FileDevice::Type::ShaderSource, "shadersrc" });
+		kInitialized = true;
+	}
 }
 
 void FileSystem::AddFileDevice(FileDevice device)
