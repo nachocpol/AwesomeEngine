@@ -121,6 +121,7 @@ namespace Graphics{namespace UI{
 			mGraphicsInterface->SetIndexBuffer(mIndexBuffer, mMaxIndices * (int)idxStride, idxFmt);
 			mGraphicsInterface->SetGraphicsPipeline(mGraphicsPipeline);
 			mGraphicsInterface->SetBlendFactors(imBlend);
+			mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
 			ImVec2 displayPos = drawPipe->DisplayPos;
 
 			uint32_t idxOffset = 0;
