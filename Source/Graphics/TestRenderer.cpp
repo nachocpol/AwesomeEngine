@@ -183,25 +183,28 @@ void TestRenderer::Render(SceneGraph* scene)
 		std::vector<LightComponent*> lights;
 		rootActor->FindComponents<LightComponent>(lights, true);
 
-		mCurLightsData.resize(glm::min(kMaxLights, (int)lights.size()));
-		for (uint32_t i = 0; i < mCurLightsData.size(); ++i)
+		if (!lights.empty())
 		{
-			const auto light = lights[i];
-			Declarations::Light dataLight;
-			dataLight.Color = light->GetColor();
-			dataLight.Type = (int)light->GetLightType();
-			dataLight.Radius = light->GetRadius();
-			dataLight.Intensity = light->GetIntensity();
-			dataLight.PosDirection = light->GetParent()->Transform->GetPosition();
-			mCurLightsData[i] = dataLight;
-
-			if (kRenderLightBounds)
+			mCurLightsData.resize(glm::min(kMaxLights, (int)lights.size()));
+			for (uint32_t i = 0; i < mCurLightsData.size(); ++i)
 			{
-				DebugDraw::GetInstance()->DrawWireSphere(dataLight.PosDirection, dataLight.Radius, glm::vec4(light->GetColor(), 1.0f));
+				const auto light = lights[i];
+				Declarations::Light dataLight;
+				dataLight.Color = light->GetColor();
+				dataLight.Type = (int)light->GetLightType();
+				dataLight.Radius = light->GetRadius();
+				dataLight.Intensity = light->GetIntensity();
+				dataLight.PosDirection = light->GetParent()->Transform->GetPosition();
+				mCurLightsData[i] = dataLight;
+
+				if (kRenderLightBounds)
+				{
+					DebugDraw::GetInstance()->DrawWireSphere(dataLight.PosDirection, dataLight.Radius, glm::vec4(light->GetColor(), 1.0f));
+				}
 			}
+			mCurLightCount = (int)mCurLightsData.size();
+			mGraphicsInterface->SetBufferData(mLightsListSB, Declarations::kLightsStride * mCurLightCount, 0, mCurLightsData.data());
 		}
-		mCurLightCount = (int)mCurLightsData.size();
-		mGraphicsInterface->SetBufferData(mLightsListSB, Declarations::kLightsStride * mCurLightCount, 0, mCurLightsData.data());
 
 		// Render items:
 		RenderItems(camera, renderSet);

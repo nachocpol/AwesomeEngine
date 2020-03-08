@@ -242,6 +242,12 @@ namespace Graphics { namespace DX12 {
 		for (int i = 0; i < NUM_BACK_BUFFERS; i++)
 		{
 			surface->SwapChain->GetBuffer(i, IID_PPV_ARGS(&surface->BackBuffers[i]));
+
+			// Name back buffer:
+			std::string name = "Back Buffer ";
+			name += std::to_string(i);
+			surface->BackBuffers[i]->SetName(std::wstring(name.begin(), name.end()).c_str());
+
 			mDevice->CreateRenderTargetView(surface->BackBuffers[i], nullptr, curHandle);
 			surface->RenderTargets[i] = curHandle;
 			curHandle.ptr += handleSize;
@@ -313,6 +319,12 @@ namespace Graphics { namespace DX12 {
 		{
 			mFrameHeap[i] = new DX12Heap;
 			mFrameHeap[i]->Initialize(mDevice, 1000000, true, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+			// Name this heap:
+			std::string name = "Frame Heap ";
+			name += std::to_string(i);
+			std::wstring wname = std::wstring(name.begin(), name.end());
+			mFrameHeap[i]->GetHeap()->SetName(wname.c_str());
 		}
 
 		// And some storage heaps
@@ -599,6 +611,9 @@ namespace Graphics { namespace DX12 {
 		mFrameHeap[idx]->Reset();
 		ID3D12DescriptorHeap* heaps[] = { mFrameHeap[idx]->GetHeap() };
 		context->SetDescriptorHeaps(1, heaps);
+
+		// New heap, so make sure we reset the binding state:
+		mBindingState.Reset();
 
 		mNumDrawCalls = 0;
 	}

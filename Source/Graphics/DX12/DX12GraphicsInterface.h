@@ -139,6 +139,25 @@ namespace Graphics{ namespace DX12
 			CD3DX12_CPU_DESCRIPTOR_HANDLE CPUView;
 			bool Null;
 		};
+		void Reset()
+		{
+			Dirty = true;
+			for (uint32_t cbv = 0; cbv < NUM_CBVS; ++cbv)
+			{
+				CBSlots[cbv].Null = true;
+				CBSlots[cbv].CPUView = CD3DX12_CPU_DESCRIPTOR_HANDLE();
+			}
+			for (uint32_t srv = 0; srv < NUM_SRVS; ++srv)
+			{
+				SRSlots[srv].Null = true;
+				SRSlots[srv].CPUView = CD3DX12_CPU_DESCRIPTOR_HANDLE();
+			}
+			for (uint32_t uav = 0; uav < NUM_UAVS; ++uav)
+			{
+				UASlots[uav].Null = true;
+				UASlots[uav].CPUView = CD3DX12_CPU_DESCRIPTOR_HANDLE();
+			}
+		}
 		Slot CBSlots[NUM_CBVS];
 		Slot SRSlots[NUM_SRVS];
 		Slot UASlots[NUM_UAVS];
