@@ -172,39 +172,3 @@ project "AwesomeAdvanced"
 			"copy %{wks.location}Depen\\PhysX\\physX\\bin\\win.x86_64.vc141.mt\\release\\PhysX_64.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\PhysX_64.dll",
 			"copy %{wks.location}Depen\\PhysX\\physX\\bin\\win.x86_64.vc141.mt\\release\\PhysXFoundation_64.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\PhysXFoundation_64.dll",
 		}
-
---[[
-project "AwesomeShowcase"
-	kind "ConsoleApp"
-	language "C++"
-	location "Temp/VSFiles"
-	targetdir "Build/%{cfg.platform}/%{cfg.buildcfg}"
-	files
-	{
-		"Source/Samples/**.h",
-		"Source/Samples/Showcase.cpp",
-		"Source/Samples/ShowcaseScene.cpp"
-	}
-	filter "configurations:Debug"
-		symbols "On"
-		libdirs
-		{
-			"../assimp/lib/Debug"
-		}
-		links
-		{
-			"Graphics", "Core",
-			"assimp-vc140-mt"
-		}
-	filter "configurations:Release"
-		optimize "On"
-		libdirs
-		{
-			"../assimp/lib/Release"
-		}
-		links
-		{
-			"Graphics", "Core",
-			"assimp-vc140-mt"
-		}
---]]

@@ -1,7 +1,6 @@
 DOING:
 + Physx link warnings..
 + Better way to recompile shaders
-+ Common toolbar
 
 TO-DO:
 + Make all  components take parent in constructor... uhmmm
@@ -31,6 +30,8 @@ TO-DO:
 + Clustered renderer.
 
 DONE:
++ Common toolbar
++ Delta time in seconds
 + Test physix stuff...
 + Physicsx linking and stuff
 + Remove optimize offs.

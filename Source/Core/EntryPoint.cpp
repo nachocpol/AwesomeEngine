@@ -14,8 +14,8 @@ void EntryImpl(AppBase* app)
 		app->Update();
 		app->EndFrame();
 
-		app->DeltaTime = timer.Stop();
-		app->TotalTime += (app->DeltaTime / 1000.0f);
+		app->DeltaTime = timer.Stop() / 1000.0f;
+		app->TotalTime += app->DeltaTime;
 	}
 	app->Release();
 }

@@ -90,7 +90,7 @@ void PhysicsWorld::Initialize()
 void PhysicsWorld::Update(float deltaTime)
 {
 	if (deltaTime == 0.0f)return;
-	mScene->simulate(deltaTime/1000.0f);
+	mScene->simulate(deltaTime);
 	mScene->fetchResults(true);
 }
 

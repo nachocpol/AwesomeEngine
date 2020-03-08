@@ -610,8 +610,7 @@ namespace Graphics { namespace DX12 {
 					{
 						if (mGraphicsPipelines[i].Pso)
 						{
-							//GraphicsPipelineEntry& p = mGraphicsPipelines[i];
-							//ReloadGraphicsPipeline(p);
+
 						}
 					}
 				}

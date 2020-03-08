@@ -29,7 +29,7 @@ public:
 	Graphics::Platform::BaseWindow* GetWindow()const;
 	// Total time in seconds the app has been running (in s)
 	float TotalTime;
-	// Last frame delta time (in ms)
+	// Last frame delta time (in s)
 	float DeltaTime;
 
 protected:

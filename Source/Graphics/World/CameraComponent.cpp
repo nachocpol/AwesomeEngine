@@ -32,7 +32,7 @@ void CameraComponent::Update(float deltaTime)
 			InputManager* input = InputManager::GetInstance();
 
 			// Update position
-			float hackSpeed = 0.005f * deltaTime;
+			float hackSpeed = 4.0f * deltaTime;
 			glm::vec3 position = transform->GetPosition();
 			if (input->IsKeyPressed('a'))
 			{
