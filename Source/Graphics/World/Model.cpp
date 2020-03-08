@@ -4,6 +4,7 @@
 #include "Actor.h"
 #include "TransformComponent.h"
 #include "Core/Logging.h"
+#include "Core/FileSystem.h"
 
 #include "assimp/Importer.hpp"
 #include "assimp/scene.h"
@@ -47,7 +48,13 @@ Model* Graphics::ModelFactory::LoadFromFile(std::string path, GraphicsInterface*
 	Model* model = new Model;
 	mModelCache[path] = model;
 
-	std::string fullPath = "..\\..\\Assets\\" + path;
+	std::string fullPath = path;
+	if (!Core::FileSystem::GetInstance()->FixupPath(fullPath))
+	{
+		assert(false);
+		return nullptr;
+	}
+
 	unsigned int assimpFlags = aiProcess_CalcTangentSpace | aiProcess_Triangulate;
 	bool isLeftHanded = true;
 	if (isLeftHanded)

@@ -34,11 +34,11 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 
 	GraphicsPipelineDescription pdesc = {};
 	pdesc.PixelShader.ShaderEntryPoint = "PSDebugDraw";
-	pdesc.PixelShader.ShaderPath = "DebugDraw.hlsl";
+	pdesc.PixelShader.ShaderPath = "shadersrc:DebugDraw.hlsl";
 	pdesc.PixelShader.Type = Graphics::ShaderType::Pixel;
 
 	pdesc.VertexShader.ShaderEntryPoint = "VSDebugDraw";
-	pdesc.VertexShader.ShaderPath = "DebugDraw.hlsl";
+	pdesc.VertexShader.ShaderPath = "shadersrc:DebugDraw.hlsl";
 	pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
 
 	Graphics::VertexInputDescription::VertexInputElement eles[2] =

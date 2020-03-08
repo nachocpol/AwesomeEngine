@@ -49,11 +49,11 @@ void TestRenderer::Initialize(AppBase * app)
 	{
 		Graphics::GraphicsPipelineDescription pdesc = {};
 		pdesc.PixelShader.ShaderEntryPoint = "PSSurface";
-		pdesc.PixelShader.ShaderPath = "Surface.hlsl";
+		pdesc.PixelShader.ShaderPath = "shadersrc:Surface.hlsl";
 		pdesc.PixelShader.Type = Graphics::ShaderType::Pixel;
 
 		pdesc.VertexShader.ShaderEntryPoint = "VSSurface";
-		pdesc.VertexShader.ShaderPath = "Surface.hlsl";
+		pdesc.VertexShader.ShaderPath = "shadersrc:Surface.hlsl";
 		pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
 
 		Graphics::VertexInputDescription::VertexInputElement eles[4] =
@@ -83,10 +83,10 @@ void TestRenderer::Initialize(AppBase * app)
 		desc.DepthEnabled = false;
 		desc.DepthFunction = Graphics::Always;
 		desc.VertexShader.ShaderEntryPoint = "VSFullScreen";
-		desc.VertexShader.ShaderPath = "Common.hlsl";
+		desc.VertexShader.ShaderPath = "shadersrc:Common.hlsl";
 		desc.VertexShader.Type = Graphics::ShaderType::Vertex;
 		desc.PixelShader.ShaderEntryPoint = "PSToneGamma";
-		desc.PixelShader.ShaderPath = "Common.hlsl";
+		desc.PixelShader.ShaderPath = "shadersrc:Common.hlsl";
 		desc.PixelShader.Type = Graphics::ShaderType::Pixel;
 
 		Graphics::VertexInputDescription::VertexInputElement eles[1] =

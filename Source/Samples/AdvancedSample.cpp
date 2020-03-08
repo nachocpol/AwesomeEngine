@@ -48,7 +48,7 @@ void AdvancedApp::Init()
 	mRenderer.Initialize(this);
 
 	// Spawn some stuff
-	mCube = Graphics::ModelFactory::Get()->LoadFromFile("Meshes\\cube.obj", mGraphicsInterface);
+	mCube = Graphics::ModelFactory::Get()->LoadFromFile("assets:Meshes/cube.obj", mGraphicsInterface);
 	for (uint32_t x = 0; x < 7; ++x)
 	{
 		for (uint32_t y = 0; y < 7; ++y)

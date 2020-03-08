@@ -4,6 +4,7 @@
 #include "Graphics/DX12/DX12GraphicsInterface.h"
 #include "Graphics/UI/UIInterface.h"
 #include "Graphics/DebugDraw.h"
+#include "Core/FileSystem.h"
 
 AppBase::AppBase():
 	 TotalTime(0.0f)
@@ -25,6 +26,8 @@ void AppBase::Configure(const char* name, bool fullScreen)
 
 void AppBase::Init()
 {
+	Core::FileSystem::GetInstance()->Initialize();
+
 	mWindow = new Graphics::Platform::Windows::WWindow();
 	mWindow->Initialize(mName, mFullScreen, 1920, 1080);
 

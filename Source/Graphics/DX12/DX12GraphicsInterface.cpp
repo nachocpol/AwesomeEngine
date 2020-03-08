@@ -3,6 +3,7 @@
 #include "Graphics/Platform/Windows/WWindow.h"
 #include "Core/Logging.h"
 #include "Graphics/Profiler.h"
+#include "Core/FileSystem.h"
 
 #include "Graphics/UI/IMGUI/imgui.h"
 
@@ -338,12 +339,15 @@ namespace Graphics { namespace DX12 {
 		ID3D10Blob* error;
 		ID3D10Blob* sblob;
 
-#ifdef ROOT_SHADER_SOURCE
-		std::string path = std::string(ROOT_SHADER_SOURCE) + desc.ShaderPath;
-#else
-		std::string path = "../../Assets/Shaders/HLSL/" + desc.ShaderPath;
-#endif
-		std::wstring wpath(path.begin(), path.end());
+		std::string fixedupPath = desc.ShaderPath;
+		if (!Core::FileSystem::GetInstance()->FixupPath(fixedupPath))
+		{
+			ERR("Could not Fixup path: %s", fixedupPath.c_str());
+			assert(false); // For now, just hard fail.
+			return false;
+		}
+
+		std::wstring wpath(fixedupPath.begin(), fixedupPath.end());
 		std::string target;
 		switch (desc.Type)
 		{

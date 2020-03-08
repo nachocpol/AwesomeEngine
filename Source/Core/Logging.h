@@ -3,13 +3,7 @@
 #include <stdio.h>
 #include <windows.h> // this is not cross plat.
 
-namespace Core
-{
-
-}
-
 #define OUT_DEBUG_STR(str) OutputDebugStringA(str);
-
 
 static void OUT_IMPL(const char* msg, const char* type, const char* file, int line, ...)
 {
@@ -24,8 +18,7 @@ static void OUT_IMPL(const char* msg, const char* type, const char* file, int li
 	_splitpath_s(file, NULL, 0, NULL, 0, fileName, 128, fileExt, 8);
 
 	char fullMsg[2048];
-	//sprintf(fullMsg, "%s(%s%s)(%d) %s \n", type, fileName, fileExt, line, buff);
-	sprintf_s(fullMsg, 2048, "%s(%s%s)(%d) %s \n", type, fileName, fileExt, line, buff);
+	sprintf_s(fullMsg, 2048, "%s(%s%s)(%d): %s \n", type, fileName, fileExt, line, buff);
 	OUT_DEBUG_STR(fullMsg);
 	va_end(argptr);
 }

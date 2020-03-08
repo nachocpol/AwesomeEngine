@@ -199,11 +199,11 @@ namespace Graphics{namespace UI{
 		// Render pipeline
 		Graphics::GraphicsPipelineDescription pdesc;
 		pdesc.VertexShader.ShaderEntryPoint = "VSUI";
-		pdesc.VertexShader.ShaderPath = "Common.hlsl";
+		pdesc.VertexShader.ShaderPath = "shadersrc:Common.hlsl";
 		pdesc.VertexShader.Type = ShaderType::Vertex;
 
 		pdesc.PixelShader.ShaderEntryPoint = "PSUI";
-		pdesc.PixelShader.ShaderPath = "Common.hlsl";
+		pdesc.PixelShader.ShaderPath = "shadersrc:Common.hlsl";
 		pdesc.PixelShader.Type = ShaderType::Pixel;
 
 		pdesc.ColorFormats[0] = mGraphicsInterface->GetOutputFormat();

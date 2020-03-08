@@ -1,6 +1,7 @@
 DOING:
 + Physx link warnings..
 + Better way to recompile shaders
++ File mount system
 
 TO-DO:
 + Make all  components take parent in constructor... uhmmm
