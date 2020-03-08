@@ -1,9 +1,9 @@
 DOING:
 + Physx link warnings..
 + Better way to recompile shaders
-+ File mount system
 
 TO-DO:
++ Command line parser and getter
 + Make all  components take parent in constructor... uhmmm
 + Proper asset import: model class, model factory
 + Tiled rendering, in prep for clustered rendering.
@@ -31,6 +31,7 @@ TO-DO:
 + Clustered renderer.
 
 DONE:
++ File mount system
 + Common toolbar
 + Delta time in seconds
 + Test physix stuff...
