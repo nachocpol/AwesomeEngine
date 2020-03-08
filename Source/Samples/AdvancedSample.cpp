@@ -53,7 +53,6 @@ void AdvancedApp::Init()
 	{
 		for (uint32_t y = 0; y < 7; ++y)
 		{
-			/*
 			// Add a cube:
 			Actor* curCube = mScene.SpawnActor();
 
@@ -68,7 +67,7 @@ void AdvancedApp::Init()
 			RigidBodyComponent* rbComp = curCube->AddComponent<RigidBodyComponent>();
 
 			rbComp->AddCollider(curCube->AddComponent<BoxColliderComponent>());
-			*/
+
 			// Add a light:
 			//Actor* curLight = mScene.SpawnActor();
 			//
@@ -83,16 +82,15 @@ void AdvancedApp::Init()
 		}
 	}	
 
-	//Actor* sceneLight = mScene.SpawnActor();
-	//TransformComponent* lightTrans = sceneLight->AddComponent<TransformComponent>();
-	//lightTrans->SetPosition(0.0f, 2.0f, 0.0f);
-	//LightComponent* lightComp = sceneLight->AddComponent<LightComponent>();
-	//lightComp->SetRadius(20.0f);
-	//lightComp->SetColor(glm::vec3(0.8f, 0.8f, 0.95f));
+	Actor* sceneLight = mScene.SpawnActor();
+	TransformComponent* lightTrans = sceneLight->AddComponent<TransformComponent>();
+	lightTrans->SetPosition(0.0f, 2.0f, 0.0f);
+	LightComponent* lightComp = sceneLight->AddComponent<LightComponent>();
+	lightComp->SetRadius(20.0f);
+	lightComp->SetColor(glm::vec3(0.8f, 0.8f, 0.95f));
 
 	// Ground
 	{
-		/*
 		Actor* ground = mScene.SpawnActor();
 		
 		TransformComponent* groundTransform = ground->AddComponent<TransformComponent>();
@@ -108,7 +106,6 @@ void AdvancedApp::Init()
 		BoxColliderComponent* boxCol = ground->AddComponent<BoxColliderComponent>();
 		boxCol->SetLocalExtents(glm::vec3(10.0f, 0.05f, 10.0f));
 		groudRb->AddCollider(boxCol);
-		*/
 	}
 
 	//sun = mScene.SpawnRenderable();
@@ -121,7 +118,6 @@ void AdvancedApp::Init()
 	//moon->SetModel(mCube);
 	//moon->SetPosition(glm::vec3(3.0f, 0.0f, 0.0f));
 
-	/*
 	mCamera = mScene.SpawnActor();
 	TransformComponent* camTransform = mCamera->AddComponent<TransformComponent>();
 	camTransform->SetPosition(glm::vec3(-12.0f, 1.0f, 0.0f));
@@ -130,7 +126,6 @@ void AdvancedApp::Init()
 	camComponent->ConfigureProjection(
 		(float)mWindow->GetWidth() / (float)mWindow->GetHeight(), 75.0f, 0.1f, 40.0f
 	);
-	*/
 	
 	mGraphicsInterface->FlushAndWait();
 }

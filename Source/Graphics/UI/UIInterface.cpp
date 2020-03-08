@@ -124,8 +124,8 @@ namespace Graphics{namespace UI{
 			mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
 			ImVec2 displayPos = drawPipe->DisplayPos;
 
-			uint32_t idxOffset = 0;
-			uint32_t vtxOffset = 0;
+			int32_t idxOffset = 0;
+			int32_t vtxOffset = 0;
 
 			// Iterate over each command list
 			for (int i = 0; i < drawPipe->CmdListsCount; i++)
@@ -148,8 +148,8 @@ namespace Graphics{namespace UI{
 							mGraphicsInterface->SetConstantBuffer(mUIDataHandle, Declarations::kUIDataSlot, sizeof(mUIData), &mUIData.ProjectionUI);
 							mGraphicsInterface->SetScissor
 							(
-								curCmd->ClipRect.x - displayPos.x, curCmd->ClipRect.y - displayPos.y, 
-								curCmd->ClipRect.z - displayPos.x, curCmd->ClipRect.w - displayPos.y
+								(uint32_t)(curCmd->ClipRect.x - displayPos.x), (uint32_t)(curCmd->ClipRect.y - displayPos.y), 
+								(uint32_t)(curCmd->ClipRect.z - displayPos.x), (uint32_t)(curCmd->ClipRect.w - displayPos.y)
 							);
 							mGraphicsInterface->SetResource(iTex,0);
 							mGraphicsInterface->DrawIndexed(curCmd->ElemCount, idxOffset, vtxOffset);
@@ -187,11 +187,11 @@ namespace Graphics{namespace UI{
 		io.Fonts->SetTexID((void*)fontTex.Handle);
 
 		// Buffers
-		mMaxVertices = 10000;
+		mMaxVertices = 50000;
 		uint64_t vtxBufferSize = sizeof(ImDrawVert) * mMaxVertices;
 		mVertexBuffer = mGraphicsInterface->CreateBuffer(BufferType::VertexBuffer, CPUAccess::Write, GPUAccess::Read, vtxBufferSize);
 
-		mMaxIndices = 10000;
+		mMaxIndices = 50000;
 		uint64_t idxBufferSize = sizeof(ImDrawIdx) * mMaxIndices;
 		mIndexBuffer = mGraphicsInterface->CreateBuffer(BufferType::IndexBuffer, CPUAccess::Write, GPUAccess::Read, idxBufferSize);
 
@@ -212,7 +212,7 @@ namespace Graphics{namespace UI{
 		pdesc.DepthWriteEnabled = false;
 		pdesc.DepthFunction = Graphics::DepthFunc::Always;
 		
-		int vec2Size = sizeof(float) * 2;
+		uint32_t vec2Size = sizeof(float) * 2;
 		Graphics::VertexInputDescription::VertexInputElement vtxEles[3] =
 		{
 			{ "POSITION",0,Graphics::Format::RG_32_Float,0 },
@@ -239,11 +239,11 @@ namespace Graphics{namespace UI{
 
 	void UIInterface::UpdateBuffers(ImDrawData* data)
 	{
-		size_t vtxStride = sizeof(ImDrawVert);
-		size_t idxStride = sizeof(ImDrawIdx);
+		int32_t vtxStride = sizeof(ImDrawVert);
+		int32_t idxStride = sizeof(ImDrawIdx);
 
-		uint32_t curVtxOffset = 0;
-		uint32_t curIdxOffset = 0;
+		int32_t curVtxOffset = 0;
+		int32_t curIdxOffset = 0;
 	
 		unsigned char* pVtxData = nullptr;
 		unsigned char* pIdxData = nullptr;
@@ -254,8 +254,8 @@ namespace Graphics{namespace UI{
 		for (int i = 0; i < data->CmdListsCount; i++)
 		{
 			ImDrawList* cmdList = data->CmdLists[i];
-			uint16_t curVtxSize = cmdList->VtxBuffer.Size * vtxStride;
-			uint16_t curIdxSize = cmdList->IdxBuffer.Size * idxStride;
+			int32_t curVtxSize = (int32_t)cmdList->VtxBuffer.Size * vtxStride;
+			int32_t curIdxSize = (int32_t)cmdList->IdxBuffer.Size * idxStride;
 
 			memcpy(pVtxData + curVtxOffset, cmdList->VtxBuffer.Data, curVtxSize);
 			memcpy(pIdxData + curIdxOffset, cmdList->IdxBuffer.Data, curIdxSize);
