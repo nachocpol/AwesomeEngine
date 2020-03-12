@@ -102,6 +102,16 @@ void PhysicsWorld::RemoveRigidBody(RigidBodyComponent* rigidBodyComponent)
 {
 }
 
+physx::PxDefaultCpuDispatcher* World::PhysicsWorld::GetPhyxCPUDispatcher() const
+{
+	return mCpuDispatcher;
+}
+
+physx::PxPhysics* World::PhysicsWorld::GetPhyx() const
+{
+	return mPhysics;
+}
+
 RigidBodyComponent::RigidBodyComponent(Actor* parent) :
 	mBodyType(Type::Dynamic)
 	,mMass(1.0f)

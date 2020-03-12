@@ -40,6 +40,10 @@ namespace World
 		void AddRigidBody(RigidBodyComponent* rigidBodyComponent);
 		void RemoveRigidBody(RigidBodyComponent* rigidBodyComponent);
 
+		// Internal use
+		physx::PxDefaultCpuDispatcher* GetPhyxCPUDispatcher()const;
+		physx::PxPhysics* GetPhyx()const;
+
 	private:
 		// One per instance.
 		physx::PxFoundation* mFoundation;
