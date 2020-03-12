@@ -706,14 +706,31 @@ namespace Graphics { namespace DX12 {
 	{
 		if (ImGui::BeginMainMenuBar())
 		{
-			char filter[512];
-			memset(filter, 0, 512);
+			std::string filter;
+			filter.resize(512);
 			if (ImGui::BeginMenu("Shaders"))
 			{
-				ImGui::InputText("Shader Filter", filter, 512);
+				ImGui::InputText("Shader Filter", &filter[0], 512);
 				if (ImGui::MenuItem("Recompile shader(s)!"))
 				{
-					INFO("Recompiling shaders");
+					mGraphicsPipelinesPool.ForEachEntry([this,filter](GraphicsPipelineEntry& entry) {
+						bool recompile = true;
+						if (!filter.empty())
+						{
+							recompile = false;
+							if (filter.find(entry.Desc.VertexShader.ShaderEntryPoint.c_str()) || filter.find(entry.Desc.PixelShader.ShaderEntryPoint.c_str()))
+							{
+								recompile = true;
+							}
+						}
+						if (recompile)
+						{
+							INFO("Recompiling PSO: VS(%s) PS(%s)", entry.Desc.VertexShader.ShaderEntryPoint.c_str(), entry.Desc.PixelShader.ShaderEntryPoint.c_str());
+							mReleaseManager.ReleaseItem(entry.Pso);
+							entry.Pso = nullptr;
+							CreatePSO(entry.Desc, entry);
+						}
+					});
 				}
 				ImGui::EndMenu();
 			}

@@ -135,13 +135,13 @@ namespace Graphics{ namespace DX12
 			}
 			mEntries.erase(mEntries.begin() + entryIdx);
 		}
-		//void ForEachEntry(std::function<void(T&)> callBack)
-		//{
-		//	for (auto& entry : mEntries)
-		//	{
-		//		callBack(entry);
-		//	}
-		//}
+		void ForEachEntry(std::function<void(T&)> callBack)
+		{
+			for (auto& entry : mEntries)
+			{
+				callBack(entry);
+			}
+		}
 	private:
 		std::vector<T> mEntries;
 	};
