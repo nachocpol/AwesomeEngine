@@ -1,6 +1,5 @@
 DOING:
 + Physx link warnings..
-+ Better way to recompile shaders
 
 TO-DO:
 + Command line parser and getter
@@ -31,6 +30,7 @@ TO-DO:
 + Clustered renderer.
 
 DONE:
++ Better way to recompile shaders
 + File mount system
 + Common toolbar
 + Delta time in seconds
