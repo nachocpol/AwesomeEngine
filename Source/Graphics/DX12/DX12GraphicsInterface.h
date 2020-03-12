@@ -5,6 +5,8 @@
 #include "DX12Heap.h"
 #include "DX12ReleaseMananger.h"
 
+#include <functional>
+
 namespace Graphics
 {
 	namespace Platform
@@ -117,7 +119,7 @@ namespace Graphics{ namespace DX12
 		T& GetFreeEntry(uint64_t& entryIdx)
 		{
 			entryIdx = 0;
-			mEntries.push_back(T());
+			mEntries.emplace_back(T());
 			entryIdx = mEntries.size() - 1;
 			return mEntries.at(entryIdx);
 		}
@@ -125,7 +127,21 @@ namespace Graphics{ namespace DX12
 		{
 			return mEntries.at(entryIdx);
 		}
-
+		void RemoveEntry(const uint64_t& entryIdx)
+		{
+			if (entryIdx > mEntries.size() - 1)
+			{
+				return;
+			}
+			mEntries.erase(mEntries.begin() + entryIdx);
+		}
+		//void ForEachEntry(std::function<void(T&)> callBack)
+		//{
+		//	for (auto& entry : mEntries)
+		//	{
+		//		callBack(entry);
+		//	}
+		//}
 	private:
 		std::vector<T> mEntries;
 	};
@@ -224,6 +240,7 @@ namespace Graphics{ namespace DX12
 		void FlushHeap(bool graphics = true);
 		void TransitionResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, bool forceFlush = false, uint32_t subResource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 		void FlushBarriers();
+		void CreatePSO(const GraphicsPipelineDescription& desc, GraphicsPipelineEntry& entry);
 		static DXGI_FORMAT ToDXGIFormat(const Graphics::Format& format);
 		static DXGI_FORMAT ToDXGIFormatTypeless(const Graphics::Format& format);
 		static D3D12_PRIMITIVE_TOPOLOGY ToDXGITopology(const Graphics::Topology::T& topology);
@@ -247,8 +264,9 @@ namespace Graphics{ namespace DX12
 		ResourcePool<QueryEntry> mTimeStampQueriesPool;
 
 		// PSO pools
-		GraphicsPipelineEntry mGraphicsPipelines[MAX_GRAPHICS_PIPELINES];
-		uint64_t mCurGraphicsPipeline;
+		ResourcePool<GraphicsPipelineEntry> mGraphicsPipelinesPool;
+		//GraphicsPipelineEntry mGraphicsPipelines[MAX_GRAPHICS_PIPELINES];
+		//uint64_t mCurGraphicsPipeline;
 
 		ID3D12PipelineState* mComputePipelines[MAX_COMPUTE_PIPELINES];
 		uint64_t mCurComputePipeline;

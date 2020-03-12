@@ -15,7 +15,6 @@ namespace Graphics { namespace DX12 {
 	DX12GraphicsInterface::DX12GraphicsInterface():
 		mDevice(nullptr),
 		mGraphicsRootSignature(nullptr),
-		mCurGraphicsPipeline(0),
 		mCurComputePipeline(0),
 		mFrameHeap(nullptr),
 		mFrame(0),
@@ -25,7 +24,6 @@ namespace Graphics { namespace DX12 {
 		mTimeStampsHeap(nullptr),
 		mTimeStampsMemory(nullptr)
 	{
-		memset(mGraphicsPipelines, 0, sizeof(mGraphicsPipelines));
 		memset(mComputePipelines, 0, sizeof(mComputePipelines));
 	}
 	
@@ -453,6 +451,92 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
+	void DX12GraphicsInterface::CreatePSO(const GraphicsPipelineDescription& desc, GraphicsPipelineEntry& entry)
+	{
+		// Build the input layout:
+		D3D12_INPUT_LAYOUT_DESC inputL = {};
+		std::vector<D3D12_INPUT_ELEMENT_DESC> eles;
+		eles.resize(desc.VertexDescription.NumElements);
+		for (int i = 0; i < desc.VertexDescription.NumElements; i++)
+		{
+			eles[i].SemanticName = desc.VertexDescription.Elements[i].Semantic.c_str();
+			eles[i].SemanticIndex = desc.VertexDescription.Elements[i].Idx;
+			eles[i].Format = ToDXGIFormat(desc.VertexDescription.Elements[i].EleFormat);
+			eles[i].AlignedByteOffset = desc.VertexDescription.Elements[i].Offset;
+			eles[i].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+			eles[i].InstanceDataStepRate = 0;
+			eles[i].InputSlot = 0;
+		}
+		inputL.NumElements = desc.VertexDescription.NumElements;
+		inputL.pInputElementDescs = eles.data();
+
+		// Describe the pso
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+		LoadShader(desc.PixelShader, psoDesc.PS);
+		LoadShader(desc.VertexShader, psoDesc.VS);
+
+		// Blend info
+		{
+			psoDesc.BlendState = CD3DX12_BLEND_DESC::CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			for (int i = 0; i < 8; i++)
+			{
+				auto& cur = psoDesc.BlendState.RenderTarget[i];
+				auto& curDesc = desc.BlendTargets[i];
+
+				cur.RenderTargetWriteMask = curDesc.WriteMask;
+				cur.BlendEnable = curDesc.Enabled;
+				if (curDesc.Enabled)
+				{
+					cur.SrcBlend = ToDX12Blend(curDesc.SrcBlendColor);
+					cur.DestBlend = ToDX12Blend(curDesc.DstBlendColor);
+					cur.BlendOp = ToDX12BlendOp(curDesc.BlendOpColor);
+
+					cur.SrcBlendAlpha = ToDX12Blend(curDesc.SrcBlendAlpha);
+					cur.DestBlendAlpha = ToDX12Blend(curDesc.DstBlendAlpha);
+					cur.BlendOpAlpha = ToDX12BlendOp(curDesc.BlendOpAlpha);
+				}
+			}
+		}
+		// Depth info
+		{
+			psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC::CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+			psoDesc.DepthStencilState.DepthEnable = desc.DepthEnabled;
+			psoDesc.DepthStencilState.DepthFunc = ToDX12DepthFunc(desc.DepthFunction);
+			psoDesc.DepthStencilState.DepthWriteMask = desc.DepthWriteEnabled ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+			psoDesc.DSVFormat = ToDXGIFormat(desc.DepthFormat);
+		}
+		// Raster info
+		{
+			psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC::CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+			psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+		}
+		psoDesc.InputLayout = inputL;
+		psoDesc.pRootSignature = mGraphicsRootSignature;
+		int numTargets = 0;
+		for (int i = 0; i < 8; i++)
+		{
+			if (desc.ColorFormats[i] != Unknown)
+			{
+				psoDesc.RTVFormats[i] = ToDXGIFormat(desc.ColorFormats[i]);
+				psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+				numTargets++;
+			}
+		}
+		psoDesc.NumRenderTargets = numTargets;
+		psoDesc.PrimitiveTopologyType = ToDXGIPrimitive(desc.PrimitiveType);
+		psoDesc.SampleDesc.Count = 1;
+		psoDesc.SampleDesc.Quality = 0;
+		psoDesc.SampleMask = 0xffffffff;
+
+		if (desc.PrimitiveType == Primitive::Line)
+		{
+			psoDesc.RasterizerState.AntialiasedLineEnable = true;
+		}
+
+		mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
+	}
+
 	DXGI_FORMAT DX12GraphicsInterface::ToDXGIFormat(const Graphics::Format& format)
 	{
 		switch (format)
@@ -623,19 +707,13 @@ namespace Graphics { namespace DX12 {
 		if (ImGui::BeginMainMenuBar())
 		{
 			char filter[512];
+			memset(filter, 0, 512);
 			if (ImGui::BeginMenu("Shaders"))
 			{
 				ImGui::InputText("Shader Filter", filter, 512);
 				if (ImGui::MenuItem("Recompile shader(s)!"))
 				{
 					INFO("Recompiling shaders");
-					for (int i = 0; i < MAX_GRAPHICS_PIPELINES; ++i)
-					{
-						if (mGraphicsPipelines[i].Pso)
-						{
-
-						}
-					}
 				}
 				ImGui::EndMenu();
 			}
@@ -1183,108 +1261,15 @@ namespace Graphics { namespace DX12 {
 
 	GraphicsPipeline DX12GraphicsInterface::CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)
 	{
-		// Build the input layout:
-		D3D12_INPUT_LAYOUT_DESC inputL = {};
-		std::vector<D3D12_INPUT_ELEMENT_DESC> eles;
-		eles.resize(desc.VertexDescription.NumElements);
-		for (int i = 0; i < desc.VertexDescription.NumElements; i++)
-		{
-			eles[i].SemanticName		 = desc.VertexDescription.Elements[i].Semantic.c_str();
-			eles[i].SemanticIndex		 = desc.VertexDescription.Elements[i].Idx;
-			eles[i].Format				 = ToDXGIFormat(desc.VertexDescription.Elements[i].EleFormat);
-			eles[i].AlignedByteOffset	 = desc.VertexDescription.Elements[i].Offset;
-			eles[i].InputSlotClass		 = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-			eles[i].InstanceDataStepRate = 0;
-			eles[i].InputSlot			 = 0;
-		}
-		inputL.NumElements = desc.VertexDescription.NumElements;
-		inputL.pInputElementDescs = eles.data();
-
-		// Describe the pso
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};		
-		LoadShader(desc.PixelShader,psoDesc.PS);
-		LoadShader(desc.VertexShader,psoDesc.VS);
-	
-		// Blend info
-		{
-			psoDesc.BlendState = CD3DX12_BLEND_DESC::CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-			for (int i = 0; i < 8; i++)
-			{
-				auto& cur = psoDesc.BlendState.RenderTarget[i];
-				auto& curDesc = desc.BlendTargets[i];
-
-				cur.RenderTargetWriteMask = curDesc.WriteMask;
-				cur.BlendEnable = curDesc.Enabled;
-				if (curDesc.Enabled)
-				{
-					cur.SrcBlend		= ToDX12Blend(curDesc.SrcBlendColor);
-					cur.DestBlend		= ToDX12Blend(curDesc.DstBlendColor);
-					cur.BlendOp			= ToDX12BlendOp(curDesc.BlendOpColor);
-
-					cur.SrcBlendAlpha	= ToDX12Blend(curDesc.SrcBlendAlpha);
-					cur.DestBlendAlpha	= ToDX12Blend(curDesc.DstBlendAlpha);
-					cur.BlendOpAlpha	= ToDX12BlendOp(curDesc.BlendOpAlpha);
-				}
-			}
-		}
-		// Depth info
-		{
-			psoDesc.DepthStencilState					= CD3DX12_DEPTH_STENCIL_DESC::CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-			psoDesc.DepthStencilState.DepthEnable		= desc.DepthEnabled;
-			psoDesc.DepthStencilState.DepthFunc			= ToDX12DepthFunc(desc.DepthFunction);
-			psoDesc.DepthStencilState.DepthWriteMask	= desc.DepthWriteEnabled ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
-			psoDesc.DSVFormat							= ToDXGIFormat(desc.DepthFormat);
-		}
-		// Raster info
-		{
-			psoDesc.RasterizerState				= CD3DX12_RASTERIZER_DESC::CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-			psoDesc.RasterizerState.CullMode	= D3D12_CULL_MODE_BACK;
-			psoDesc.RasterizerState.FillMode	= D3D12_FILL_MODE_SOLID;
-		}
-		psoDesc.InputLayout = inputL;
-		psoDesc.pRootSignature = mGraphicsRootSignature;
-		int numTargets = 0;
-		for (int i = 0; i < 8; i++)
-		{
-			if (desc.ColorFormats[i] != Unknown)
-			{
-				psoDesc.RTVFormats[i] = ToDXGIFormat(desc.ColorFormats[i]);
-				psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-				numTargets++;
-			}
-		}
-		psoDesc.NumRenderTargets		= numTargets; 
-		psoDesc.PrimitiveTopologyType	= ToDXGIPrimitive(desc.PrimitiveType);
-		psoDesc.SampleDesc.Count		= 1;
-		psoDesc.SampleDesc.Quality		= 0;
-		psoDesc.SampleMask				= 0xffffffff;
-
-		if (desc.PrimitiveType == Primitive::Line)
-		{
-			psoDesc.RasterizerState.AntialiasedLineEnable = true;
-		}
-
-		GraphicsPipelineEntry& entry = mGraphicsPipelines[mCurGraphicsPipeline];
-		mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
+		GraphicsPipeline handle;
+		GraphicsPipelineEntry& entry = mGraphicsPipelinesPool.GetFreeEntry(handle.Handle);
+		CreatePSO(desc,entry);		
 		
 		// Cache it so we can recompile at runtime
 		entry.Desc = desc;
 		entry.Desc.VertexShader = desc.VertexShader;
 		entry.Desc.PixelShader = desc.PixelShader;
-		{
-			entry.Desc.VertexDescription.NeedRelease = true;
-			entry.Desc.VertexDescription.NumElements = desc.VertexDescription.NumElements;
-			entry.Desc.VertexDescription.Elements = new Graphics::VertexInputDescription::VertexInputElement[desc.VertexDescription.NumElements];
-			for (unsigned int i = 0; i < desc.VertexDescription.NumElements; i++)
-			{
-				entry.Desc.VertexDescription.Elements[i].Semantic.assign(desc.VertexDescription.Elements[i].Semantic);
-				entry.Desc.VertexDescription.Elements[i].Idx = desc.VertexDescription.Elements[i].Idx;
-				entry.Desc.VertexDescription.Elements[i].EleFormat = desc.VertexDescription.Elements[i].EleFormat;
-				entry.Desc.VertexDescription.Elements[i].Offset = desc.VertexDescription.Elements[i].Offset;
-			}
-		}
-		GraphicsPipeline handle = { mCurGraphicsPipeline };
-		mCurGraphicsPipeline++;
+		entry.Desc.VertexDescription = VertexInputDescription(desc.VertexDescription);
 
 		return handle;
 	}
@@ -1304,23 +1289,18 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::ReloadGraphicsPipeline(GraphicsPipeline& pipeline)
 	{
-		GraphicsPipelineEntry& entry = mGraphicsPipelines[pipeline.Handle];
-		
-		uint64_t cachedPipelineNum = mCurGraphicsPipeline;
-		uint64_t cachedPipelineHandle = pipeline.Handle;
+		// Start by releasing the old entry:
+		GraphicsPipelineEntry& entry = mGraphicsPipelinesPool.GetEntry(pipeline.Handle);
+		mReleaseManager.ReleaseItem(entry.Pso);
+		entry.Pso = nullptr;
 
-		// mmm.........
-		mCurGraphicsPipeline = pipeline.Handle;
-		CreateGraphicsPipeline(entry.Desc);
-		mCurGraphicsPipeline = cachedPipelineNum;
-		// mMMMMM.........
-
-		pipeline.Handle = cachedPipelineHandle;
+		// Now lets create it again:
+		CreatePSO(entry.Desc, entry);
 	}
 
 	void DX12GraphicsInterface::ReloadComputePipeline(ComputePipeline & pipeline)
 	{
-		
+		// TO-DO
 	}
 
 	void DX12GraphicsInterface::ReleaseTexture(TextureHandle& handle)
@@ -1337,13 +1317,18 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::ReleaseGraphicsPipeline(GraphicsPipeline& pipeline)
 	{
-		if (pipeline.Handle == InvalidGraphicsPipeline.Handle || pipeline.Handle > MAX_GRAPHICS_PIPELINES)
+		if (pipeline.Handle == InvalidGraphicsPipeline.Handle)
 		{
 			assert(false);
 			return;
 		}
+		
+		// Release the pipeline:
+		GraphicsPipelineEntry& graphicsPipeline = mGraphicsPipelinesPool.GetEntry(pipeline.Handle);
+		mReleaseManager.ReleaseItem(graphicsPipeline.Pso);
 
-		mReleaseManager.ReleaseItem(mGraphicsPipelines[pipeline.Handle].Pso);
+		// Remove from the pool:
+		mGraphicsPipelinesPool.RemoveEntry(pipeline.Handle);
 
 		// Reset data
 		pipeline.Handle = InvalidGraphicsPipeline.Handle;
@@ -1460,7 +1445,7 @@ namespace Graphics { namespace DX12 {
 	void DX12GraphicsInterface::SetGraphicsPipeline(const GraphicsPipeline& pipeline)
 	{
 		mCurrentIsCompute = false;
-		GraphicsPipelineEntry& psoEntry = mGraphicsPipelines[pipeline.Handle];
+		GraphicsPipelineEntry& psoEntry = mGraphicsPipelinesPool.GetEntry(pipeline.Handle);
 		if (pipeline.Handle != InvalidGraphicsPipeline.Handle && psoEntry.Pso != nullptr)
 		{
 			mDefaultSurface.CmdContext->SetGraphicsRootSignature(mGraphicsRootSignature);

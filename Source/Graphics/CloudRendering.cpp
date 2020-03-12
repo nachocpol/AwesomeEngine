@@ -35,12 +35,8 @@ namespace Graphics
 			desc.PixelShader.ShaderEntryPoint = "PSClouds";
 			desc.PixelShader.ShaderPath = "Clouds.hlsl";
 			desc.PixelShader.Type = Graphics::ShaderType::Pixel;
-			Graphics::VertexInputDescription::VertexInputElement eles[1] =
-			{
-				"POSITION",0, Graphics::Format::RGB_32_Float,0
-			};
-			desc.VertexDescription.NumElements = 1;
-			desc.VertexDescription.Elements = eles;
+			desc.VertexDescription.Elements.push_back({ "POSITION",0, Graphics::Format::RGB_32_Float,0 });
+			desc.VertexDescription.NumElements = (uint8_t)desc.VertexDescription.Elements.size();
 			desc.ColorFormats[0] = Graphics::Format::RGBA_16_Float;
 
 			desc.BlendTargets[0].Enabled = true;
@@ -68,12 +64,8 @@ namespace Graphics
 			desc.PixelShader.ShaderEntryPoint = "PSCloudsComposite";
 			desc.PixelShader.ShaderPath = "Clouds.hlsl";
 			desc.PixelShader.Type = Graphics::ShaderType::Pixel;
-			Graphics::VertexInputDescription::VertexInputElement eles[1] =
-			{
-				"POSITION",0, Graphics::Format::RGB_32_Float,0
-			};
-			desc.VertexDescription.NumElements = 1;
-			desc.VertexDescription.Elements = eles;
+			desc.VertexDescription.Elements.push_back({ "POSITION",0, Graphics::Format::RGB_32_Float,0 });
+			desc.VertexDescription.NumElements = (uint8_t)desc.VertexDescription.Elements.size();
 			desc.ColorFormats[0] = mGraphicsInterface->GetOutputFormat();
 
 			desc.BlendTargets[0].Enabled = true;

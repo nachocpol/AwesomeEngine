@@ -48,19 +48,9 @@ void TriangleApp::Init()
 		pdesc.VertexShader.ShaderPath = "TriangleSample.hlsl";
 		pdesc.VertexShader.Type = ShaderType::Vertex;
 
-		VertexInputDescription::VertexInputElement eles[2];
-		eles[0].Semantic = "POSITION";
-		eles[0].Idx = 0;
-		eles[0].EleFormat = Format::RGB_32_Float;
-		eles[0].Offset = 0;
-
-		eles[1].Semantic = "COLOR";
-		eles[1].Idx = 0;
-		eles[1].EleFormat = Format::RGB_32_Float;
-		eles[1].Offset = sizeof(float) * 3;
-
-		pdesc.VertexDescription.NumElements = sizeof(eles) / sizeof(VertexInputDescription::VertexInputElement);
-		pdesc.VertexDescription.Elements = eles;
+		pdesc.VertexDescription.Elements.push_back({ "POSITION",0,Format::RGB_32_Float ,0 });
+		pdesc.VertexDescription.Elements.push_back({ "COLOR",0,Format::RGB_32_Float ,sizeof(float) * 3 });
+		pdesc.VertexDescription.NumElements = (uint8_t)pdesc.VertexDescription.Elements.size();
 		pdesc.ColorFormats[0] = mGraphicsInterface->GetOutputFormat();
 		m_Pipeline = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
 	}

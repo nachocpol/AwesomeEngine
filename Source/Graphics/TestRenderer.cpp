@@ -56,16 +56,11 @@ void TestRenderer::Initialize(AppBase * app)
 		pdesc.VertexShader.ShaderPath = "shadersrc:Surface.hlsl";
 		pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
 
-		Graphics::VertexInputDescription::VertexInputElement eles[4] =
-		{
-			 { "POSITION", 0, Graphics::Format::RGB_32_Float, 0 }
-			,{ "NORMAL", 0, Graphics::Format::RGB_32_Float, 12 }
-			,{ "TANGENT", 0,	Graphics::Format::RGB_32_Float, 24 }
-			,{ "TEXCOORD", 0, Graphics::Format::RG_32_Float, 36 }
-		};
-
-		pdesc.VertexDescription.NumElements = sizeof(eles) / sizeof(Graphics::VertexInputDescription::VertexInputElement);
-		pdesc.VertexDescription.Elements = eles;
+		pdesc.VertexDescription.Elements.push_back({ "POSITION", 0, Graphics::Format::RGB_32_Float, 0 });
+		pdesc.VertexDescription.Elements.push_back({ "NORMAL", 0, Graphics::Format::RGB_32_Float, 12 });
+		pdesc.VertexDescription.Elements.push_back({ "TANGENT", 0,	Graphics::Format::RGB_32_Float, 24 });
+		pdesc.VertexDescription.Elements.push_back({ "TEXCOORD", 0, Graphics::Format::RG_32_Float, 36 });
+		pdesc.VertexDescription.NumElements = (uint8_t)pdesc.VertexDescription.Elements.size();
 		pdesc.DepthEnabled = true;
 		pdesc.DepthWriteEnabled = true;
 		pdesc.DepthFunction = Graphics::LessEqual;
@@ -89,12 +84,8 @@ void TestRenderer::Initialize(AppBase * app)
 		desc.PixelShader.ShaderPath = "shadersrc:Common.hlsl";
 		desc.PixelShader.Type = Graphics::ShaderType::Pixel;
 
-		Graphics::VertexInputDescription::VertexInputElement eles[1] =
-		{
-			"POSITION",0, Graphics::Format::RGB_32_Float,0
-		};
-		desc.VertexDescription.NumElements = 1;
-		desc.VertexDescription.Elements = eles;
+		desc.VertexDescription.Elements.push_back({ "POSITION",0, Graphics::Format::RGB_32_Float,0 });
+		desc.VertexDescription.NumElements = (uint8_t)desc.VertexDescription.Elements.size();
 
 		desc.ColorFormats[0] = Graphics::Format::RGBA_8_Unorm;
 		desc.DepthFormat = Graphics::Format::Depth24_Stencil8;

@@ -1,12 +1,13 @@
 #pragma once
 
-#include <stdint.h>
-#include <iostream>
-
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_FORCE_LEFT_HANDED
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/glm.hpp"
+
+#include <stdint.h>
+#include <iostream>
+#include <vector>
 
 #define NUM_SRVS 8
 #define NUM_UAVS 8
@@ -190,8 +191,6 @@ namespace Graphics
 			Type = other.Type;
 			ShaderPath = other.ShaderPath;
 			ShaderEntryPoint = other.ShaderEntryPoint;
-			//ShaderPath.copy((char*)other.ShaderPath.data(), other.ShaderPath.size());
-			//ShaderEntryPoint.copy((char*)other.ShaderEntryPoint.data(), other.ShaderEntryPoint.size());
 		}
 		ShaderType::T Type;
 		std::string ShaderPath;
@@ -200,17 +199,6 @@ namespace Graphics
 
 	struct VertexInputDescription
 	{
-		VertexInputDescription():
-			NeedRelease(false)
-		{
-		}
-		~VertexInputDescription()
-		{
-			if (NeedRelease && Elements)
-			{
-				delete[] Elements;
-			}
-		}
 		uint8_t NumElements;
 		struct VertexInputElement
 		{
@@ -218,7 +206,8 @@ namespace Graphics
 			uint8_t Idx;
 			Format EleFormat;
 			uint32_t Offset;
-		}*Elements;
+		};
+		std::vector<VertexInputElement> Elements;
 		bool NeedRelease;
 	};
 

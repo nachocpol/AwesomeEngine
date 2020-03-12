@@ -41,15 +41,10 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 	pdesc.VertexShader.ShaderPath = "shadersrc:DebugDraw.hlsl";
 	pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
 
-	Graphics::VertexInputDescription::VertexInputElement eles[2] =
-	{
-		{ "POSITION", 0, Graphics::Format::RGB_32_Float,  0  },
-		{ "COLOR",    0, Graphics::Format::RGBA_32_Float, 12 }
-	};
-
 	pdesc.PrimitiveType = Primitive::Line;
-	pdesc.VertexDescription.NumElements = sizeof(eles) / sizeof(Graphics::VertexInputDescription::VertexInputElement);
-	pdesc.VertexDescription.Elements = eles;
+	pdesc.VertexDescription.Elements.push_back({ "POSITION", 0, Graphics::Format::RGB_32_Float,  0 });
+	pdesc.VertexDescription.Elements.push_back({ "COLOR",    0, Graphics::Format::RGBA_32_Float, 12 });
+	pdesc.VertexDescription.NumElements = pdesc.VertexDescription.Elements.size();
 	pdesc.DepthEnabled = true;
 	pdesc.DepthWriteEnabled = false;
 	pdesc.DepthFunction = Graphics::LessEqual;
