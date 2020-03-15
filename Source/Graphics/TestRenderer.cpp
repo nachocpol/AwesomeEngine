@@ -6,6 +6,7 @@
 #include "World/Model.h"
 #include "World/CameraComponent.h"
 #include "World/LightComponent.h"
+#include "World/Materialnfo.h"
 #include "Core/App/AppBase.h"
 #include "Platform/BaseWindow.h"
 #include "DebugDraw.h"
@@ -202,8 +203,6 @@ void TestRenderer::Render(SceneGraph* scene)
 
 		DrawOriginGizmo();
 	
-//		ImGui::ShowDemoWindow();
-
 		// Flush debug draw
 		DebugDraw::GetInstance()->Flush(camera);
 
@@ -359,13 +358,20 @@ void TestRenderer::RenderItems(World::CameraComponent* camera, const std::vector
 		mGraphicsInterface->SetGraphicsPipeline(mSurfacePipelineBase);
 		mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
 		mCameraData.InvViewProj = camera->GetProjection() * camera->GetInvViewTransform();
+		mCameraData.CameraWorldPos = camera->GetParent()->Transform->GetPosition();
 
 		for (const RenderItem& item : renderSet)
 		{
+			Mesh* mesh = item.MeshItem;
+			const MaterialInfo& material = mesh->MaterialData;
+
+			// Copy item data:
 			mItemData.World = item.WorldMatrix;
 			mItemData.NumLights = mCurLightCount;
+			mItemData.BaseColor = material.BaseColor;
+			mItemData.Metalness = material.Metalness;
+			mItemData.Roughness = material.Roughness;
 
-			Mesh* mesh = item.MeshItem;
 			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, Declarations::kCameraDataSlot, sizeof(Declarations::CameraData), &mCameraData);
 			mGraphicsInterface->SetConstantBuffer(mItemDataCb, Declarations::kItemDataSlot, sizeof(Declarations::ItemData), &mItemData);
 			mGraphicsInterface->SetResource(mLightsListSB, Declarations::kLightsSlot);

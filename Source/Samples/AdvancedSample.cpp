@@ -32,6 +32,7 @@ public:
 
 private:
 	Graphics::Model* mCube;
+	Graphics::Model* mSphere;
 	World::SceneGraph mScene;
 	Graphics::TestRenderer mRenderer;
 	Actor* mCamera;
@@ -49,6 +50,8 @@ void AdvancedApp::Init()
 
 	// Spawn some stuff
 	mCube = Graphics::ModelFactory::Get()->LoadFromFile("assets:Meshes/cube.obj", mGraphicsInterface);
+	mSphere = Graphics::ModelFactory::Get()->LoadFromFile("assets:Meshes/sphere.obj", mGraphicsInterface);
+
 	for (uint32_t x = 0; x < 7; ++x)
 	{
 		for (uint32_t y = 0; y < 7; ++y)
@@ -57,28 +60,25 @@ void AdvancedApp::Init()
 			Actor* curCube = mScene.SpawnActor();
 
 			TransformComponent* curTransform = curCube->AddComponent<TransformComponent>();
-			glm::vec3 curPos = glm::vec3(((float)x * 2.0f) - 7.0f, 4.0f, ((float)y * 2.0f) - 7.0f);
+			glm::vec3 curPos = glm::vec3(((float)x * 2.0f) - 7.0f, -2.5f, ((float)y * 2.0f) - 7.0f);
 			curTransform->SetPosition(curPos);
 			curTransform->SetRotation(glm::vec3(x+1,x,y+1));
 
 			ModelComponent* modelComponent = curCube->AddComponent<ModelComponent>();
-			modelComponent->SetModel(mCube);
+			modelComponent->SetModel(mSphere);
 
-			RigidBodyComponent* rbComp = curCube->AddComponent<RigidBodyComponent>();
-
-			rbComp->AddCollider(curCube->AddComponent<BoxColliderComponent>());
+			//RigidBodyComponent* rbComp = curCube->AddComponent<RigidBodyComponent>();
+			//rbComp->AddCollider(curCube->AddComponent<BoxColliderComponent>());
 
 			// Add a light:
-			Actor* curLight = mScene.SpawnActor();
-			
-			TransformComponent* lightTrans = curLight->AddComponent<TransformComponent>();
-			lightTrans->SetPosition(curPos + glm::vec3(0.0f,glm::linearRand(1.0f,2.0f)-6.0f,0.0f));
-			
-			LightComponent* pointComp = curLight->AddComponent<LightComponent>();
-			pointComp->SetLightType(LightComponent::LightType::Point);
-			pointComp->SetColor(glm::vec3(glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f)));
-			pointComp->SetIntensity(glm::linearRand(0.5f, 2.0f));
-			pointComp->SetRadius(glm::linearRand(1.0f, 5.5f));
+			//Actor* curLight = mScene.SpawnActor();
+			//TransformComponent* lightTrans = curLight->AddComponent<TransformComponent>();
+			//lightTrans->SetPosition(curPos + glm::vec3(0.0f,glm::linearRand(1.0f,2.0f)-6.0f,0.0f));
+			//LightComponent* pointComp = curLight->AddComponent<LightComponent>();
+			//pointComp->SetLightType(LightComponent::LightType::Point);
+			//pointComp->SetColor(glm::vec3(glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f), glm::linearRand(0.0f, 1.0f)));
+			//pointComp->SetIntensity(glm::linearRand(0.5f, 2.0f));
+			//pointComp->SetRadius(glm::linearRand(1.0f, 5.5f));
 		}
 	}	
 

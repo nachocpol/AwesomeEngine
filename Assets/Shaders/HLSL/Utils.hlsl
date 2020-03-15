@@ -2,6 +2,8 @@
 	Utils.hlsl
 */
 
+#define PI 3.141516
+
 float4 ToSRGB(float4 base, float gamma)
 {
 	float grcp = 1.0f/ gamma;

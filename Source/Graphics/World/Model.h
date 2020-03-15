@@ -3,6 +3,7 @@
 #include "Graphics/GraphicsInterface.h"
 #include "Core/Math.h"
 #include "Component.h"
+#include "Materialnfo.h"
 
 #include <string>
 #include <map>
@@ -27,6 +28,7 @@ namespace Graphics
 		uint32_t NumIndices;
 		Math::AABBData AABB;
 		Math::BSData BS;
+		MaterialInfo MaterialData;
 	};
 
 	struct Model

@@ -46,6 +46,7 @@ CBUFFER(UIData, 0)
 CBUFFER(CameraData, 0)
 {
 	float4x4 InvViewProj;
+	float3 CameraWorldPos;
 };
 
 CBUFFER(ItemData, 1)
@@ -53,6 +54,9 @@ CBUFFER(ItemData, 1)
 	float4x4 World;
 	float4 DebugColor;
 	int NumLights;
+	float3 BaseColor;
+	float Metalness;
+	float Roughness;
 };
 
 #if defined(__cplusplus)

@@ -3,6 +3,7 @@
 	Shaders used to render the meshes.
 */
 #include "Declarations.h"
+#include "Utils.hlsl"
 
 struct SurfaceVSIn
 {
@@ -34,10 +35,23 @@ SurfaceVSOut VSSurface(SurfaceVSIn input)
 	return output;
 }
 
+float D_DistributionGGX(float3 NdotH, float roughness)
+{
+	float r2 = roughness * roughness;
+	float NdotH2 = NdotH * NdotH;
+	float denom = (NdotH2 * (r2 - 1.0) + 1.0);
+	denom = PI * denom * denom;
+
+	return r2 / denom;
+}
+
 float4 PSSurface(SurfaceVSOut input) : SV_Target0
 {
+	float3 n = normalize(input.WorldNormal);
+	float3 v = normalize(CameraWorldPos - input.WorldPos);
+	float3 F0 = float3(0.04, 0.04, 0.04); // TO-DO metallic surface
+
 	float3 baseColor = 1.0;
-	float3 N = normalize(input.WorldNormal);
 	float3 total = 0.0;
 
 	for(int lightIdx = 0; lightIdx < NumLights; ++lightIdx)
@@ -49,12 +63,21 @@ float4 PSSurface(SurfaceVSOut input) : SV_Target0
 
 		if(light.Type == 0)
 		{
-			float3 L = normalize(light.PosDirection - input.WorldPos);
-			float NdotL = max(dot(N,L), 0.0);
-	
-			float dist = distance(light.PosDirection, input.WorldPos);
-			float attenuation = 1.0 - saturate(dist / light.Radius);
-			diffuse = light.Color * light.Intensity * attenuation * NdotL;
+			float3 l = normalize(light.PosDirection - input.WorldPos);
+			float3 h = normalize(v + l);
+
+			float NdotH = max(dot(n,h),0.0);
+			
+			// Specular BRDF (Cook-Torrance)
+			float D = D_DistributionGGX(NdotH, 0.2);
+			//float G;
+			//float3 F;
+
+			diffuse	= D;
+
+			//float dist = distance(light.PosDirection, input.WorldPos);
+			//float attenuation = 1.0 - saturate(dist / light.Radius);
+			//diffuse = light.Color * light.Intensity * attenuation * NdotL;
 		}
 
 		total += diffuse + specular;
