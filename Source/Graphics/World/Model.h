@@ -28,7 +28,6 @@ namespace Graphics
 		uint32_t NumIndices;
 		Math::AABBData AABB;
 		Math::BSData BS;
-		MaterialInfo MaterialData;
 	};
 
 	struct Model
@@ -70,11 +69,15 @@ namespace World
 		void SetModel(Graphics::Model* model);
 		Graphics::Model* GetModel()const;
 
+		void SetMaterial(const MaterialInfo& materialInfo, uint32_t meshIdx = 0);
+		const MaterialInfo& GetMaterial(uint32_t meshIdx = 0)const;
+
 		Math::AABBData GetWorldAABB(uint32_t meshIdx = 0)const;
 		Math::BSData GetWorldBS(uint32_t meshIdx = 0)const;
 
 	private:
 		Graphics::Model* mModel;
+		std::vector<MaterialInfo> mMaterials;
 		std::vector<Math::AABBData> mWorldAABB;
 		std::vector<Math::BSData> mWorldBS;
 	};

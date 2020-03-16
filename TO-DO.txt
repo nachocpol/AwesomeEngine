@@ -1,7 +1,10 @@
 DOING:
 + Physx link warnings..
++ PBR rendering, start with the bases for a PBR model
++ Recompile shaders, allow change debug flag
 
 TO-DO:
++
 + Command line parser and getter
 + Make all  components take parent in constructor... uhmmm
 + Proper asset import: model class, model factory

@@ -269,6 +269,7 @@ void TestRenderer::ProcessVisibility(World::CameraComponent* camera, const std::
 					RenderItem item;
 					item.MeshItem = &model->Meshes[meshIdx];
 					item.WorldMatrix = actor->Transform->GetWorldTransform();
+					item.Material = modelComponent->GetMaterial(meshIdx);
 					renderItems.push_back(item);
 
 					// Draw actor bounds:
@@ -363,7 +364,7 @@ void TestRenderer::RenderItems(World::CameraComponent* camera, const std::vector
 		for (const RenderItem& item : renderSet)
 		{
 			Mesh* mesh = item.MeshItem;
-			const MaterialInfo& material = mesh->MaterialData;
+			const MaterialInfo& material = item.Material;
 
 			// Copy item data:
 			mItemData.World = item.WorldMatrix;

@@ -4,6 +4,8 @@
 #include "GraphicsInterface.h"
 #include "Core/Math.h"
 #include "HLSL/Declarations.h"
+#include "World/Model.h"
+
 #include <vector>
 
 namespace World
@@ -20,6 +22,7 @@ namespace Graphics
 	{
 		glm::mat4 WorldMatrix;
 		Mesh* MeshItem;
+		MaterialInfo Material;
 	};
 
 	struct TiledCamera

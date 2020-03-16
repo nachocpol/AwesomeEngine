@@ -265,11 +265,38 @@ void ModelComponent::UpdateLate()
 void ModelComponent::SetModel(Model* model)
 {
 	mModel = model;
+	mMaterials.resize(model->NumMeshes);
 }
 
 Model* ModelComponent::GetModel() const
 {
 	return mModel;
+}
+
+void ModelComponent::SetMaterial(const MaterialInfo& materialInfo, uint32_t meshIdx)
+{
+	if (mModel && meshIdx < mModel->NumMeshes)
+	{
+		mMaterials[meshIdx] = materialInfo;
+	}
+	else
+	{
+		ERR("%s", mModel ? "Invalid meshIdx" : "Set model before assigning a material.");
+	}
+}
+
+const MaterialInfo& ModelComponent::GetMaterial(uint32_t meshIdx) const
+{
+	if (mModel && meshIdx < mModel->NumMeshes)
+	{
+		return mMaterials[meshIdx];
+	}
+	else
+	{
+		ERR("%s", mModel ? "Invalid meshIdx" : "Set model before getting a material.");
+		static MaterialInfo dummy;
+		return dummy;
+	}
 }
 
 AABBData ModelComponent::GetWorldAABB(uint32_t meshIdx) const

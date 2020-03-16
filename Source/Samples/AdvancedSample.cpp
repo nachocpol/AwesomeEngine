@@ -52,20 +52,35 @@ void AdvancedApp::Init()
 	mCube = Graphics::ModelFactory::Get()->LoadFromFile("assets:Meshes/cube.obj", mGraphicsInterface);
 	mSphere = Graphics::ModelFactory::Get()->LoadFromFile("assets:Meshes/sphere.obj", mGraphicsInterface);
 
-	for (uint32_t x = 0; x < 7; ++x)
+	int numx = 7;
+	int numy = 7;
+
+	float midx = (float)numx / 2.0f;
+	float midy = (float)numy / 2.0f;
+
+	for (int x = 0; x < numx; ++x)
 	{
-		for (uint32_t y = 0; y < 7; ++y)
+		for (int y = 0; y < numy; ++y)
 		{
 			// Add a cube:
 			Actor* curCube = mScene.SpawnActor();
 
 			TransformComponent* curTransform = curCube->AddComponent<TransformComponent>();
-			glm::vec3 curPos = glm::vec3(((float)x * 2.0f) - 7.0f, -2.5f, ((float)y * 2.0f) - 7.0f);
+			glm::vec3 curPos = glm::vec3(
+				((float)x - midx + 0.5f) * 2.0f,
+				-1.0f,
+				((float)y - midy + 0.5f) * 2.0f
+			);
 			curTransform->SetPosition(curPos);
 			curTransform->SetRotation(glm::vec3(x+1,x,y+1));
-
+		
 			ModelComponent* modelComponent = curCube->AddComponent<ModelComponent>();
 			modelComponent->SetModel(mSphere);
+
+			MaterialInfo mtlInfo;
+			mtlInfo.Roughness = (float)x / (float)(numx - 1);
+			mtlInfo.Metalness = (float)y / (float)(numy - 1);
+			modelComponent->SetMaterial(mtlInfo);
 
 			//RigidBodyComponent* rbComp = curCube->AddComponent<RigidBodyComponent>();
 			//rbComp->AddCollider(curCube->AddComponent<BoxColliderComponent>());
@@ -87,6 +102,7 @@ void AdvancedApp::Init()
 	lightTrans->SetPosition(0.0f, 2.0f, 0.0f);
 	LightComponent* lightComp = sceneLight->AddComponent<LightComponent>();
 	lightComp->SetRadius(20.0f);
+	lightComp->SetIntensity(2.0f);
 	lightComp->SetColor(glm::vec3(0.8f, 0.8f, 0.95f));
 
 	// Ground
@@ -94,11 +110,16 @@ void AdvancedApp::Init()
 		Actor* ground = mScene.SpawnActor();
 		
 		TransformComponent* groundTransform = ground->AddComponent<TransformComponent>();
-		groundTransform->SetScale(20.0f, 0.1f, 20.0f);
-		groundTransform->SetPosition(0.0f, -3.5f, 0.0f);
+		groundTransform->SetScale(14.0f, 0.1f, 14.0f);
+		groundTransform->SetPosition(0.0f, -1.95f, 0.0f);
 
 		ModelComponent* groundModel = ground->AddComponent<ModelComponent>();
 		groundModel->SetModel(mCube);
+
+		MaterialInfo mtlFloor;
+		mtlFloor.Roughness = 0.0f;
+		mtlFloor.BaseColor = glm::vec3(1.0f);
+		groundModel->SetMaterial(mtlFloor);
 
 		RigidBodyComponent* groudRb = ground->AddComponent<RigidBodyComponent>();
 		groudRb->SetBodyType(RigidBodyComponent::Type::Static);
