@@ -67,13 +67,32 @@ float3 F_FresnelSchlick(float NdotV, float3 F0)
     return f + F0 * (1.0 - f);
 }
 
+float F_Schlick(float NdotV, float F0, float F90)
+{
+	return F0 + (F90 - F0) * pow(1.0 - NdotV, 5.0);
+}
+
+float Fd_Burley(float NdotV, float NdotL, float LdotH, float roughness) 
+{
+	float f90 = 0.5 + 2.0 * roughness * LdotH * LdotH;
+	float lightScatter = F_Schlick(NdotL, 1.0, f90);
+	float viewScatter = F_Schlick(NdotV, 1.0, f90);
+	return lightScatter * viewScatter * (1.0 / PI);
+}
+
+float Fd_Lambert()
+{
+	return 1.0 / PI;
+}
+
 float4 PSSurface(SurfaceVSOut input) : SV_Target0
 {
 	float3 n = normalize(input.WorldNormal);
 	float3 v = normalize(CameraWorldPos - input.WorldPos);
 	float3 F0 = float3(0.04, 0.04, 0.04); // TO-DO metallic surface
 
-	float r = max(Roughness * Roughness, 0.001); // Roughness remaping.
+	float3 diffuseColor = BaseColor * (1.0 - Metalness);
+	float roughness = max(Roughness * Roughness, 0.001); // Roughness remaping.
 
 	float3 total = 0.0;
 
@@ -85,7 +104,7 @@ float4 PSSurface(SurfaceVSOut input) : SV_Target0
 		{
 			// Light
 			float lightNormDist = 1.0 - (distance(input.WorldPos, light.PosDirection) / light.Radius);
-			float attenuation = lightNormDist * lightNormDist;
+			float attenuation = lightNormDist * lightNormDist; // TODO: revisit this
 			float3 lightRadiance = light.Color * attenuation * light.Intensity;
 
 			// BRDF
@@ -95,19 +114,25 @@ float4 PSSurface(SurfaceVSOut input) : SV_Target0
 			float NdotV = max(dot(n,v), 0.0);
 			float NdotL = max(dot(n,l), 0.0);
 			float VdotH = max(dot(v,h), 0.0);
+			float LdotH = max(dot(l,h), 0.0);
 			
 			// Specular BRDF (Cook-Torrance)
-			float D = D_DistributionGGX(NdotH, r);
-			float G  = G_GeometrySmith(NdotV, NdotL, r);
+			// TODO: multi scatering spec (loosing energy rough surfaces!)
+			float D = D_DistributionGGX(NdotH, roughness);
+			float G  = G_GeometrySmith(NdotV, NdotL, roughness);
 			float3 F = F_FresnelSchlick(NdotV, F0);
 			float3 BRDFs = D * G * F / max(4.0 * NdotV * NdotL, 0.0001);
 
 			// Diffuse BRDF (Lambert diffuse)
-			float3 BRDFd = BaseColor / PI;
+			#if 0
+			float3 BRDFd = diffuseColor * Fd_Lambert();
+			#else
+			float3 BRDFd = diffuseColor * Fd_Burley(NdotV, NdotL, LdotH, roughness);
+			#endif
 
 			// Ratio of refraction:
 			float3 kS = F;
-			float3 kD = (1.0 - kS) * (1.0 - Metalness);
+			float3 kD = (float3(1.0,1.0,1.0) - kS) * (1.0 - Metalness);
 
 			total += (kD * BRDFd + BRDFs) * lightRadiance * NdotL;
 			

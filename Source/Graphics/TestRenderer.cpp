@@ -7,6 +7,7 @@
 #include "World/CameraComponent.h"
 #include "World/LightComponent.h"
 #include "World/Materialnfo.h"
+#include "World/ProbeComponent.h"
 #include "Core/App/AppBase.h"
 #include "Platform/BaseWindow.h"
 #include "DebugDraw.h"
@@ -174,7 +175,6 @@ void TestRenderer::Render(SceneGraph* scene)
 		// Gather lights:
 		std::vector<LightComponent*> lights;
 		rootActor->FindComponents<LightComponent>(lights, true);
-
 		if (!lights.empty())
 		{
 			mCurLightsData.resize(glm::min(kMaxLights, (int)lights.size()));
@@ -196,6 +196,26 @@ void TestRenderer::Render(SceneGraph* scene)
 			}
 			mCurLightCount = (int)mCurLightsData.size();
 			mGraphicsInterface->SetBufferData(mLightsListSB, Declarations::kLightsStride * mCurLightCount, 0, mCurLightsData.data());
+		}
+
+		// Gather probes:
+		std::vector<ProbeComponent*> probes;
+		rootActor->FindComponents<ProbeComponent>(probes, true);
+		if (!probes.empty())
+		{
+			for (uint32_t i = 0; i < probes.size(); ++i)
+			{
+				ProbeComponent* curProbe = probes[i];
+				if (!CHECK_TEXTURE(curProbe->SourceTexture))
+				{
+					AssetImporter importer(mGraphicsInterface);
+					curProbe->SourceTexture = importer.LoadAndCreateTexture(curProbe->GetSourcePath());
+				}
+
+				ImGui::Begin("Testu");
+				ImGui::Image((ImTextureID)curProbe->SourceTexture.Handle, ImVec2(1024, 512));
+				ImGui::End();
+			}
 		}
 
 		// Render items:

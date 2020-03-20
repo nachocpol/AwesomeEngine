@@ -1,6 +1,7 @@
 #include "AssetImporter.h"
 #include "GraphicsInterface.h"
 #include "Graphics/World/SceneGraph.h"
+#include "Core/FileSystem.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -12,6 +13,15 @@
 #include "assimp/postprocess.h"
 
 #include <stdint.h>
+
+static Graphics::Format ToAppFormat(DXGI_FORMAT fmt)
+{
+	switch (fmt)
+	{
+		case DXGI_FORMAT_R32G32B32A32_FLOAT: return Graphics::Format::RGBA_32_Float;
+	}
+	return Graphics::Format::RGBA_8_Unorm;
+}
 
 namespace Graphics
 {
@@ -29,9 +39,14 @@ namespace Graphics
 		return true;
 	}
 
-	bool AssetImporter::LoadTexture(const char* path, unsigned char*& outData, int& width, int& height,int& mips, Graphics::Format& format, bool calcMips )
+	bool AssetImporter::LoadTexture(const char* path, void*& outData, int& width, int& height,int& mips, Graphics::Format& format, bool calcMips )
 	{
-		std::string fullPath = "../../Assets/Textures/" + std::string(path);
+		std::string fullPath = path;
+		if (!Core::FileSystem::GetInstance()->FixupPath(fullPath))
+		{
+			return false;
+		}
+
 		std::wstring wname = std::wstring(fullPath.begin(), fullPath.end());
 
 		DirectX::TexMetadata metadata = {};
@@ -46,10 +61,15 @@ namespace Graphics
 		{
 			res = DirectX::LoadFromTGAFile(wname.c_str(), &metadata, scratchImage);
 		}
+		else if (fullPath.find(".hdr") != std::string::npos)
+		{
+			res = DirectX::LoadFromHDRFile(wname.c_str(), &metadata, scratchImage);
+		}
 		else
 		{
 			res = DirectX::LoadFromWICFile(wname.c_str(), DirectX::WIC_FLAGS_NONE, &metadata, scratchImage);
 		}
+
 		if (FAILED(res))
 		{
 			return false;
@@ -65,7 +85,7 @@ namespace Graphics
 			auto image = scratchWithMips.GetImage(0, 0, 0);
 			width = image->width;
 			height = image->height;
-			format = Graphics::Format::RGBA_8_Unorm;
+			format = ToAppFormat(image->format);
 			outData = (unsigned char*)malloc(scratchWithMips.GetPixelsSize());
 			memcpy(outData, image->pixels, scratchWithMips.GetPixelsSize());
 		}
@@ -74,7 +94,7 @@ namespace Graphics
 			auto image = scratchImage.GetImage(0,0,0);
 			width = image->width;
 			height = image->height;
-			format = Graphics::Format::RGBA_8_Unorm;
+			format = ToAppFormat(image->format);
 			outData = (unsigned char*)malloc(width * height * sizeof(uint8_t) * 4);
 			memcpy(outData, image->pixels, width * height * sizeof(uint8_t) * 4);
 		}
@@ -98,7 +118,7 @@ namespace Graphics
 			return mLoadedTextures[path];
 		}
 		// ...otherwise load it
-		unsigned char* tData = nullptr;
+		void* tData = nullptr;
 		int x, y,m;
 		Graphics::Format format;
 		if (LoadTexture(path, tData, x, y, m, format, true))

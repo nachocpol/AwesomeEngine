@@ -20,6 +20,15 @@ namespace Graphics
 		class BaseWindow;
 	}
 
+	struct ProbeShape
+	{
+		enum T
+		{
+			Infinite,
+			NUM
+		};
+	};
+
 	struct ShaderType
 	{
 		enum T

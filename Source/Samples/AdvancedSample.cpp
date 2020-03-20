@@ -9,6 +9,7 @@
 #include "Graphics/World/Actor.h"
 #include "Graphics/World/CameraComponent.h"
 #include "Graphics/World/LightComponent.h"
+#include "Graphics/World/ProbeComponent.h"
 #include "Graphics/World/PhysicsWorld.h"
 #include "Graphics/TestRenderer.h"
 #include "Graphics/UI/IMGUI/imgui.h"
@@ -127,6 +128,16 @@ void AdvancedApp::Init()
 		BoxColliderComponent* boxCol = ground->AddComponent<BoxColliderComponent>();
 		boxCol->SetLocalExtents(glm::vec3(10.0f, 0.05f, 10.0f));
 		groudRb->AddCollider(boxCol);
+	}
+
+	// Probe
+	{
+		Actor* probe = mScene.SpawnActor();
+
+		TransformComponent* probeTransform = probe->AddComponent<TransformComponent>();
+		probeTransform->SetPosition(0.0f, 2.0f, 0.0f);
+
+		ProbeComponent* probeComp = probe->AddComponent<ProbeComponent>();
 	}
 
 	//sun = mScene.SpawnRenderable();
