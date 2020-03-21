@@ -64,6 +64,10 @@ namespace Graphics
 		Declarations::ItemData mItemData;
 		Graphics::BufferHandle mItemDataCb;
 
+		// Envmap processing:
+		Graphics::ComputePipeline mGenIrradianceMapPipeline;
+		Graphics::ComputePipeline mConvolutePipeline;
+
 		int mCurLightCount;
 		int kMaxLights = 1024; 
 		std::vector<Declarations::Light> mCurLightsData;

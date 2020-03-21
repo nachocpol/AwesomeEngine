@@ -1,5 +1,6 @@
 #include "DebugDraw.h"
 #include "World/CameraComponent.h"	
+#include "World/Model.h"
 #include "Core/Logging.h"
 
 using namespace Graphics;
@@ -32,26 +33,53 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 {
 	mGraphicsInterface = graphicsInterface;
 
-	GraphicsPipelineDescription pdesc = {};
-	pdesc.PixelShader.ShaderEntryPoint = "PSDebugDraw";
-	pdesc.PixelShader.ShaderPath = "shadersrc:DebugDraw.hlsl";
-	pdesc.PixelShader.Type = Graphics::ShaderType::Pixel;
+	{
+		GraphicsPipelineDescription pdesc = {};
+		pdesc.PixelShader.ShaderEntryPoint = "PSDebugDraw";
+		pdesc.PixelShader.ShaderPath = "shadersrc:DebugDraw.hlsl";
+		pdesc.PixelShader.Type = Graphics::ShaderType::Pixel;
 
-	pdesc.VertexShader.ShaderEntryPoint = "VSDebugDraw";
-	pdesc.VertexShader.ShaderPath = "shadersrc:DebugDraw.hlsl";
-	pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
+		pdesc.VertexShader.ShaderEntryPoint = "VSDebugDraw";
+		pdesc.VertexShader.ShaderPath = "shadersrc:DebugDraw.hlsl";
+		pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
 
-	pdesc.PrimitiveType = Primitive::Line;
-	pdesc.VertexDescription.Elements.push_back({ "POSITION", 0, Graphics::Format::RGB_32_Float,  0 });
-	pdesc.VertexDescription.Elements.push_back({ "COLOR",    0, Graphics::Format::RGBA_32_Float, 12 });
-	pdesc.VertexDescription.NumElements = pdesc.VertexDescription.Elements.size();
-	pdesc.DepthEnabled = true;
-	pdesc.DepthWriteEnabled = false;
-	pdesc.DepthFunction = Graphics::LessEqual;
-	pdesc.ColorFormats[0] =Graphics::Format::RGBA_16_Float;
-	pdesc.DepthFormat = Graphics::Format::Depth24_Stencil8;
+		pdesc.PrimitiveType = Primitive::Line;
+		pdesc.VertexDescription.Elements.push_back({ "POSITION", 0, Graphics::Format::RGB_32_Float,  0 });
+		pdesc.VertexDescription.Elements.push_back({ "COLOR",    0, Graphics::Format::RGBA_32_Float, 12 });
+		pdesc.VertexDescription.NumElements = (uint8_t)pdesc.VertexDescription.Elements.size();
+		pdesc.DepthEnabled = true;
+		pdesc.DepthWriteEnabled = false;
+		pdesc.DepthFunction = Graphics::LessEqual;
+		pdesc.ColorFormats[0] =Graphics::Format::RGBA_16_Float;
+		pdesc.DepthFormat = Graphics::Format::Depth24_Stencil8;
 
-	mDebugPipeline = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
+		mDebugPipelineLines = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
+	}
+
+	{
+		GraphicsPipelineDescription pdesc = {};
+		pdesc.PixelShader.ShaderEntryPoint = "PSDebugDrawSolid";
+		pdesc.PixelShader.ShaderPath = "shadersrc:DebugDraw.hlsl";
+		pdesc.PixelShader.Type = Graphics::ShaderType::Pixel;
+
+		pdesc.VertexShader.ShaderEntryPoint = "VSSurface";
+		pdesc.VertexShader.ShaderPath = "shadersrc:Surface.hlsl";
+		pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
+
+		pdesc.PrimitiveType = Primitive::Triangle;
+		pdesc.VertexDescription.Elements.push_back({ "POSITION", 0, Graphics::Format::RGB_32_Float, 0 });
+		pdesc.VertexDescription.Elements.push_back({ "NORMAL", 0, Graphics::Format::RGB_32_Float, 12 });
+		pdesc.VertexDescription.Elements.push_back({ "TANGENT", 0,	Graphics::Format::RGB_32_Float, 24 });
+		pdesc.VertexDescription.Elements.push_back({ "TEXCOORD", 0, Graphics::Format::RG_32_Float, 36 });
+		pdesc.VertexDescription.NumElements = (uint8_t)pdesc.VertexDescription.Elements.size();
+		pdesc.DepthEnabled = true;
+		pdesc.DepthWriteEnabled = false;
+		pdesc.DepthFunction = Graphics::LessEqual;
+		pdesc.ColorFormats[0] = Graphics::Format::RGBA_16_Float;
+		pdesc.DepthFormat = Graphics::Format::Depth24_Stencil8;
+		
+		mDebugPipelineSolid = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
+	}
 
 	// Init constant buffers:
 	mCameraDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(Declarations::CameraData));
@@ -118,6 +146,13 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 		mWireSphereNumVtx = (uint32_t)sphereVtx.size();
 		mWireSphereVtxBuffer = mGraphicsInterface->CreateBuffer(BufferType::VertexBuffer, CPUAccess::None, GPUAccess::Read, sizeof(DebugVertex) * mWireSphereNumVtx, 0, &sphereVtx[0]);
 	}
+
+	// Debug cubemap
+	{
+		mSphereModel = Graphics::ModelFactory::Get()->LoadFromFile("assets:Meshes/sphere.obj", mGraphicsInterface);
+	}
+
+	mDebugDataCB = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(mDebugData));
 }
 
 void DebugDraw::Release()
@@ -129,10 +164,13 @@ void Graphics::DebugDraw::StartFrame()
 	// Reset items:
 	mLines.clear();
 	mWireSpheres.clear();
+	mCubemapItems.clear();
 }
 
 void Graphics::DebugDraw::Flush(World::CameraComponent* camera)
 {
+	mCameraData.InvViewProj = camera->GetProjection() * camera->GetInvViewTransform();
+
 	// Lines
 	if (!mLines.empty())
 	{
@@ -153,10 +191,9 @@ void Graphics::DebugDraw::Flush(World::CameraComponent* camera)
 			}
 			mGraphicsInterface->UnMapBuffer(mLinesVtxBuffer);
 
-			mCameraData.InvViewProj = camera->GetProjection() * camera->GetInvViewTransform();
 			mItemData.World = glm::mat4(1.0f);
 			mItemData.DebugColor = glm::vec4(1.0f);
-			mGraphicsInterface->SetGraphicsPipeline(mDebugPipeline);
+			mGraphicsInterface->SetGraphicsPipeline(mDebugPipelineLines);
 			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, Declarations::kCameraDataSlot, sizeof(Declarations::CameraData), &mCameraData);
 			mGraphicsInterface->SetConstantBuffer(mItemDataCb, Declarations::kItemDataSlot, sizeof(Declarations::ItemData), &mItemData);
 			mGraphicsInterface->SetTopology(Topology::LineList);
@@ -176,7 +213,7 @@ void Graphics::DebugDraw::Flush(World::CameraComponent* camera)
 
 			mItemData.DebugColor = sphere.Color;
 
-			mGraphicsInterface->SetGraphicsPipeline(mDebugPipeline);
+			mGraphicsInterface->SetGraphicsPipeline(mDebugPipelineLines);
 			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, Declarations::kCameraDataSlot, sizeof(Declarations::CameraData), &mCameraData);
 			mGraphicsInterface->SetConstantBuffer(mItemDataCb, Declarations::kItemDataSlot, sizeof(Declarations::ItemData), &mItemData);
 			mGraphicsInterface->SetTopology(Topology::LineList);
@@ -186,6 +223,29 @@ void Graphics::DebugDraw::Flush(World::CameraComponent* camera)
 	}
 
 	mGraphicsInterface->SetTopology(Topology::TriangleList);
+
+	// Cubemaps
+	if (!mCubemapItems.empty())
+	{
+		mGraphicsInterface->SetGraphicsPipeline(mDebugPipelineSolid);
+		for (const auto cubeitem : mCubemapItems)
+		{
+			mItemData.World = glm::mat4(1.0f);
+			mItemData.World = glm::translate(mItemData.World, cubeitem.Position);
+
+			mDebugData.DebugCubemap = 1;
+
+			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, Declarations::kCameraDataSlot, sizeof(Declarations::CameraData), &mCameraData);
+			mGraphicsInterface->SetConstantBuffer(mItemDataCb, Declarations::kItemDataSlot, sizeof(Declarations::ItemData), &mItemData);
+			mGraphicsInterface->SetConstantBuffer(mDebugDataCB, Declarations::kDebugDataSlot, sizeof(Declarations::DebugData), &mDebugData);
+
+			mGraphicsInterface->SetResource(cubeitem.Texture, 0);
+
+			mGraphicsInterface->SetVertexBuffer(mSphereModel->Meshes[0].VertexBuffer, mSphereModel->Meshes[0].NumVertex * mSphereModel->Meshes[0].VertexSize, mSphereModel->Meshes[0].VertexSize);
+			mGraphicsInterface->SetIndexBuffer(mSphereModel->Meshes[0].IndexBuffer, mSphereModel->Meshes[0].NumIndices * sizeof(uint32_t), Format::R_32_Uint);
+			mGraphicsInterface->DrawIndexed(mSphereModel->Meshes[0].NumIndices);
+		}
+	}
 }
 
 void Graphics::DebugDraw::EndFrame()
@@ -281,16 +341,30 @@ void Graphics::DebugDraw::DrawFrustum(glm::mat4 transform, float aspect, float v
 	DrawLine(BLFar, BLNear, color);
 }
 
-DebugDraw::LineItem::LineItem(glm::vec3 start, glm::vec3 end, glm::vec4 color):
-	 Start(start)
+void DebugDraw::DrawCubemap(TextureHandle texture, glm::vec3 position)
+{
+	if (CHECK_TEXTURE(texture))
+	{
+		mCubemapItems.push_back(CubemapItem(texture, position));
+	}
+}
+
+DebugDraw::LineItem::LineItem(glm::vec3 start, glm::vec3 end, glm::vec4 color)
+	:Start(start)
 	,End(end)
 	,Color(color)
 {
 }
 
-DebugDraw::WireSphereItem::WireSphereItem(glm::vec3 center,float radius, glm::vec4 color):
-	 Center(center)
+DebugDraw::WireSphereItem::WireSphereItem(glm::vec3 center,float radius, glm::vec4 color)
+	:Center(center)
 	,Radius(radius)
 	,Color(color)
+{
+}
+
+DebugDraw::CubemapItem::CubemapItem(TextureHandle t, glm::vec3 pos)
+	:Texture(t)
+	,Position(pos)
 {
 }

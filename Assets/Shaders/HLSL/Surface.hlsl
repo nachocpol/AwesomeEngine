@@ -18,6 +18,7 @@ struct SurfaceVSOut
 	float4 ClipPos  	: SV_Position;
 	float3 WorldPos		: WPOS;
 	float3 WorldNormal  : NORMAL;
+	float3 LocalPos		: LOCALPOS;
 	//float2 PTexcoord: TEXCOORD;
 	//float3x3 TBN	: TBNMATRIX;
 };
@@ -32,6 +33,7 @@ SurfaceVSOut VSSurface(SurfaceVSIn input)
 	output.WorldPos = mul(World, float4(input.Position, 1.0)).xyz;
 	output.ClipPos = mul(InvViewProj, float4(output.WorldPos, 1.0));
 	output.WorldNormal = mul(World, float4(input.Normal, 0.0));
+	output.LocalPos = input.Position;
 	return output;
 }
 

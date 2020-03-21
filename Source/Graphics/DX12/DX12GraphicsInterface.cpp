@@ -15,7 +15,6 @@ namespace Graphics { namespace DX12 {
 	DX12GraphicsInterface::DX12GraphicsInterface():
 		mDevice(nullptr),
 		mGraphicsRootSignature(nullptr),
-		mCurComputePipeline(0),
 		mFrameHeap(nullptr),
 		mFrame(0),
 		mCurBackBuffer(0),
@@ -24,7 +23,6 @@ namespace Graphics { namespace DX12 {
 		mTimeStampsHeap(nullptr),
 		mTimeStampsMemory(nullptr)
 	{
-		memset(mComputePipelines, 0, sizeof(mComputePipelines));
 	}
 	
 	DX12GraphicsInterface::~DX12GraphicsInterface()
@@ -537,6 +535,14 @@ namespace Graphics { namespace DX12 {
 		mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
 	}
 
+	void DX12GraphicsInterface::CreatePSO(const ComputePipelineDescription& desc, ComputePipelineEntry& entry)
+	{
+		D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
+		psoDesc.pRootSignature = mGraphicsRootSignature;
+		LoadShader(desc.ComputeShader, psoDesc.CS);
+		mDevice->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
+	}
+
 	DXGI_FORMAT DX12GraphicsInterface::ToDXGIFormat(const Graphics::Format& format)
 	{
 		switch (format)
@@ -726,6 +732,16 @@ namespace Graphics { namespace DX12 {
 						if (recompile)
 						{
 							INFO("Recompiling PSO: VS(%s) PS(%s)", entry.Desc.VertexShader.ShaderEntryPoint.c_str(), entry.Desc.PixelShader.ShaderEntryPoint.c_str());
+							mReleaseManager.ReleaseItem(entry.Pso);
+							entry.Pso = nullptr;
+							CreatePSO(entry.Desc, entry);
+						}
+					});
+					mComputePipelinesPool.ForEachEntry([this, filter](ComputePipelineEntry& entry) {
+						bool recompile = true;
+						if (recompile)
+						{
+							INFO("Recompiling PSO: CS(%s)", entry.Desc.ComputeShader.ShaderEntryPoint.c_str());
 							mReleaseManager.ReleaseItem(entry.Pso);
 							entry.Pso = nullptr;
 							CreatePSO(entry.Desc, entry);
@@ -1511,13 +1527,12 @@ namespace Graphics { namespace DX12 {
 
 	ComputePipeline DX12GraphicsInterface::CreateComputePipeline(const ComputePipelineDescription& desc)
 	{
-		D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
-		psoDesc.pRootSignature = mGraphicsRootSignature;
-		LoadShader(desc.ComputeShader, psoDesc.CS);
-		mDevice->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&mComputePipelines[mCurComputePipeline]));
-	
-		ComputePipeline handle = { mCurComputePipeline };
-		mCurComputePipeline++;
+		ComputePipeline handle;
+		ComputePipelineEntry& entry = mComputePipelinesPool.GetFreeEntry(handle.Handle);
+		CreatePSO(desc, entry);
+
+		// Cache it
+		entry.Desc = desc;
 
 		return handle;
 	}
@@ -1643,14 +1658,15 @@ namespace Graphics { namespace DX12 {
 		mDefaultSurface.CmdContext->IASetPrimitiveTopology(ToDXGITopology(topology));
 	}
 
-	void DX12GraphicsInterface::SetComputePipeline(const ComputePipeline & pipeline)
+	void DX12GraphicsInterface::SetComputePipeline(const ComputePipeline& pipeline)
 	{
 		mCurrentIsCompute = true;
-		const auto& pso = mComputePipelines[pipeline.Handle];
+		const auto& pso = mComputePipelinesPool.GetEntry(pipeline.Handle).Pso;
+		
 		if (pipeline.Handle != InvalidComputePipeline.Handle && pso != nullptr)
 		{
 			mDefaultSurface.CmdContext->SetComputeRootSignature(mGraphicsRootSignature);
-			mDefaultSurface.CmdContext->SetPipelineState(mComputePipelines[pipeline.Handle]);
+			mDefaultSurface.CmdContext->SetPipelineState(pso);
 
 			// Setup NULL views tier 1
 			// Why is this a compute only thing??

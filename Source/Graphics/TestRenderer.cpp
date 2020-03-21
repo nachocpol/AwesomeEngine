@@ -111,6 +111,21 @@ void TestRenderer::Initialize(AppBase * app)
 	mItemDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(Declarations::ItemData));
 
 	mLightsListSB = mGraphicsInterface->CreateBuffer(BufferType::GPUBuffer, CPUAccess::None, GPUAccess::Read, kMaxLights, Declarations::kLightsStride);
+
+	// Env map processing
+	{
+		ComputePipelineDescription irradianceDesc;
+		irradianceDesc.ComputeShader.ShaderEntryPoint = "CSIrradianceGen";
+		irradianceDesc.ComputeShader.ShaderPath = "shadersrc:IBL.hlsl";
+		irradianceDesc.ComputeShader.Type = ShaderType::Compute;
+		mGenIrradianceMapPipeline = mGraphicsInterface->CreateComputePipeline(irradianceDesc);
+
+		ComputePipelineDescription convDesc;
+		convDesc.ComputeShader.ShaderEntryPoint = "CSConvolute";
+		convDesc.ComputeShader.ShaderPath = "shadersrc:IBL.hlsl";
+		convDesc.ComputeShader.Type = ShaderType::Compute;
+		mConvolutePipeline = mGraphicsInterface->CreateComputePipeline(convDesc);
+	}
 }
 
 void TestRenderer::Release()
@@ -214,6 +229,13 @@ void TestRenderer::Render(SceneGraph* scene)
 					curProbe->IrradianceTexture = mGraphicsInterface->CreateTextureCube(128, 1, 1, Format::RGBA_32_Float, TextureFlags::UnorderedAccess);
 					curProbe->ConvolutedTexture = mGraphicsInterface->CreateTextureCube(512, 8, 1, Format::RGBA_32_Float, TextureFlags::UnorderedAccess);
 				}
+
+				mGraphicsInterface->SetComputePipeline(mGenIrradianceMapPipeline);
+				mGraphicsInterface->SetResource(curProbe->SourceTexture, 0);
+				mGraphicsInterface->SetRWResource(curProbe->IrradianceTexture, 0);
+				mGraphicsInterface->Dispatch(128 / 8, 128 / 8, 6);
+
+				DebugDraw::GetInstance()->DrawCubemap(curProbe->IrradianceTexture, curProbe->GetParent()->Transform->GetPosition());
 
 				ImGui::Begin("Testu");
 				ImGui::Image((ImTextureID)curProbe->SourceTexture.Handle, ImVec2(1024, 512));

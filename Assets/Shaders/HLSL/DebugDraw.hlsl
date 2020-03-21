@@ -2,7 +2,11 @@
 	DebugDraw.hlsl
 */
 
-#include "Declarations.h"
+#include "Surface.hlsl"
+
+SamplerState LinearWrapSampler : register(s0);
+
+TextureCube<float4> CubeMapSource : register(t0);
 
 //////////////////////////////////////
 // Vertex inputs and outputs definitions
@@ -17,21 +21,41 @@ struct DebugDrawVSOut
 {
 	float4 ClipPos 	: SV_Position;
 	float4 Color 	: COLOR;
+	float3 LocalPos : LPOS;
 };
 
 //////////////////////////////////////
-// Shaders to render debug meshes
+// Shaders to render debug meshes (with lines)
 //////////////////////////////////////
-DebugDrawVSOut VSDebugDraw(DebugDrawVSIn i)
+DebugDrawVSOut VSDebugDraw(DebugDrawVSIn input)
 {
-	DebugDrawVSOut o;
-	o.ClipPos = mul(InvViewProj, mul(World, float4(i.Position, 1.0)));
-	o.Color.rgb = i.Color;
-	o.Color.a = 1.0;
-	return o;
+	DebugDrawVSOut output;
+	output.ClipPos = mul(InvViewProj, mul(World, float4(input.Position, 1.0)));
+	output.Color.rgb = input.Color;
+	output.Color.a = 1.0;
+	output.LocalPos = input.Position;
+	return output;
 }
 
-float4 PSDebugDraw(DebugDrawVSOut i) : SV_Target0
+float4 PSDebugDraw(DebugDrawVSOut input) : SV_Target0
 {
-	return i.Color * DebugColor;
+	return input.Color * DebugColor;
+}
+
+//////////////////////////////////////
+// Shaders to render debug meshes solid
+//////////////////////////////////////
+
+float4 PSDebugDrawSolid(SurfaceVSOut input) : SV_Target0
+{
+	if (DebugCubemap == 1)
+	{
+		float3 dir = normalize(input.LocalPos);
+		float3 cubemapColor = CubeMapSource.SampleLevel(LinearWrapSampler, dir, 0).xyz;
+		return float4(cubemapColor, 1.0);
+	}
+	else
+	{
+		return DebugColor;
+	}
 }

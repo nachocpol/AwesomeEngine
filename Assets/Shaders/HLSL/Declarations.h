@@ -59,6 +59,11 @@ CBUFFER(ItemData, 1)
 	float Roughness;
 };
 
+CBUFFER(DebugData, 2)
+{
+	int DebugCubemap;
+};
+
 #if defined(__cplusplus)
 	} // End namespace
 	#undef float4x4

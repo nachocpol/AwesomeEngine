@@ -163,3 +163,12 @@ float ValueNoiseSlow3D(float3 p)
 	float d1 = lerp(lerp(v001,v101,fp.x),lerp(v011,v111,fp.x),fp.y);
 	return lerp(d0,d1,fp.z);
 }
+
+float2 ToEquirectangular(float3 v)
+{
+	const float2 invAtan = float2(0.1591, 0.3183);
+    float2 uv = float2(atan2(v.x, v.z), asin(v.y));
+    uv *= invAtan;
+    uv += 0.5;
+    return uv;
+}

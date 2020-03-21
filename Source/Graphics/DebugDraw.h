@@ -17,6 +17,7 @@ namespace World
 
 namespace Graphics
 {
+	struct Model;
 	class GraphicsInterface;
 	class DebugDraw
 	{
@@ -39,9 +40,12 @@ namespace Graphics
 		void DrawWireSphere(glm::vec3 center, float radius, glm::vec4 color = glm::vec4(1.0f));
 		void DrawFrustum(glm::mat4 transform, float aspect, float vfov, float nearDist, float farDist, glm::vec4 color = glm::vec4(1.0f));
 
+		void DrawCubemap(TextureHandle texture, glm::vec3 position);
+
 	private:
 		GraphicsInterface* mGraphicsInterface;
-		GraphicsPipeline mDebugPipeline;
+		GraphicsPipeline mDebugPipelineLines;
+		GraphicsPipeline mDebugPipelineSolid;
 
 		Declarations::CameraData mCameraData;
 		BufferHandle mCameraDataCb;
@@ -69,5 +73,17 @@ namespace Graphics
 		std::vector<WireSphereItem> mWireSpheres;
 		BufferHandle mWireSphereVtxBuffer;
 		uint32_t mWireSphereNumVtx;
+
+		struct CubemapItem
+		{
+			CubemapItem(TextureHandle t, glm::vec3 pos);
+			TextureHandle Texture;
+			glm::vec3 Position;
+		};
+		std::vector<CubemapItem> mCubemapItems;
+
+		Declarations::DebugData mDebugData;
+		BufferHandle mDebugDataCB;
+		Model* mSphereModel;
 	};
 }

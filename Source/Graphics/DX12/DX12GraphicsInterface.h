@@ -109,6 +109,16 @@ namespace Graphics{ namespace DX12
 		GraphicsPipelineDescription Desc;
 	};
 
+	struct ComputePipelineEntry
+	{
+		ComputePipelineEntry()
+			:Pso(nullptr)
+		{
+		}
+		ID3D12PipelineState* Pso;
+		ComputePipelineDescription Desc;
+	};
+
 	//! Class that manages creation of new resource entries:
 	template <class T>
 	class ResourcePool
@@ -242,6 +252,7 @@ namespace Graphics{ namespace DX12
 		void TransitionResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, bool forceFlush = false, uint32_t subResource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 		void FlushBarriers();
 		void CreatePSO(const GraphicsPipelineDescription& desc, GraphicsPipelineEntry& entry);
+		void CreatePSO(const ComputePipelineDescription& desc, ComputePipelineEntry& entry);
 		static DXGI_FORMAT ToDXGIFormat(const Graphics::Format& format);
 		static DXGI_FORMAT ToDXGIFormatTypeless(const Graphics::Format& format);
 		static D3D12_PRIMITIVE_TOPOLOGY ToDXGITopology(const Graphics::Topology::T& topology);
@@ -266,11 +277,10 @@ namespace Graphics{ namespace DX12
 
 		// PSO pools
 		ResourcePool<GraphicsPipelineEntry> mGraphicsPipelinesPool;
-		//GraphicsPipelineEntry mGraphicsPipelines[MAX_GRAPHICS_PIPELINES];
-		//uint64_t mCurGraphicsPipeline;
+		ResourcePool<ComputePipelineEntry> mComputePipelinesPool;
 
-		ID3D12PipelineState* mComputePipelines[MAX_COMPUTE_PIPELINES];
-		uint64_t mCurComputePipeline;
+		//ID3D12PipelineState* mComputePipelines[MAX_COMPUTE_PIPELINES];
+		//uint64_t mCurComputePipeline;
 
 		// Heaps
 		DX12Heap** mFrameHeap;
