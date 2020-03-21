@@ -4,9 +4,8 @@
 
 #include "Surface.hlsl"
 
-SamplerState LinearWrapSampler : register(s0);
-
 TextureCube<float4> CubeMapSource : register(t0);
+Texture2D<float4> TextureSource : register(t1);
 
 //////////////////////////////////////
 // Vertex inputs and outputs definitions
@@ -48,10 +47,17 @@ float4 PSDebugDraw(DebugDrawVSOut input) : SV_Target0
 
 float4 PSDebugDrawSolid(SurfaceVSOut input) : SV_Target0
 {
-	if (DebugCubemap == 1)
+	if (Equirectangular == 1)
 	{
 		float3 dir = normalize(input.LocalPos);
-		float3 cubemapColor = CubeMapSource.SampleLevel(LinearWrapSampler, dir, 0).xyz;
+		float2 tc = ToEquirectangular(dir);
+		float3 equiColor = TextureSource.SampleLevel(LinearWrapSampler, tc, 0).rgb;
+		return float4(equiColor, 1.0);
+	}
+	else if (DebugCubemap == 1)
+	{
+		float3 dir = normalize(input.LocalPos);
+		float3 cubemapColor = CubeMapSource.SampleLevel(LinearWrapSampler, dir, 0).rgb;
 		return float4(cubemapColor, 1.0);
 	}
 	else

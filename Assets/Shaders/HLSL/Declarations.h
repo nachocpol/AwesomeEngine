@@ -62,6 +62,7 @@ CBUFFER(ItemData, 1)
 CBUFFER(DebugData, 2)
 {
 	int DebugCubemap;
+	int Equirectangular;
 };
 
 #if defined(__cplusplus)

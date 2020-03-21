@@ -23,6 +23,10 @@ struct SurfaceVSOut
 	//float3x3 TBN	: TBNMATRIX;
 };
 
+SamplerState LinearWrapSampler : register(s0);
+
+TextureCube<float4> IrradianceMap : register(t1);
+
 //////////////////////////////////////
 // Surface
 //////////////////////////////////////
@@ -63,14 +67,20 @@ float G_GeometrySmith(float NdotV, float NdotL, float k)
 	return ggx1 * ggx2;
 }
 
-float3 F_FresnelSchlick(float NdotV, float3 F0)
+float3 F_FresnelSchlick(float cosTheta, float3 F0)
 {
-	float f = pow(1.0 - NdotV, 5.0);
+	float f = pow(1.0 - cosTheta, 5.0);
     return f + F0 * (1.0 - f);
+}
+
+float3 F_FresnelSchlickRoughness(float cosTheta, float3 F0, float roughness)
+{
+	return F0 + (max(1.0 - roughness, F0) - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
 float F_Schlick(float NdotV, float F0, float F90)
 {
+	// check this, ndotv, hdok
 	return F0 + (F90 - F0) * pow(1.0 - NdotV, 5.0);
 }
 
@@ -91,6 +101,8 @@ float4 PSSurface(SurfaceVSOut input) : SV_Target0
 {
 	float3 n = normalize(input.WorldNormal);
 	float3 v = normalize(CameraWorldPos - input.WorldPos);
+	float NdotV = max(dot(n, v), 0.0);
+
 	float3 F0 = float3(0.04, 0.04, 0.04); // TO-DO metallic surface
 
 	float3 diffuseColor = BaseColor * (1.0 - Metalness);
@@ -112,17 +124,16 @@ float4 PSSurface(SurfaceVSOut input) : SV_Target0
 			// BRDF
 			float3 l = normalize(light.PosDirection - input.WorldPos);
 			float3 h = normalize(v + l);
-			float NdotH = max(dot(n,h), 0.0);
-			float NdotV = max(dot(n,v), 0.0);
-			float NdotL = max(dot(n,l), 0.0);
-			float VdotH = max(dot(v,h), 0.0);
-			float LdotH = max(dot(l,h), 0.0);
+			float NdotH = max(dot(n, h), 0.0);
+			float NdotL = max(dot(n, l), 0.0);
+			float LdotH = max(dot(l, h), 0.0);
+			float HdotV = max(dot(h, v), 0.0);
 			
 			// Specular BRDF (Cook-Torrance)
 			// TODO: multi scatering spec (loosing energy rough surfaces!)
 			float D = D_DistributionGGX(NdotH, roughness);
 			float G  = G_GeometrySmith(NdotV, NdotL, roughness);
-			float3 F = F_FresnelSchlick(NdotV, F0);
+			float3 F = F_FresnelSchlick(HdotV, F0);
 			float3 BRDFs = D * G * F / max(4.0 * NdotV * NdotL, 0.0001);
 
 			// Diffuse BRDF (Lambert diffuse)
@@ -137,10 +148,21 @@ float4 PSSurface(SurfaceVSOut input) : SV_Target0
 			float3 kD = (float3(1.0,1.0,1.0) - kS) * (1.0 - Metalness);
 
 			total += (kD * BRDFd + BRDFs) * lightRadiance * NdotL;
-			
-			float3 ambient = BRDFd * kD * 0.01;
-			total += ambient;
 		}
 	}
+
+	// Ambient term:
+	float3 ambient = 0;
+	{
+		float3 kS = F_FresnelSchlickRoughness(NdotV, F0, roughness);
+		float3 kD = 1.0 - kS;
+
+		float3 irradiance = IrradianceMap.SampleLevel(LinearWrapSampler, n, 0).rgb;
+		irradiance *= diffuseColor;
+
+		ambient = kD * irradiance;
+	}
+	total += ambient;
+
 	return float4(total, 1.0);
 }

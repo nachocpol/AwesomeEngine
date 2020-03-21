@@ -170,5 +170,5 @@ float2 ToEquirectangular(float3 v)
     float2 uv = float2(atan2(v.x, v.z), asin(v.y));
     uv *= invAtan;
     uv += 0.5;
-    return uv;
+	return float2(uv.x, 1.0 - uv.y);
 }

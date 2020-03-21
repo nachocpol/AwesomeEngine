@@ -73,7 +73,7 @@ void AdvancedApp::Init()
 				((float)y - midy + 0.5f) * 2.0f
 			);
 			curTransform->SetPosition(curPos);
-			curTransform->SetRotation(glm::vec3(x+1,x,y+1));
+			//curTransform->SetRotation(glm::vec3(x+1,x,y+1));
 		
 			ModelComponent* modelComponent = curCube->AddComponent<ModelComponent>();
 			modelComponent->SetModel(mSphere);

@@ -228,15 +228,18 @@ void TestRenderer::Render(SceneGraph* scene)
 
 					curProbe->IrradianceTexture = mGraphicsInterface->CreateTextureCube(128, 1, 1, Format::RGBA_32_Float, TextureFlags::UnorderedAccess);
 					curProbe->ConvolutedTexture = mGraphicsInterface->CreateTextureCube(512, 8, 1, Format::RGBA_32_Float, TextureFlags::UnorderedAccess);
+					
+					mGraphicsInterface->SetComputePipeline(mGenIrradianceMapPipeline);
+					mGraphicsInterface->SetResource(curProbe->SourceTexture, 0);
+					mGraphicsInterface->SetRWResource(curProbe->IrradianceTexture, 0);
+					mGraphicsInterface->Dispatch(128 / 8, 128 / 8, 6);
 				}
 
-				mGraphicsInterface->SetComputePipeline(mGenIrradianceMapPipeline);
-				mGraphicsInterface->SetResource(curProbe->SourceTexture, 0);
-				mGraphicsInterface->SetRWResource(curProbe->IrradianceTexture, 0);
-				mGraphicsInterface->Dispatch(128 / 8, 128 / 8, 6);
-
 				DebugDraw::GetInstance()->DrawCubemap(curProbe->IrradianceTexture, curProbe->GetParent()->Transform->GetPosition());
-
+				if (i == 0)
+				{
+					mGraphicsInterface->SetResource(curProbe->IrradianceTexture, 1);
+				}
 				ImGui::Begin("Testu");
 				ImGui::Image((ImTextureID)curProbe->SourceTexture.Handle, ImVec2(1024, 512));
 				ImGui::End();

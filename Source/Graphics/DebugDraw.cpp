@@ -233,13 +233,15 @@ void Graphics::DebugDraw::Flush(World::CameraComponent* camera)
 			mItemData.World = glm::mat4(1.0f);
 			mItemData.World = glm::translate(mItemData.World, cubeitem.Position);
 
-			mDebugData.DebugCubemap = 1;
+			mDebugData.Equirectangular = cubeitem.Equirectangular ? 1 : 0;
+			mDebugData.DebugCubemap = !mDebugData.Equirectangular;
 
 			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, Declarations::kCameraDataSlot, sizeof(Declarations::CameraData), &mCameraData);
 			mGraphicsInterface->SetConstantBuffer(mItemDataCb, Declarations::kItemDataSlot, sizeof(Declarations::ItemData), &mItemData);
 			mGraphicsInterface->SetConstantBuffer(mDebugDataCB, Declarations::kDebugDataSlot, sizeof(Declarations::DebugData), &mDebugData);
 
-			mGraphicsInterface->SetResource(cubeitem.Texture, 0);
+			uint8_t slot = cubeitem.Equirectangular ? 1 : 0;
+			mGraphicsInterface->SetResource(cubeitem.Texture, slot);
 
 			mGraphicsInterface->SetVertexBuffer(mSphereModel->Meshes[0].VertexBuffer, mSphereModel->Meshes[0].NumVertex * mSphereModel->Meshes[0].VertexSize, mSphereModel->Meshes[0].VertexSize);
 			mGraphicsInterface->SetIndexBuffer(mSphereModel->Meshes[0].IndexBuffer, mSphereModel->Meshes[0].NumIndices * sizeof(uint32_t), Format::R_32_Uint);
@@ -341,11 +343,11 @@ void Graphics::DebugDraw::DrawFrustum(glm::mat4 transform, float aspect, float v
 	DrawLine(BLFar, BLNear, color);
 }
 
-void DebugDraw::DrawCubemap(TextureHandle texture, glm::vec3 position)
+void DebugDraw::DrawCubemap(TextureHandle texture, glm::vec3 position, bool equirectangular)
 {
 	if (CHECK_TEXTURE(texture))
 	{
-		mCubemapItems.push_back(CubemapItem(texture, position));
+		mCubemapItems.push_back(CubemapItem(texture, position, equirectangular));
 	}
 }
 
@@ -363,8 +365,9 @@ DebugDraw::WireSphereItem::WireSphereItem(glm::vec3 center,float radius, glm::ve
 {
 }
 
-DebugDraw::CubemapItem::CubemapItem(TextureHandle t, glm::vec3 pos)
+DebugDraw::CubemapItem::CubemapItem(TextureHandle t, glm::vec3 pos, bool equirect)
 	:Texture(t)
 	,Position(pos)
+	,Equirectangular(equirect)
 {
 }

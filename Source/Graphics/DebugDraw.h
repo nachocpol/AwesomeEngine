@@ -40,7 +40,7 @@ namespace Graphics
 		void DrawWireSphere(glm::vec3 center, float radius, glm::vec4 color = glm::vec4(1.0f));
 		void DrawFrustum(glm::mat4 transform, float aspect, float vfov, float nearDist, float farDist, glm::vec4 color = glm::vec4(1.0f));
 
-		void DrawCubemap(TextureHandle texture, glm::vec3 position);
+		void DrawCubemap(TextureHandle texture, glm::vec3 position, bool equirectangular = false);
 
 	private:
 		GraphicsInterface* mGraphicsInterface;
@@ -76,9 +76,10 @@ namespace Graphics
 
 		struct CubemapItem
 		{
-			CubemapItem(TextureHandle t, glm::vec3 pos);
+			CubemapItem(TextureHandle t, glm::vec3 pos, bool equirect);
 			TextureHandle Texture;
 			glm::vec3 Position;
+			bool Equirectangular;
 		};
 		std::vector<CubemapItem> mCubemapItems;
 
