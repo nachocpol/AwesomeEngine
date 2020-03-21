@@ -1091,6 +1091,224 @@ namespace Graphics { namespace DX12 {
 		return handle;
 	}
 
+	TextureHandle DX12GraphicsInterface::CreateTextureCube(uint32_t size, uint32_t mips, uint32_t layers, Format format, TextureFlags flags, void * data)
+	{
+		if ((size * layers * mips) == 0)
+		{
+			return InvalidTexture;
+		}
+
+		TextureHandle handle;
+		TextureEntry& curTexEntry = mTexturesPool.GetFreeEntry(handle.Handle);
+
+		bool isUav = false;
+		bool isCubeArray = layers > 1;
+
+		D3D12_RESOURCE_FLAGS dxflags = D3D12_RESOURCE_FLAG_NONE;
+		if ((flags & UnorderedAccess) == UnorderedAccess)
+		{
+			isUav = true;
+			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		}
+		if ((flags & RenderTarget) == RenderTarget)
+		{
+			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		}
+		if ((flags & DepthStencil) == DepthStencil)
+		{
+			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+		}
+		CD3DX12_RESOURCE_DESC texDesc;
+		texDesc = CD3DX12_RESOURCE_DESC::Tex2D
+		(
+			ToDXGIFormatTypeless(format),
+			size,
+			size,
+			layers * 6,
+			mips,
+			1, 0,
+			dxflags
+		);
+		CD3DX12_HEAP_PROPERTIES heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+		auto& state = curTexEntry.State;
+		state = isUav ? UNORDERED_ACCESS : SRV_READ;
+		mDevice->CreateCommittedResource
+		(
+			&heapP, D3D12_HEAP_FLAG_NONE,
+			&texDesc, state,
+			nullptr,
+			IID_PPV_ARGS(&curTexEntry.Resource)
+		);
+
+		// Here we cache a few values that we will use to upload the mips:
+		UINT64 totalSize;
+		D3D12_PLACED_SUBRESOURCE_FOOTPRINT* footPrints = new D3D12_PLACED_SUBRESOURCE_FOOTPRINT[mips];
+		UINT64* rowSizes = new UINT64[mips];
+		mDevice->GetCopyableFootprints(&texDesc, 0, mips, 0, footPrints, nullptr, rowSizes, &totalSize);
+
+		// Upload buffer
+		// Sometimes the following CreateCommittedResource call will fail with "wrong memory preference..." 
+		// setting again fixes it. Prob because it is a static member¿??¿
+		heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		mDevice->CreateCommittedResource
+		(
+			&heapP, D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(totalSize), D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&curTexEntry.UploadHeap)
+		);
+		if (data)
+		{
+			// Implement this..
+			assert(false);
+			auto baseDesc = curTexEntry.Resource->GetDesc();
+			int curOff = 0;
+			for (int i = 0; i < mips; i++)
+			{
+				const D3D12_PLACED_SUBRESOURCE_FOOTPRINT& curPrint = footPrints[i];
+
+				UINT64 curSliceSize = rowSizes[i] * curPrint.Footprint.Height;
+
+				D3D12_SUBRESOURCE_DATA d = {};
+				d.pData = (void*)(curOff + (unsigned char*)data);
+				d.RowPitch = rowSizes[i];
+				d.SlicePitch = curSliceSize;
+
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry.Resource, state, COPY_DST));
+				UpdateSubresources(mDefaultSurface.CmdContext, curTexEntry.Resource, curTexEntry.UploadHeap, curPrint.Offset, i, 1, &d);
+				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(curTexEntry.Resource, COPY_DST, state));
+
+				curOff += rowSizes[i] * curPrint.Footprint.Height;
+			}
+		}
+
+		delete[] footPrints;
+		delete[] rowSizes;
+
+		// Render target views
+		if ((flags & RenderTarget) == RenderTarget)
+		{
+			// Implement this
+			assert(false);
+			//D3D12_RENDER_TARGET_VIEW_DESC rtDesc = {};
+			//rtDesc.Format = ToDXGIFormat(format);
+			//rtDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+			//rtDesc.Texture2D.MipSlice = 0;
+			//rtDesc.Texture2D.PlaneSlice = 0;
+			//
+			//mDevice->CreateRenderTargetView(curTexEntry.Resource, &rtDesc, mRenderTargetHeap->GetCPU());
+			//curTexEntry.RenderTarget = mRenderTargetHeap->GetCPU();
+			//mRenderTargetHeap->OffsetHandles(1);
+		}
+		// Depth stencil views
+		if ((flags & DepthStencil) == DepthStencil)
+		{
+			// implement this
+			assert(false);
+			//D3D12_DEPTH_STENCIL_VIEW_DESC depthDesc = {};
+			//depthDesc.Format = ToDXGIFormat(format);
+			//depthDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+			//depthDesc.Flags = D3D12_DSV_FLAG_NONE;
+			//depthDesc.Texture2D.MipSlice = 0;
+			//
+			//mDevice->CreateDepthStencilView(curTexEntry.Resource, &depthDesc, mDepthStencilHeap->GetCPU());
+			//curTexEntry.DepthStencil = mDepthStencilHeap->GetCPU();
+			//mDepthStencilHeap->OffsetHandles(1);
+		}
+		// Full view
+		{
+			D3D12_SHADER_RESOURCE_VIEW_DESC descCube = {};
+			descCube.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			descCube.Format = ToDXGIFormat(format);
+			if (format == Format::Depth24_Stencil8)
+			{
+				descCube.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+			}
+			descCube.ViewDimension = isCubeArray ? D3D12_SRV_DIMENSION_TEXTURECUBEARRAY : D3D12_SRV_DIMENSION_TEXTURECUBE;
+			if (isCubeArray)
+			{
+				descCube.TextureCubeArray.MipLevels = mips;
+				descCube.TextureCubeArray.MostDetailedMip = 0;
+				descCube.TextureCubeArray.ResourceMinLODClamp = 0.0f;
+				descCube.TextureCubeArray.First2DArrayFace = 0;
+				descCube.TextureCubeArray.NumCubes = layers;
+			}
+			else
+			{
+				descCube.TextureCube.MipLevels = mips;
+				descCube.TextureCube.MostDetailedMip = 0;
+				descCube.TextureCube.ResourceMinLODClamp = 0.0f;
+			}
+
+			curTexEntry.FullView = mViewsHeap.GetCPU();
+			mDevice->CreateShaderResourceView(curTexEntry.Resource, &descCube, curTexEntry.FullView);
+			mViewsHeap.OffsetHandles(1);
+		}
+		// Per mip-view
+		{
+			D3D12_SHADER_RESOURCE_VIEW_DESC descCube = {};
+			descCube.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			descCube.Format = ToDXGIFormat(format);
+			if (format == Format::Depth24_Stencil8)
+			{
+				descCube.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+			}
+			descCube.ViewDimension = isCubeArray ? D3D12_SRV_DIMENSION_TEXTURECUBEARRAY : D3D12_SRV_DIMENSION_TEXTURECUBE;
+			if (isCubeArray)
+			{
+				descCube.TextureCubeArray.MipLevels = 1;
+				descCube.TextureCubeArray.ResourceMinLODClamp = 0.0f;
+				descCube.TextureCubeArray.First2DArrayFace = 0;
+				descCube.TextureCubeArray.NumCubes = layers;
+			}
+			else
+			{
+				descCube.TextureCube.MipLevels = 1;
+				descCube.TextureCube.ResourceMinLODClamp = 0.0f;
+			}
+
+			curTexEntry.MipViews = new D3D12_CPU_DESCRIPTOR_HANDLE[mips];
+			for (int m = 0; m < mips; m++)
+			{
+				if (isCubeArray)
+				{
+					descCube.TextureCubeArray.MostDetailedMip = m;
+				}
+				else
+				{
+					descCube.TextureCubeArray.MostDetailedMip = m;
+				}
+				curTexEntry.MipViews[m] = mViewsHeap.GetCPU();
+				mDevice->CreateShaderResourceView(curTexEntry.Resource, &descCube, curTexEntry.MipViews[m]);
+				mViewsHeap.OffsetHandles(1);
+			}
+		}
+		// RW Views
+		if (isUav)
+		{
+			// Per mip-view
+			{
+				D3D12_UNORDERED_ACCESS_VIEW_DESC descCubeRW = {};
+				descCubeRW.Format = ToDXGIFormat(format);
+				descCubeRW.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+				descCubeRW.Texture2DArray.PlaneSlice = 0;
+				descCubeRW.Texture2DArray.ArraySize = layers * 6;
+				descCubeRW.Texture2DArray.FirstArraySlice = 0;
+
+				curTexEntry.MipViewsRW = new D3D12_CPU_DESCRIPTOR_HANDLE[mips];
+				for (int m = 0; m < mips; m++)
+				{
+					descCubeRW.Texture2DArray.MipSlice = m;
+					curTexEntry.MipViewsRW[m] = mViewsHeap.GetCPU();
+					mDevice->CreateUnorderedAccessView(curTexEntry.Resource, nullptr, &descCubeRW, curTexEntry.MipViewsRW[m]);
+					mViewsHeap.OffsetHandles(1);
+				}
+			}
+		}
+
+		return handle;
+	}
+
 	TextureHandle DX12GraphicsInterface::CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags /* = TextureFlagNone*/, void* data /*= nullptr*/)
 	{
 		if ((width * height * layers * mips) == 0)

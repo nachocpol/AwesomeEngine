@@ -210,6 +210,9 @@ void TestRenderer::Render(SceneGraph* scene)
 				{
 					AssetImporter importer(mGraphicsInterface);
 					curProbe->SourceTexture = importer.LoadAndCreateTexture(curProbe->GetSourcePath());
+
+					curProbe->IrradianceTexture = mGraphicsInterface->CreateTextureCube(128, 1, 1, Format::RGBA_32_Float, TextureFlags::UnorderedAccess);
+					curProbe->ConvolutedTexture = mGraphicsInterface->CreateTextureCube(512, 8, 1, Format::RGBA_32_Float, TextureFlags::UnorderedAccess);
 				}
 
 				ImGui::Begin("Testu");
