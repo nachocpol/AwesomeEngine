@@ -1,7 +1,6 @@
 DOING:
 + Physx link warnings..
 + Recompile shaders, allow change debug flag
-+ Probe
 + IBL
 
 TO-DO:
@@ -20,7 +19,6 @@ TO-DO:
 + Auto magic PSO without setting render target and depth formats..
 + Make constant buffer binding more clever, as in, if we don´t change a slot ,do not trash it...
 + Console to display logs
-+ Make pools for every type of resource
 + Check proper resizing..
 + Replace rand with something better (spherical distribution)
 + Combine dx12 texture creation code
@@ -34,6 +32,8 @@ TO-DO:
 + Clustered renderer.
 
 DONE:
++ Make pools for every type of resource
++ Probe
 + PBR rendering, start with the bases for a PBR model
 + Better way to recompile shaders
 + File mount system
