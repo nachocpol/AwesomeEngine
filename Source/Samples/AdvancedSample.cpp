@@ -81,6 +81,7 @@ void AdvancedApp::Init()
 			MaterialInfo mtlInfo;
 			mtlInfo.Roughness = (float)x / (float)(numx - 1);
 			mtlInfo.Metalness = (float)y / (float)(numy - 1);
+			mtlInfo.BaseColor = glm::vec3(1.0f,0.0f,1.0);
 			modelComponent->SetMaterial(mtlInfo);
 
 			//RigidBodyComponent* rbComp = curCube->AddComponent<RigidBodyComponent>();

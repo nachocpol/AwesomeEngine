@@ -1,12 +1,14 @@
 /*
 	IBL.hlsl
 */
-#include "Utils.hlsl"
+#include "Declarations.h"
+#include "BRDF.hlsl"
 
 SamplerState LinearWrapSampler : register(s0);
 
 Texture2D SourceEnvMap : register(t0);
 RWTexture2DArray<float4> TargetMip : register(u0);
+RWTexture2D<float4> BRDFLut : register(u1);
 
 float RadicalInverse_VdC(uint bits)
 {
@@ -122,5 +124,81 @@ void CSIrradianceGen(uint3 threadID : SV_DispatchThreadID)
 [numthreads(8,8,1)]
 void CSPrefilterGen(uint3 threadID : SV_DispatchThreadID)
 {
+	float roughness = gIBLData.Roughness * gIBLData.Roughness;
 
+	float3 samplingNormal = GetSamplingNormal(threadID);
+	float totalWeight = 0.0;
+	float3 prefilterAcum = 0.0;
+
+	float3 r = samplingNormal;
+	float3 v = r;
+
+	uint numSamples = 512;
+	for (uint i = 0; i < numSamples; ++i)
+	{
+		float2 Xi = Hammersley(i, numSamples);
+		float3 h = ImportanceSampleGGX(Xi, samplingNormal, roughness);
+		float3 l = normalize(2.0 * dot(v, h) * h - v);
+
+		float NdotL = max(dot(samplingNormal, l), 0.0);
+		if (NdotL > 0.0)
+		{
+			float2 tc = ToEquirectangular(l);
+			prefilterAcum += ReinhardTonemap(SourceEnvMap.SampleLevel(LinearWrapSampler, tc, 0).rgb) * NdotL;
+			totalWeight += NdotL;
+		}
+	}
+
+	prefilterAcum /= totalWeight;
+	// TO-do! Each mip not same size
+	TargetMip[threadID] = float4(prefilterAcum, 1.0);
+}
+
+[numthreads(8, 8, 1)]
+void CSBRDFLut(uint3 threadID : SV_DispatchThreadID)
+{
+	uint2 dim = uint2(0, 0);
+	uint layers = 0;
+	BRDFLut.GetDimensions(dim.x, dim.y);
+
+	// LUT 
+	float NdotV = (float)threadID.x / (float)dim.x;
+	float roughness = (float)threadID.y / (float)dim.y;
+
+	float3 v;
+	v.x = sqrt(1.0 - NdotV * NdotV);
+	v.y = 0.0;
+	v.z = NdotV;
+
+	float A = 0.0;
+	float B = 0.0;
+
+	float3 n = float3(0.0, 0.0, 1.0);
+
+	const uint numSamples = 1024;
+	for (uint i = 0; i < numSamples; ++i)
+	{
+		float2 Xi = Hammersley(i, numSamples);
+		float3 h = ImportanceSampleGGX(Xi, n, roughness);
+		float3 l = normalize(2.0 * dot(v, h) * h - v);
+
+		float NdotL = max(l.z, 0.0);
+		float NdotH = max(h.z, 0.0);
+		float VdotH = max(dot(v, h), 0.0);
+
+		if (NdotL > 0.0)
+		{
+			float G = G_GeometrySmith(NdotV, NdotL, roughness);
+			float G_Vis = (G * VdotH) / (NdotH * NdotV);
+			float Fc = pow(1.0 - VdotH, 5.0);
+
+			A += (1.0 - Fc) * G_Vis;
+			B += Fc * G_Vis;
+		}
+	}
+
+	A /= float(numSamples);
+	B /= float(numSamples);
+
+	BRDFLut[threadID.xy] = float4(A, B, 0, 0);
 }

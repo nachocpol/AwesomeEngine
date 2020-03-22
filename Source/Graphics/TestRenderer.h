@@ -69,6 +69,8 @@ namespace Graphics
 		BufferHandle mIBLDataCB;
 		ComputePipeline mGenIrradianceMapPipeline;
 		ComputePipeline mGenPrefilteredMapPipeline;
+		ComputePipeline mGenBRDFLutPipeline;
+		TextureHandle mBRDFLut;
 
 		// Lights:
 		int mCurLightCount;

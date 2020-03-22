@@ -3,7 +3,7 @@
 	Shaders used to render the meshes.
 */
 #include "Declarations.h"
-#include "Utils.hlsl"
+#include "BRDF.hlsl"
 
 struct SurfaceVSIn
 {
@@ -24,8 +24,11 @@ struct SurfaceVSOut
 };
 
 SamplerState LinearWrapSampler : register(s0);
+SamplerState LinearClampSampler : register(s1);
 
-TextureCube<float4> IrradianceMap : register(t1);
+TextureCube<float4> IrradianceMap  : register(t1);
+TextureCube<float4> PrefilteredMap : register(t2);
+Texture2D<float4> BRDFLut		   : register(t3);
 
 //////////////////////////////////////
 // Surface
@@ -41,69 +44,15 @@ SurfaceVSOut VSSurface(SurfaceVSIn input)
 	return output;
 }
 
-float D_DistributionGGX(float3 NdotH, float roughness)
-{
-	float r2 = roughness * roughness;
-	float NdotH2 = NdotH * NdotH;
-	float denom = (NdotH2 * (r2 - 1.0) + 1.0);
-	denom = PI * denom * denom;
-
-	return r2 / denom;
-}
-
-float GeometrySchlickGGX(float NdotV, float k)
-{
-	float nom   = NdotV;
-	float denom = NdotV * (1.0 - k) + k;
-
-	return nom / denom;
-}
-
-float G_GeometrySmith(float NdotV, float NdotL, float k)
-{
-	float ggx1 = GeometrySchlickGGX(NdotV, k);
-	float ggx2 = GeometrySchlickGGX(NdotL, k);
-
-	return ggx1 * ggx2;
-}
-
-float3 F_FresnelSchlick(float cosTheta, float3 F0)
-{
-	float f = pow(1.0 - cosTheta, 5.0);
-    return f + F0 * (1.0 - f);
-}
-
-float3 F_FresnelSchlickRoughness(float cosTheta, float3 F0, float roughness)
-{
-	return F0 + (max(1.0 - roughness, F0) - F0) * pow(1.0 - cosTheta, 5.0);
-}
-
-float F_Schlick(float NdotV, float F0, float F90)
-{
-	// check this, ndotv, hdok
-	return F0 + (F90 - F0) * pow(1.0 - NdotV, 5.0);
-}
-
-float Fd_Burley(float NdotV, float NdotL, float LdotH, float roughness) 
-{
-	float f90 = 0.5 + 2.0 * roughness * LdotH * LdotH;
-	float lightScatter = F_Schlick(NdotL, 1.0, f90);
-	float viewScatter = F_Schlick(NdotV, 1.0, f90);
-	return lightScatter * viewScatter * (1.0 / PI);
-}
-
-float Fd_Lambert()
-{
-	return 1.0 / PI;
-}
-
 float4 PSSurface(SurfaceVSOut input) : SV_Target0
 {
 	float3 n = normalize(input.WorldNormal);
 	float3 v = normalize(gCameraData.CameraWorldPos - input.WorldPos);
+	float3 r = reflect(-v, n);
 	float NdotV = max(dot(n, v), 0.0);
 
-	float3 F0 = float3(0.04, 0.04, 0.04); // TO-DO metallic surface
+	float3 F0 = float3(0.04, 0.04, 0.04); 
+	F0 = lerp(F0, gItemData.BaseColor, gItemData.Metalness);
 
 	float3 diffuseColor = gItemData.BaseColor * (1.0 - gItemData.Metalness);
 	float roughness = max(gItemData.Roughness * gItemData.Roughness, 0.001); // Roughness remaping.
@@ -119,7 +68,7 @@ float4 PSSurface(SurfaceVSOut input) : SV_Target0
 			// Light
 			float lightNormDist = 1.0 - (distance(input.WorldPos, light.PosDirection) / light.Radius);
 			float attenuation = lightNormDist * lightNormDist; // TODO: revisit this
-			float3 lightRadiance = light.Color * attenuation * light.Intensity;
+			float3 lightRadiance = light.Color * attenuation * light.Intensity * 5.0;
 
 			// BRDF
 			float3 l = normalize(light.PosDirection - input.WorldPos);
@@ -160,7 +109,11 @@ float4 PSSurface(SurfaceVSOut input) : SV_Target0
 		float3 irradiance = IrradianceMap.SampleLevel(LinearWrapSampler, n, 0).rgb;
 		irradiance *= diffuseColor;
 
-		ambient = kD * irradiance;
+		float2 brdfLUT = BRDFLut.SampleLevel(LinearClampSampler, float2(NdotV, roughness), 0).xy;
+		float3 prefiltered = PrefilteredMap.SampleLevel(LinearWrapSampler, r, roughness * 4).rgb;
+		float3 specular = prefiltered * (kS * brdfLUT.x + brdfLUT.y);
+
+		ambient = kD * irradiance + specular;
 	}
 	total += ambient;
 

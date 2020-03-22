@@ -126,7 +126,16 @@ void TestRenderer::Initialize(AppBase * app)
 		convDesc.ComputeShader.Type = ShaderType::Compute;
 		mGenPrefilteredMapPipeline = mGraphicsInterface->CreateComputePipeline(convDesc);
 
+		ComputePipelineDescription brdfLutDesc;
+		brdfLutDesc.ComputeShader.ShaderEntryPoint = "CSBRDFLut";
+		brdfLutDesc.ComputeShader.ShaderPath = "shadersrc:IBL.hlsl";
+		brdfLutDesc.ComputeShader.Type = ShaderType::Compute;
+		mGenBRDFLutPipeline = mGraphicsInterface->CreateComputePipeline(brdfLutDesc);
+
+		mBRDFLut = mGraphicsInterface->CreateTexture2D(256, 256, 1, 1, Format::RG_32_Float, TextureFlags::UnorderedAccess);
+
 		mIBLDataCB = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(mIBLData));
+
 	}
 }
 
@@ -140,6 +149,16 @@ static bool kRenderLightBounds = false;
 
 void TestRenderer::Render(SceneGraph* scene)
 { 
+	static bool doBRDF = true;
+	if (doBRDF)
+	{
+		doBRDF = false;
+
+		mGraphicsInterface->SetComputePipeline(mGenBRDFLutPipeline);
+		mGraphicsInterface->SetRWResource(mBRDFLut, 1);
+		mGraphicsInterface->Dispatch(256 / 8, 256 / 8, 1);
+	}
+
 	// Render UI:
 	if (ImGui::BeginMainMenuBar())
 	{
@@ -238,26 +257,27 @@ void TestRenderer::Render(SceneGraph* scene)
 					mGraphicsInterface->Dispatch(128 / 8, 128 / 8, 6);
 
 					// Prefilter map:
-					//mGraphicsInterface->SetComputePipeline(mGenPrefilteredMapPipeline);
-					//mGraphicsInterface->SetResource(curProbe->SourceTexture, 0);
-					//for (int mip = 0; mip < 5; ++mip)
-					//{
-					//	float roughness = (float)mip / 5.0f;
-					//	mIBLData.Roughness = roughness;
-					//	mGraphicsInterface->SetConstantBuffer(mIBLDataCB, Declarations::kIBLDataSlot, sizeof(mIBLData), &mIBLData);
-					//	mGraphicsInterface->SetRWResource(curProbe->PrefilteredTexture, 0, mip);
-					//	mGraphicsInterface->Dispatch(256 / 8, 256 / 8, 6);
-					//}
+					mGraphicsInterface->SetComputePipeline(mGenPrefilteredMapPipeline);
+					mGraphicsInterface->SetResource(curProbe->SourceTexture, 0);
+					for (int mip = 0; mip < 5; ++mip)
+					{
+						float roughness = (float)mip / 5.0f;
+						mIBLData.Roughness = roughness;
+						mGraphicsInterface->SetConstantBuffer(mIBLDataCB, Declarations::kIBLDataSlot, sizeof(mIBLData), &mIBLData);
+						mGraphicsInterface->SetRWResource(curProbe->PrefilteredTexture, 0, mip);
+						int curSize = 256 * glm::pow(0.5f, mip);
+						mGraphicsInterface->Dispatch(curSize / 8, curSize / 8, 6);
+					}
 				}
 
-				DebugDraw::GetInstance()->DrawCubemap(curProbe->IrradianceTexture, curProbe->GetParent()->Transform->GetPosition());
+				DebugDraw::GetInstance()->DrawCubemap(curProbe->IrradianceTexture, curProbe->GetParent()->Transform->GetPosition() + glm::vec3(-1.0f,1.0f,0.0f));
+				DebugDraw::GetInstance()->DrawCubemap(curProbe->PrefilteredTexture, curProbe->GetParent()->Transform->GetPosition() + glm::vec3(1.0f, 1.0f, 0.0f));
 				if (i == 0)
 				{
 					mGraphicsInterface->SetResource(curProbe->IrradianceTexture, 1);
+					mGraphicsInterface->SetResource(curProbe->PrefilteredTexture, 2);
+					mGraphicsInterface->SetResource(mBRDFLut, 3);
 				}
-				ImGui::Begin("Testu");
-				ImGui::Image((ImTextureID)curProbe->SourceTexture.Handle, ImVec2(1024, 512));
-				ImGui::End();
 			}
 		}
 
