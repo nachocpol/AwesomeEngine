@@ -6,7 +6,8 @@
 	#pragma once
 	#include "glm/glm.hpp"
 
-	#define CBUFFER(name, slot)static const unsigned int k##name##Slot = slot; struct name
+	#define CBUFFER(name) struct name {
+	#define CBUFFER_END(name, slot) }; static const unsigned int k##name##Slot = slot;
 	#define STRUCTUREDBUFFER(name, type, slot) static const unsigned int k##name##Slot = slot; static const unsigned int k##name##Stride = sizeof(type);
 
 	#define float4x4	glm::mat4
@@ -17,7 +18,8 @@
 	namespace Declarations
 	{
 #else
-	#define CBUFFER(name, slot) cbuffer name : register(b##slot)
+	#define CBUFFER(name) struct name {
+#define CBUFFER_END(name, slot) }; cbuffer name##CB : register(b##slot) { name g##name; }; 
 	#define STRUCTUREDBUFFER(name, type, slot) StructuredBuffer<type> name : register(t##slot); RWStructuredBuffer<type> RW##name : register(u##slot);
 #endif
 
@@ -38,32 +40,32 @@ struct Tile
 };
 STRUCTUREDBUFFER(Tiles, Tile, 1);
 
-CBUFFER(UIData, 0)
-{
+CBUFFER(UIData)
 	float4x4 ProjectionUI;	// ImGUI ortho projection
-};
+CBUFFER_END(UIData, 0)
 
-CBUFFER(CameraData, 0)
-{
+CBUFFER(CameraData)
 	float4x4 InvViewProj;
 	float3 CameraWorldPos;
-};
+CBUFFER_END(CameraData, 0)
 
-CBUFFER(ItemData, 1)
-{
+CBUFFER(ItemData)
 	float4x4 World;
 	float4 DebugColor;
 	int NumLights;
 	float3 BaseColor;
 	float Metalness;
 	float Roughness;
-};
+CBUFFER_END(ItemData, 1)
 
-CBUFFER(DebugData, 2)
-{
+CBUFFER(DebugData)
 	int DebugCubemap;
 	int Equirectangular;
-};
+CBUFFER_END(DebugData, 2)
+
+CBUFFER(IBLData)
+	float Roughness;
+CBUFFER_END(IBLData, 0)
 
 #if defined(__cplusplus)
 	} // End namespace

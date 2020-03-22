@@ -19,7 +19,7 @@ namespace World
 
 		Graphics::TextureHandle SourceTexture;
 		Graphics::TextureHandle IrradianceTexture;
-		Graphics::TextureHandle ConvolutedTexture;
+		Graphics::TextureHandle PrefilteredTexture;
 
 	private:
 		std::string mSourceEnvMap;

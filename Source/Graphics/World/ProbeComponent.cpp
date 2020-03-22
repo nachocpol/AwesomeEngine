@@ -9,7 +9,7 @@ ProbeComponent::ProbeComponent()
 	, mInitialized(false)
 	, SourceTexture(InvalidTexture)
 	, IrradianceTexture(InvalidTexture)
-	, ConvolutedTexture(InvalidTexture)
+	, PrefilteredTexture(InvalidTexture)
 {
 }
 

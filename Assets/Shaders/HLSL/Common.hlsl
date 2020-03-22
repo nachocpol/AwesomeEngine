@@ -94,7 +94,7 @@ float4 PSToneGamma(FullscrenVSOut i): SV_Target0
 UIVSOut VSUI(UIVSIn i)
 {
 	UIVSOut o;
-	o.ClipPos = mul(ProjectionUI,float4(i.Position,0.0,1.0));
+	o.ClipPos = mul(gUIData.ProjectionUI, float4(i.Position,0.0,1.0));
 	o.VertexColor = i.VertexColor;
 	o.TexCoord = i.TexCoord;
 	return o;
@@ -111,34 +111,15 @@ float4 PSUI(UIVSOut i): SV_Target0
 SimpleVSOut VSSimple(SimpleVSIn i)
 {
 	SimpleVSOut o;
-	o.WPos = mul(World, float4(i.Position,1.0));
-	o.ClipPos = mul(InvViewProj, o.WPos);
-	o.PNormal = mul((float3x3)World,i.Normal);
-	//o.PTexcoord = i.Texcoord;
+	o.WPos = mul(gItemData.World, float4(i.Position,1.0));
+	o.ClipPos = mul(gCameraData.InvViewProj, o.WPos);
+	o.PNormal = mul((float3x3)gItemData.World,i.Normal);
 
-	//float3 T 	= normalize(mul(Model,float4(i.Tangent,0.0f))).xyz;
-	//float3 N 	= normalize(mul(Model,float4(i.Normal,0.0f))).xyz;
-	//T 			= normalize(T - dot(T, N) * N);
-	//float3 B 	= cross(T,N);
-	//o.TBN 		= float3x3(T,B,N);
-	
 	return o;
 }
 
 float4 PSSimple(SimpleVSOut i): SV_Target0
 {	
-	/*
-	float4 c = AlbedoTexture.Sample(LinearWrapSampler,i.PTexcoord);
-	float3 n = BumpTexture.Sample(LinearWrapSampler,i.PTexcoord).xyz;;
-	n = normalize(n * 2.0f - 1.0f);
-	n = normalize(mul(i.TBN, n));
-
-	float3 tl = normalize(float3(0.0f,15.0f,8.0f) - i.WPos.xyz);
-	float ndl = max(dot(n,tl),0.0f);
-
-	return (c * ndl);
-	*/
-
 	float lightDir = normalize(float3(1.9,0.0,0.0));
 	float ndl = max(dot(normalize(i.PNormal), lightDir),0.0);
 	float3 albedo = float3(0.7,0.6,0.6);

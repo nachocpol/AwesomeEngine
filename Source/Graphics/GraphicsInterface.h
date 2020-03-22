@@ -305,7 +305,7 @@ namespace Graphics
 		virtual void SetConstantBuffer(const BufferHandle& buffer, uint8_t slot, uint32_t size, void* data) = 0;
 		virtual void SetResource(const TextureHandle& texture, uint8_t slot) = 0;
 		virtual void SetResource(const BufferHandle& buffer, uint8_t slot) = 0;
-		virtual void SetRWResource(const TextureHandle& texture, uint8_t slot) = 0;
+		virtual void SetRWResource(const TextureHandle& texture, uint8_t slot, uint32_t mip = 0) = 0;
 		virtual void SetRWResource(const BufferHandle& buffer, uint8_t slot) = 0;
 		virtual void SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth) = 0;
 		virtual void ClearTargets(uint8_t num, TextureHandle* colorTargets,float clear[4], TextureHandle* depth,float d, uint8_t stencil) = 0;

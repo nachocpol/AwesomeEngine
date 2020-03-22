@@ -1801,11 +1801,6 @@ namespace Graphics { namespace DX12 {
 					bindSlot.Null = false;
 					mBindingState.Dirty = true;
 				}
-
-				// UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
-				// auto heapHandle = mFrameHeap[idx]->GetCPU();
-				// heapHandle.Offset(slot, mFrameHeap[idx]->GetIncrementSize());
-				// mDevice->CopyDescriptorsSimple(1, heapHandle, bufferEntry.CBV, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			}
 		}
 	}
@@ -1835,10 +1830,6 @@ namespace Graphics { namespace DX12 {
 			bindSlot.Null = false;
 			mBindingState.Dirty = true;
 		}
-		// Copy descriptor:
-		// auto slotHandle = mFrameHeap[idx]->GetCPU();
-		// slotHandle.Offset(slot + NUM_CBVS, mFrameHeap[idx]->GetIncrementSize());
-		// mDevice->CopyDescriptorsSimple(1, slotHandle, entry.FullView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 
 	void DX12GraphicsInterface::SetResource(const BufferHandle& buffer, uint8_t slot)
@@ -1866,14 +1857,9 @@ namespace Graphics { namespace DX12 {
 			bindSlot.Null = false;
 			mBindingState.Dirty = true;
 		}
-
-		// Copy descriptor:
-		// auto slotHandle = mFrameHeap[idx]->GetCPU();
-		// slotHandle.Offset(slot + NUM_CBVS, mFrameHeap[idx]->GetIncrementSize());
-		// mDevice->CopyDescriptorsSimple(1, slotHandle, entry.GPUBufferView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 
-	void DX12GraphicsInterface::SetRWResource(const TextureHandle& texture, uint8_t slot)
+	void DX12GraphicsInterface::SetRWResource(const TextureHandle& texture, uint8_t slot, uint32_t mip)
 	{
 		if (!CHECK_TEXTURE(texture))
 		{
@@ -1891,17 +1877,12 @@ namespace Graphics { namespace DX12 {
 		}
 
 		BindingState::Slot& bindSlot = mBindingState.UASlots[slot];
-		if (bindSlot.Null || (bindSlot.CPUView != entry.MipViewsRW[0]))
+		if (bindSlot.Null || (bindSlot.CPUView != entry.MipViewsRW[mip]))
 		{
-			bindSlot.CPUView = entry.MipViewsRW[0];
+			bindSlot.CPUView = entry.MipViewsRW[mip];
 			bindSlot.Null = false;
 			mBindingState.Dirty = true;
 		}
-
-		// Copy descriptor:
-		// auto slotHandle = mFrameHeap[idx]->GetCPU();
-		// slotHandle.Offset(slot + NUM_CBVS + NUM_SRVS, mFrameHeap[idx]->GetIncrementSize());
-		// mDevice->CopyDescriptorsSimple(1, slotHandle, entry.MipViewsRW[0], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 
 	void DX12GraphicsInterface::SetRWResource(const BufferHandle& buffer, uint8_t slot)
@@ -1929,11 +1910,6 @@ namespace Graphics { namespace DX12 {
 			bindSlot.Null = false;
 			mBindingState.Dirty = true;
 		}
-
-		// Copy descriptor:
-		// auto slotHandle = mFrameHeap[idx]->GetCPU();
-		// slotHandle.Offset(slot + NUM_CBVS + NUM_SRVS, mFrameHeap[idx]->GetIncrementSize());
-		// mDevice->CopyDescriptorsSimple(1, slotHandle, entry.GPURWBufferView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 
 	void DX12GraphicsInterface::SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth)

@@ -8,14 +8,52 @@ SamplerState LinearWrapSampler : register(s0);
 Texture2D SourceEnvMap : register(t0);
 RWTexture2DArray<float4> TargetMip : register(u0);
 
-[numthreads(8,8,1)]
-void CSIrradianceGen(uint3 threadID : SV_DispatchThreadID)
+float RadicalInverse_VdC(uint bits)
+{
+	bits = (bits << 16u) | (bits >> 16u);
+	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+}
+
+// Low discrepancy sequence generation:
+float2 Hammersley(uint i, uint N)
+{
+	return float2(float(i) / float(N), RadicalInverse_VdC(i));
+}
+
+float3 ImportanceSampleGGX(float2 Xi, float3 N, float roughness)
+{
+	float a = roughness * roughness; // Rougness remaping.
+
+	float phi = 2.0 * PI * Xi.x;
+	float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a*a - 1.0) * Xi.y));
+	float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+
+	// from spherical coordinates to cartesian coordinates
+	float3 H;
+	H.x = cos(phi) * sinTheta;
+	H.y = sin(phi) * sinTheta;
+	H.z = cosTheta;
+
+	// from tangent-space vector to world-space sample vector
+	float3 up = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
+	float3 tangent = normalize(cross(up, N));
+	float3 bitangent = cross(N, tangent);
+
+	float3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;
+	return normalize(sampleVec);
+}
+
+float3 GetSamplingNormal(uint3 threadID)
 {
 	uint2 threadPos = threadID.xy;
 	uint face = threadID.z;
-	uint2 dim = uint2(0,0);
+	uint2 dim = uint2(0, 0);
 	uint layers = 0;
-    TargetMip.GetDimensions(dim.x,dim.y,layers);
+	TargetMip.GetDimensions(dim.x, dim.y, layers);
 	float2 texCoord = (float2)threadPos / (float2)dim;
 
 	// Sampling direction (as if this was +X face)
@@ -40,8 +78,13 @@ void CSIrradianceGen(uint3 threadID : SV_DispatchThreadID)
 	faceRot[3] = mul(faceRot[3], faceRot[4]);
 
 	// Rotate base normal(align with current cube face):
-	samplingNormal = mul(normalize(samplingNormal), faceRot[face]);
+	return mul(normalize(samplingNormal), faceRot[face]);
+}
 
+[numthreads(8,8,1)]
+void CSIrradianceGen(uint3 threadID : SV_DispatchThreadID)
+{
+	float3 samplingNormal = GetSamplingNormal(threadID);
 	float3 irradiance = 0;
 	int numSamples = 0;
 	float sampleDelta = 0.05;
@@ -76,8 +119,8 @@ void CSIrradianceGen(uint3 threadID : SV_DispatchThreadID)
 	TargetMip[threadID] = float4(irradiance,1);
 }
 
-[numthreads(1,1,1)]
-void CSConvolute(uint3 threadID : SV_DispatchThreadID)
+[numthreads(8,8,1)]
+void CSPrefilterGen(uint3 threadID : SV_DispatchThreadID)
 {
 
 }

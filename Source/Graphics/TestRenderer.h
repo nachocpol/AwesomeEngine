@@ -53,25 +53,28 @@ namespace Graphics
 		void DrawOriginGizmo();
 		void DrawTiledCamera(World::CameraComponent* camera);
 
-		Graphics::TextureHandle mColourRt;
-		Graphics::TextureHandle mDepthRt;
-		Graphics::GraphicsPipeline mTestPipeline;
-		Graphics::GraphicsPipeline mSurfacePipelineBase;
-		Graphics::GraphicsPipeline mPresentPipeline;
-		Graphics::BufferHandle mPresentVtxBuffer;
+		TextureHandle mColourRt;
+		TextureHandle mDepthRt;
+		GraphicsPipeline mTestPipeline;
+		GraphicsPipeline mSurfacePipelineBase;
+		GraphicsPipeline mPresentPipeline;
+		BufferHandle mPresentVtxBuffer;
 		Declarations::CameraData mCameraData;
-		Graphics::BufferHandle mCameraDataCb;
+		BufferHandle mCameraDataCb;
 		Declarations::ItemData mItemData;
-		Graphics::BufferHandle mItemDataCb;
+		BufferHandle mItemDataCb;
 
 		// Envmap processing:
-		Graphics::ComputePipeline mGenIrradianceMapPipeline;
-		Graphics::ComputePipeline mConvolutePipeline;
+		Declarations::IBLData mIBLData;
+		BufferHandle mIBLDataCB;
+		ComputePipeline mGenIrradianceMapPipeline;
+		ComputePipeline mGenPrefilteredMapPipeline;
 
+		// Lights:
 		int mCurLightCount;
 		int kMaxLights = 1024; 
 		std::vector<Declarations::Light> mCurLightsData;
-		Graphics::BufferHandle mLightsListSB;
+		BufferHandle mLightsListSB;
 
 		int kNumTilesW = 11;
 		int kNumTilesH = 5;

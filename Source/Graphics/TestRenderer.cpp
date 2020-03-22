@@ -121,10 +121,12 @@ void TestRenderer::Initialize(AppBase * app)
 		mGenIrradianceMapPipeline = mGraphicsInterface->CreateComputePipeline(irradianceDesc);
 
 		ComputePipelineDescription convDesc;
-		convDesc.ComputeShader.ShaderEntryPoint = "CSConvolute";
+		convDesc.ComputeShader.ShaderEntryPoint = "CSPrefilterGen";
 		convDesc.ComputeShader.ShaderPath = "shadersrc:IBL.hlsl";
 		convDesc.ComputeShader.Type = ShaderType::Compute;
-		mConvolutePipeline = mGraphicsInterface->CreateComputePipeline(convDesc);
+		mGenPrefilteredMapPipeline = mGraphicsInterface->CreateComputePipeline(convDesc);
+
+		mIBLDataCB = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(mIBLData));
 	}
 }
 
@@ -227,12 +229,25 @@ void TestRenderer::Render(SceneGraph* scene)
 					curProbe->SourceTexture = importer.LoadAndCreateTexture(curProbe->GetSourcePath());
 
 					curProbe->IrradianceTexture = mGraphicsInterface->CreateTextureCube(128, 1, 1, Format::RGBA_32_Float, TextureFlags::UnorderedAccess);
-					curProbe->ConvolutedTexture = mGraphicsInterface->CreateTextureCube(512, 8, 1, Format::RGBA_32_Float, TextureFlags::UnorderedAccess);
+					curProbe->PrefilteredTexture = mGraphicsInterface->CreateTextureCube(256, 5, 1, Format::RGBA_32_Float, TextureFlags::UnorderedAccess);
 					
+					// Generate irradiance map:
 					mGraphicsInterface->SetComputePipeline(mGenIrradianceMapPipeline);
 					mGraphicsInterface->SetResource(curProbe->SourceTexture, 0);
 					mGraphicsInterface->SetRWResource(curProbe->IrradianceTexture, 0);
 					mGraphicsInterface->Dispatch(128 / 8, 128 / 8, 6);
+
+					// Prefilter map:
+					//mGraphicsInterface->SetComputePipeline(mGenPrefilteredMapPipeline);
+					//mGraphicsInterface->SetResource(curProbe->SourceTexture, 0);
+					//for (int mip = 0; mip < 5; ++mip)
+					//{
+					//	float roughness = (float)mip / 5.0f;
+					//	mIBLData.Roughness = roughness;
+					//	mGraphicsInterface->SetConstantBuffer(mIBLDataCB, Declarations::kIBLDataSlot, sizeof(mIBLData), &mIBLData);
+					//	mGraphicsInterface->SetRWResource(curProbe->PrefilteredTexture, 0, mip);
+					//	mGraphicsInterface->Dispatch(256 / 8, 256 / 8, 6);
+					//}
 				}
 
 				DebugDraw::GetInstance()->DrawCubemap(curProbe->IrradianceTexture, curProbe->GetParent()->Transform->GetPosition());

@@ -34,9 +34,9 @@ TextureCube<float4> IrradianceMap : register(t1);
 SurfaceVSOut VSSurface(SurfaceVSIn input)
 {
 	SurfaceVSOut output;
-	output.WorldPos = mul(World, float4(input.Position, 1.0)).xyz;
-	output.ClipPos = mul(InvViewProj, float4(output.WorldPos, 1.0));
-	output.WorldNormal = mul(World, float4(input.Normal, 0.0));
+	output.WorldPos = mul(gItemData.World, float4(input.Position, 1.0)).xyz;
+	output.ClipPos = mul(gCameraData.InvViewProj, float4(output.WorldPos, 1.0));
+	output.WorldNormal = mul(gItemData.World, float4(input.Normal, 0.0));
 	output.LocalPos = input.Position;
 	return output;
 }
@@ -100,17 +100,17 @@ float Fd_Lambert()
 float4 PSSurface(SurfaceVSOut input) : SV_Target0
 {
 	float3 n = normalize(input.WorldNormal);
-	float3 v = normalize(CameraWorldPos - input.WorldPos);
+	float3 v = normalize(gCameraData.CameraWorldPos - input.WorldPos);
 	float NdotV = max(dot(n, v), 0.0);
 
 	float3 F0 = float3(0.04, 0.04, 0.04); // TO-DO metallic surface
 
-	float3 diffuseColor = BaseColor * (1.0 - Metalness);
-	float roughness = max(Roughness * Roughness, 0.001); // Roughness remaping.
+	float3 diffuseColor = gItemData.BaseColor * (1.0 - gItemData.Metalness);
+	float roughness = max(gItemData.Roughness * gItemData.Roughness, 0.001); // Roughness remaping.
 
 	float3 total = 0.0;
 
-	for(int lightIdx = 0; lightIdx < NumLights; ++lightIdx)
+	for(int lightIdx = 0; lightIdx < gItemData.NumLights; ++lightIdx)
 	{
 		Light light = Lights[lightIdx];
 		
@@ -145,7 +145,7 @@ float4 PSSurface(SurfaceVSOut input) : SV_Target0
 
 			// Ratio of refraction:
 			float3 kS = F;
-			float3 kD = (float3(1.0,1.0,1.0) - kS) * (1.0 - Metalness);
+			float3 kD = (float3(1.0,1.0,1.0) - kS) * (1.0 - gItemData.Metalness);
 
 			total += (kD * BRDFd + BRDFs) * lightRadiance * NdotL;
 		}

@@ -29,7 +29,7 @@ struct DebugDrawVSOut
 DebugDrawVSOut VSDebugDraw(DebugDrawVSIn input)
 {
 	DebugDrawVSOut output;
-	output.ClipPos = mul(InvViewProj, mul(World, float4(input.Position, 1.0)));
+	output.ClipPos = mul(gCameraData.InvViewProj, mul(gItemData.World, float4(input.Position, 1.0)));
 	output.Color.rgb = input.Color;
 	output.Color.a = 1.0;
 	output.LocalPos = input.Position;
@@ -38,7 +38,7 @@ DebugDrawVSOut VSDebugDraw(DebugDrawVSIn input)
 
 float4 PSDebugDraw(DebugDrawVSOut input) : SV_Target0
 {
-	return input.Color * DebugColor;
+	return input.Color * gItemData.DebugColor;
 }
 
 //////////////////////////////////////
@@ -47,14 +47,14 @@ float4 PSDebugDraw(DebugDrawVSOut input) : SV_Target0
 
 float4 PSDebugDrawSolid(SurfaceVSOut input) : SV_Target0
 {
-	if (Equirectangular == 1)
+	if (gDebugData.Equirectangular == 1)
 	{
 		float3 dir = normalize(input.LocalPos);
 		float2 tc = ToEquirectangular(dir);
 		float3 equiColor = TextureSource.SampleLevel(LinearWrapSampler, tc, 0).rgb;
 		return float4(equiColor, 1.0);
 	}
-	else if (DebugCubemap == 1)
+	else if (gDebugData.DebugCubemap == 1)
 	{
 		float3 dir = normalize(input.LocalPos);
 		float3 cubemapColor = CubeMapSource.SampleLevel(LinearWrapSampler, dir, 0).rgb;
@@ -62,6 +62,6 @@ float4 PSDebugDrawSolid(SurfaceVSOut input) : SV_Target0
 	}
 	else
 	{
-		return DebugColor;
+		return gItemData.DebugColor;
 	}
 }
