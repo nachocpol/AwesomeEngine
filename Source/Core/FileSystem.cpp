@@ -58,10 +58,12 @@ bool FileSystem::FixupPath(std::string& path)
 	{
 		if (device.Identifier == pathIdentifier)
 		{
-			path = path.erase(0, charPos + 1);
-			path.insert(0, device.RootPath);
-			if (FileExists(path))
+			std::string tempPath = path;
+			tempPath = tempPath.erase(0, charPos + 1);
+			tempPath.insert(0, device.RootPath);
+			if (FileExists(tempPath))
 			{
+				path = tempPath;
 				return true;
 			}
 			// Don't break, we can have more devices for this file type.
