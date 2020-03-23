@@ -111,6 +111,7 @@ void TestRenderer::Initialize(AppBase * app)
 	mItemDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(Declarations::ItemData));
 
 	mLightsListSB = mGraphicsInterface->CreateBuffer(BufferType::GPUBuffer, CPUAccess::None, GPUAccess::Read, kMaxLights, Declarations::kLightsStride);
+	mCurLightsData.resize(kMaxLights);
 
 	// Env map processing
 	{
@@ -213,24 +214,22 @@ void TestRenderer::Render(SceneGraph* scene)
 		rootActor->FindComponents<LightComponent>(lights, true);
 		if (!lights.empty())
 		{
-			mCurLightsData.resize(glm::min(kMaxLights, (int)lights.size()));
-			for (uint32_t i = 0; i < mCurLightsData.size(); ++i)
+			mCurLightCount = 0;
+			for (LightComponent* light : lights)
 			{
-				const auto light = lights[i];
 				Declarations::Light dataLight;
 				dataLight.Color = light->GetColor();
 				dataLight.Type = (int)light->GetLightType();
 				dataLight.Radius = light->GetRadius();
 				dataLight.Intensity = light->GetIntensity();
 				dataLight.PosDirection = light->GetParent()->Transform->GetPosition();
-				mCurLightsData[i] = dataLight;
+				mCurLightsData[mCurLightCount++] = dataLight;
 
 				if (kRenderLightBounds)
 				{
 					DebugDraw::GetInstance()->DrawWireSphere(dataLight.PosDirection, dataLight.Radius, glm::vec4(light->GetColor(), 1.0f));
 				}
 			}
-			mCurLightCount = (int)mCurLightsData.size();
 			mGraphicsInterface->SetBufferData(mLightsListSB, Declarations::kLightsStride * mCurLightCount, 0, mCurLightsData.data());
 		}
 

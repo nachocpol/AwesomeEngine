@@ -5,6 +5,8 @@
 #include "Component.h"
 #include "Materialnfo.h"
 
+#include "glm/glm.hpp"
+
 #include <string>
 #include <map>
 #include <vector>
@@ -26,8 +28,11 @@ namespace Graphics
 		uint32_t VertexSize;
 		BufferHandle IndexBuffer;
 		uint32_t NumIndices;
+		std::string Name;
+
 		Math::AABBData AABB;
 		Math::BSData BS;
+		MaterialInfo DefaultMaterial;
 	};
 
 	struct Model
@@ -48,7 +53,7 @@ namespace Graphics
 	public:
 		static ModelFactory* Get();
 		// Load from source file (.fbx,.obj...)
-		Model* LoadFromFile(std::string path, GraphicsInterface* graphicsInterface);
+		Model* LoadFromFile(std::string path, GraphicsInterface* graphicsInterface, glm::mat3 transform = glm::mat3());
 		// Load model from asset file (binary)
 		Model* LoadFromAsset(std::string path, GraphicsInterface* graphicsInterface);
 
@@ -77,7 +82,12 @@ namespace World
 
 	private:
 		Graphics::Model* mModel;
-		std::vector<MaterialInfo> mMaterials;
+		struct MaterialSlot
+		{
+			bool Overriden = false;
+			MaterialInfo Material;
+		};
+		std::vector<MaterialSlot> mMaterials;
 		std::vector<Math::AABBData> mWorldAABB;
 		std::vector<Math::BSData> mWorldBS;
 	};

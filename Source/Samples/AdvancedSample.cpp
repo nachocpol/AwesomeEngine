@@ -34,6 +34,7 @@ public:
 private:
 	Graphics::Model* mCube;
 	Graphics::Model* mSphere;
+	Graphics::Model* mQuadModel;
 	World::SceneGraph mScene;
 	Graphics::TestRenderer mRenderer;
 	Actor* mCamera;
@@ -52,6 +53,8 @@ void AdvancedApp::Init()
 	// Spawn some stuff
 	mCube = Graphics::ModelFactory::Get()->LoadFromFile("assets:Meshes/cube.obj", mGraphicsInterface);
 	mSphere = Graphics::ModelFactory::Get()->LoadFromFile("assets:Meshes/sphere.obj", mGraphicsInterface);
+	glm::mat3 rot = glm::rotate(glm::mat4(), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	mQuadModel = Graphics::ModelFactory::Get()->LoadFromFile("assets:Meshes/QuadDrone.FBX", mGraphicsInterface, rot);
 
 	int numx = 7;
 	int numy = 7;
@@ -129,6 +132,13 @@ void AdvancedApp::Init()
 		BoxColliderComponent* boxCol = ground->AddComponent<BoxColliderComponent>();
 		boxCol->SetLocalExtents(glm::vec3(10.0f, 0.05f, 10.0f));
 		groudRb->AddCollider(boxCol);
+	}
+
+	// Drone mesh
+	{
+		Actor* drone = mScene.SpawnActor();
+		drone->AddComponent<TransformComponent>()->SetPosition(0.0f,1.0f,0.0);
+		drone->AddComponent<ModelComponent>()->SetModel(mQuadModel);
 	}
 
 	// Probe

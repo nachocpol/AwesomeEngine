@@ -35,7 +35,7 @@ ModelFactory* Graphics::ModelFactory::Get()
 	return kModelFactory;
 }
 
-Model* Graphics::ModelFactory::LoadFromFile(std::string path, GraphicsInterface* graphicsInterface)
+Model* Graphics::ModelFactory::LoadFromFile(std::string path, GraphicsInterface* graphicsInterface, glm::mat3 transform)
 {
 	// Check if the entry already exists:
 	auto cachedRes = mModelCache.find(path);
@@ -73,12 +73,11 @@ Model* Graphics::ModelFactory::LoadFromFile(std::string path, GraphicsInterface*
 	uint32_t numMeshes = loadedScene->mNumMeshes;
 	model->Meshes = new Mesh[numMeshes];
 	model->NumMeshes = numMeshes;
-
-	//std::vector<Graphics::ShadingInfo> loadedMaterials;
-	//loadedMaterials.resize(numMeshes);
 	for (uint32_t i = 0; i < numMeshes; i++)
 	{
 		const aiMesh* curLoadedMesh = loadedScene->mMeshes[i];
+		model->Meshes[i].Name = std::string(curLoadedMesh->mName.C_Str());
+
 		uint32_t numVertices = curLoadedMesh->mNumVertices;
 		uint32_t vtxSize = sizeof(PosNorTanTexc_Vertex) * numVertices;
 		std::vector<PosNorTanTexc_Vertex> vertices;
@@ -93,9 +92,11 @@ Model* Graphics::ModelFactory::LoadFromFile(std::string path, GraphicsInterface*
 		for (uint32_t v = 0; v < numVertices; v++)
 		{
 			// Position:
-			vtx->Position[0] = curLoadedMesh->mVertices[v].x;
-			vtx->Position[1] = curLoadedMesh->mVertices[v].y;
-			vtx->Position[2] = curLoadedMesh->mVertices[v].z;
+			glm::vec3 pos(curLoadedMesh->mVertices[v].x, curLoadedMesh->mVertices[v].y, curLoadedMesh->mVertices[v].z);
+			pos = pos * transform;
+			vtx->Position[0] = pos.x;
+			vtx->Position[1] = pos.y;
+			vtx->Position[2] = pos.z;
 
 			minVtx = glm::min(glm::vec3(vtx->Position[0], vtx->Position[1], vtx->Position[2]), minVtx);
 			maxVtx = glm::max(glm::vec3(vtx->Position[0], vtx->Position[1], vtx->Position[2]), maxVtx);
@@ -103,17 +104,21 @@ Model* Graphics::ModelFactory::LoadFromFile(std::string path, GraphicsInterface*
 			// Normal:
 			if (curLoadedMesh->HasNormals())
 			{
-				vtx->Normal[0] = curLoadedMesh->mNormals[v].x;
-				vtx->Normal[1] = curLoadedMesh->mNormals[v].y;
-				vtx->Normal[2] = curLoadedMesh->mNormals[v].z;
+				glm::vec3 nrm(curLoadedMesh->mNormals[v].x, curLoadedMesh->mNormals[v].y, curLoadedMesh->mNormals[v].z);
+				nrm = nrm * transform;
+				vtx->Normal[0] = nrm.x;
+				vtx->Normal[1] = nrm.y;
+				vtx->Normal[2] = nrm.z;
 			}
 
 			// Tangent:
 			if (curLoadedMesh->HasTangentsAndBitangents())
 			{
-				vtx->Tangent[0] = curLoadedMesh->mTangents[v].x;
-				vtx->Tangent[1] = curLoadedMesh->mTangents[v].x;
-				vtx->Tangent[2] = curLoadedMesh->mTangents[v].x;
+				glm::vec3 tng(curLoadedMesh->mTangents[v].x, curLoadedMesh->mTangents[v].y, curLoadedMesh->mTangents[v].z);
+				tng = tng * transform;
+				vtx->Tangent[0] = tng.x;
+				vtx->Tangent[1] = tng.x;
+				vtx->Tangent[2] = tng.x;
 			}
 
 			// Texcoord:
@@ -150,27 +155,31 @@ Model* Graphics::ModelFactory::LoadFromFile(std::string path, GraphicsInterface*
 		model->Meshes[i].AABB.Min = minVtx;
 		model->Meshes[i].AABB.Max = maxVtx;
 
-		// Setup material
-		//loadedMaterials[i].AlbedoColor = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
-		//if (loadedScene->HasMaterials())
-		//{
-		//	const auto curMaterial = loadedScene->mMaterials[curLoadedMesh->mMaterialIndex];
-		//
-		//	aiString tpath;
-		//	aiColor4D albedoColor;
-		//	aiGetMaterialColor(curMaterial, AI_MATKEY_COLOR_DIFFUSE, &albedoColor);
-		//	loadedMaterials[i].AlbedoColor = glm::vec4(albedoColor.r, albedoColor.g, albedoColor.b, albedoColor.a);
-		//	if (curMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &tpath) == aiReturn_SUCCESS)
-		//	{
-		//		loadedMaterials[i].AlbedoTexture = LoadAndCreateTexture(tpath.C_Str());
-		//	}
-		//	tpath.Clear();
-		//	// aiTextureType_HEIGHT uhhhhhhmmm nope
-		//	if (curMaterial->GetTexture(aiTextureType_HEIGHT, 0, &tpath) == aiReturn_SUCCESS)
-		//	{
-		//		loadedMaterials[i].BumpMapTexture = LoadAndCreateTexture(tpath.C_Str());
-		//	}
-		//}
+		// Setup default material:
+		if (loadedScene->HasMaterials())
+		{
+			const auto curMaterial = loadedScene->mMaterials[curLoadedMesh->mMaterialIndex];
+		
+			aiColor4D albedoColor;
+			aiGetMaterialColor(curMaterial, AI_MATKEY_COLOR_DIFFUSE, &albedoColor);
+			model->Meshes[i].DefaultMaterial.BaseColor = glm::vec3(albedoColor.r, albedoColor.g, albedoColor.b); // ignoring .a !
+
+			float shininess = 0.0f;
+			aiGetMaterialFloat(curMaterial, AI_MATKEY_SHININESS, &shininess);
+			model->Meshes[i].DefaultMaterial.Roughness = 1.0f - shininess;
+
+			//aiString tpath;
+			//if (curMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &tpath) == aiReturn_SUCCESS)
+			//{
+			//	loadedMaterials[i].AlbedoTexture = LoadAndCreateTexture(tpath.C_Str());
+			//}
+			//tpath.Clear();
+			//// aiTextureType_HEIGHT uhhhhhhmmm nope
+			//if (curMaterial->GetTexture(aiTextureType_HEIGHT, 0, &tpath) == aiReturn_SUCCESS)
+			//{
+			//	loadedMaterials[i].BumpMapTexture = LoadAndCreateTexture(tpath.C_Str());
+			//}
+		}
 	}
 
 	return model;
@@ -277,7 +286,8 @@ void ModelComponent::SetMaterial(const MaterialInfo& materialInfo, uint32_t mesh
 {
 	if (mModel && meshIdx < mModel->NumMeshes)
 	{
-		mMaterials[meshIdx] = materialInfo;
+		mMaterials[meshIdx].Overriden = true;
+		mMaterials[meshIdx].Material = materialInfo;
 	}
 	else
 	{
@@ -289,7 +299,7 @@ const MaterialInfo& ModelComponent::GetMaterial(uint32_t meshIdx) const
 {
 	if (mModel && meshIdx < mModel->NumMeshes)
 	{
-		return mMaterials[meshIdx];
+		return mMaterials[meshIdx].Overriden ? mMaterials[meshIdx].Material : mModel->Meshes[meshIdx].DefaultMaterial;
 	}
 	else
 	{
