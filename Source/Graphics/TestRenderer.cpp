@@ -270,8 +270,7 @@ void TestRenderer::Render(SceneGraph* scene)
 					}
 				}
 
-				DebugDraw::GetInstance()->DrawCubemap(curProbe->IrradianceTexture, curProbe->GetParent()->Transform->GetPosition() + glm::vec3(-1.0f,1.0f,0.0f));
-				DebugDraw::GetInstance()->DrawCubemap(curProbe->PrefilteredTexture, curProbe->GetParent()->Transform->GetPosition() + glm::vec3(1.0f, 1.0f, 0.0f));
+				// TO-DO: Integrate this to the tiled camera setup.
 				if (i == 0)
 				{
 					mGraphicsInterface->SetResource(curProbe->IrradianceTexture, 1);
