@@ -183,6 +183,8 @@ void AdvancedApp::Update()
 	mScene.UpdatePhysics(DeltaTime);
 	mScene.Update(DeltaTime);
 	mRenderer.Render(&mScene);
+
+	mScene.RenderUI();
 }
 
 void AdvancedApp::Release()

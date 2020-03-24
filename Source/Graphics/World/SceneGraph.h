@@ -30,12 +30,19 @@ namespace World
 		void Initialize();
 		void UpdatePhysics(float deltaTime);
 		void Update(float deltaTime);
+		// Renders all scene graph UI, also each actor ui.
+		void RenderUI();
 		
 		Actor* SpawnActor(Actor* parent = nullptr);
 
 		Actor* GetRoot()const;
 
 	private:
+
+		// Scene graph editor
+		void RenderGraphTree(const std::vector<Actor*>& actors);
+		Actor* mSelectedActor;
+
 		Actor* mRoot;
 	};
 }

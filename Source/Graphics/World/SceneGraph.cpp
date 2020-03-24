@@ -5,9 +5,12 @@
 #include "TransformComponent.h"
 #include "PhysicsWorld.h"
 
+#include "Graphics/UI/IMGUI/imgui.h"
+
 using namespace World;
 
 SceneGraph::SceneGraph()
+	:mSelectedActor(nullptr)
 {
 }
 
@@ -44,6 +47,33 @@ void SceneGraph::Update(float deltaTime)
 	mRoot->UpdateLate();
 }
 
+void SceneGraph::RenderUI()
+{
+	static bool kShowGraph = false;
+	ImGui::BeginMainMenuBar();
+	if (ImGui::BeginMenu("Scene Graph"))
+	{
+		ImGui::Checkbox("Show Graph", &kShowGraph);
+		ImGui::EndMenu();
+	}
+	ImGui::EndMainMenuBar();
+
+	if (kShowGraph)
+	{
+		ImGuiWindowFlags flags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
+		ImGui::SetNextWindowPos(ImVec2(0, 16));
+		ImGui::SetNextWindowSize(ImVec2(256, 1904));
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
+		ImGui::SetNextWindowBgAlpha(0.5f);
+		ImGui::Begin("Graph", &kShowGraph, flags);
+		{
+			RenderGraphTree(mRoot->GetChilds());
+		}
+		ImGui::End();
+		ImGui::PopStyleVar(1);
+	}
+}
+
 Actor* SceneGraph::SpawnActor(Actor* parent)
 {
 	Actor* actor = new Actor;
@@ -62,4 +92,40 @@ Actor* SceneGraph::SpawnActor(Actor* parent)
 Actor* World::SceneGraph::GetRoot() const
 {
 	return mRoot;
+}
+
+void SceneGraph::RenderGraphTree(const std::vector<Actor*>& actors)
+{
+	for (const Actor* actor : actors)
+	{
+		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+		if (actor->GetNumChilds() == 0)
+		{
+			// Current is a leaf!
+			flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+		}
+		if (mSelectedActor == actor)
+		{
+			flags |= ImGuiTreeNodeFlags_Selected;
+		}
+		if (ImGui::TreeNodeEx(actor,flags,"Actor"))
+		{
+			if (ImGui::IsItemClicked())
+			{
+				mSelectedActor = (Actor*)actor;
+			}
+			RenderGraphTree(actor->GetChilds());
+			if (!(flags & ImGuiTreeNodeFlags_NoTreePushOnOpen))
+			{
+				ImGui::TreePop();
+			}
+		}
+		else
+		{
+			if (ImGui::IsItemClicked())
+			{
+				mSelectedActor = (Actor*)actor;
+			}
+		}
+	}
 }

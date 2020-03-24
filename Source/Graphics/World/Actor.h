@@ -34,6 +34,7 @@ namespace World
 		virtual void UpdatePhysics();
 		virtual void Update(float deltaTime);
 		virtual void UpdateLate();
+		virtual void RenderUI();
 
 		// Getters for components frequently used
 		TransformComponent* Transform = nullptr;

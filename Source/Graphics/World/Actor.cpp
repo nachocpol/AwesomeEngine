@@ -71,6 +71,10 @@ void Actor::UpdateLate()
 	}
 }
 
+void Actor::RenderUI()
+{
+}
+
 void Actor::AddChild(Actor* child)
 {
 	child->mParent = this;
