@@ -10,6 +10,7 @@ namespace World
 	public:
 		TransformComponent();
 		void Update(float deltaTime);
+		void RenderUI()override;
 
 		glm::vec3 GetPosition()const;
 		void SetPosition(const glm::vec3& position);

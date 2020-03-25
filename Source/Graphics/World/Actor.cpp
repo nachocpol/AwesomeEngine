@@ -73,6 +73,10 @@ void Actor::UpdateLate()
 
 void Actor::RenderUI()
 {
+	for (Component* component : mComponents)
+	{
+		component->RenderUI();
+	}
 }
 
 void Actor::AddChild(Actor* child)

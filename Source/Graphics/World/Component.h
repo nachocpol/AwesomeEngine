@@ -12,6 +12,7 @@ namespace World
 		virtual void UpdatePhysics() {};
 		virtual void Update(float deltaTime) = 0;
 		virtual void UpdateLate() {};
+		virtual void RenderUI() {};
 
 		Actor* GetParent()const { return mParent; }
 

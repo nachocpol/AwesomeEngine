@@ -1,5 +1,6 @@
 #include "TransformComponent.h"
 #include "Actor.h"
+#include "Graphics/UI/IMGUI/imgui.h"
 
 #include "glm/ext.hpp"
 
@@ -27,6 +28,14 @@ void TransformComponent::Update(float deltaTime)
 	{
 		mWorldTransform = mParent->GetParent()->FindComponent<TransformComponent>()->GetWorldTransform() * mWorldTransform;
 	}
+}
+
+void TransformComponent::RenderUI()
+{
+	ImGui::Text("Transform Component");
+	ImGui::InputFloat3("Position", &mPosition.x);
+	ImGui::InputFloat3("Rotation", &mRotation.x);
+	ImGui::InputFloat3("Scale", &mScale.x);
 }
 
 glm::vec3 TransformComponent::GetPosition() const

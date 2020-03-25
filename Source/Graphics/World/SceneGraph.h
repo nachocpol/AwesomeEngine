@@ -34,8 +34,8 @@ namespace World
 		void RenderUI();
 		
 		Actor* SpawnActor(Actor* parent = nullptr);
-
 		Actor* GetRoot()const;
+		Actor* GetSelectedActor()const;
 
 	private:
 

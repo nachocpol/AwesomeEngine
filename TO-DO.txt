@@ -1,9 +1,10 @@
 DOING:
 + Physx link warnings..
 + Recompile shaders, allow change debug flag
-+ IBL
 
 TO-DO:
++ Guizmo for rotate translate and scale
++ GPU selection
 + Texture with SRGB
 + Command line parser and getter
 + Make all  components take parent in constructor... uhmmm
@@ -32,6 +33,7 @@ TO-DO:
 + Clustered renderer.
 
 DONE:
++ IBL
 + Make pools for every type of resource
 + Probe
 + PBR rendering, start with the bases for a PBR model

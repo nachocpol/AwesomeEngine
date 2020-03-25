@@ -64,25 +64,25 @@ void SceneGraph::RenderUI()
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
 
-		ImGuiWindowFlags flags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
-		ImGui::SetNextWindowPos(ImVec2(0, 16));
+		ImGuiWindowFlags flags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
+		ImGui::SetNextWindowPos(ImVec2(0, 16 + 4));
 		ImGui::SetNextWindowSize(ImVec2(256, 512));
-		ImGui::SetNextWindowBgAlpha(1.0f);
+		ImGui::SetNextWindowBgAlpha(0.65f);
 		ImGui::Begin("Graph", &kShowGraph, flags);
 		{
-			ImGui::Text("Scene Graph");
-			ImGui::Separator();
 			RenderGraphTree(mRoot->GetChilds());
 		}
 		ImGui::End();
 
-		ImGui::SetNextWindowPos(ImVec2(0, 512 + 16));
+		ImGui::SetNextWindowPos(ImVec2(0, 512 + 16 + 1));
 		ImGui::SetNextWindowSize(ImVec2(256, totalh - (512 + 16)));
-		ImGui::SetNextWindowBgAlpha(0.5f);
+		ImGui::SetNextWindowBgAlpha(0.65f);
 		ImGui::Begin("Properties", &kShowGraph, flags);
 		{
-			ImGui::Text("Properties");
-			ImGui::Separator();
+			if (mSelectedActor)
+			{
+				mSelectedActor->RenderUI();
+			}
 		}
 		ImGui::End();
 
@@ -108,6 +108,11 @@ Actor* SceneGraph::SpawnActor(Actor* parent)
 Actor* World::SceneGraph::GetRoot() const
 {
 	return mRoot;
+}
+
+Actor* SceneGraph::GetSelectedActor() const
+{
+	return mSelectedActor;
 }
 
 void SceneGraph::RenderGraphTree(const std::vector<Actor*>& actors)
