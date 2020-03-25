@@ -49,7 +49,7 @@ void SceneGraph::Update(float deltaTime)
 
 void SceneGraph::RenderUI()
 {
-	static bool kShowGraph = false;
+	static bool kShowGraph = true;
 	ImGui::BeginMainMenuBar();
 	if (ImGui::BeginMenu("Scene Graph"))
 	{
@@ -60,17 +60,33 @@ void SceneGraph::RenderUI()
 
 	if (kShowGraph)
 	{
+		int totalh = 1080;
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
+
 		ImGuiWindowFlags flags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
 		ImGui::SetNextWindowPos(ImVec2(0, 16));
-		ImGui::SetNextWindowSize(ImVec2(256, 1904));
-		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
-		ImGui::SetNextWindowBgAlpha(0.5f);
+		ImGui::SetNextWindowSize(ImVec2(256, 512));
+		ImGui::SetNextWindowBgAlpha(1.0f);
 		ImGui::Begin("Graph", &kShowGraph, flags);
 		{
+			ImGui::Text("Scene Graph");
+			ImGui::Separator();
 			RenderGraphTree(mRoot->GetChilds());
 		}
 		ImGui::End();
-		ImGui::PopStyleVar(1);
+
+		ImGui::SetNextWindowPos(ImVec2(0, 512 + 16));
+		ImGui::SetNextWindowSize(ImVec2(256, totalh - (512 + 16)));
+		ImGui::SetNextWindowBgAlpha(0.5f);
+		ImGui::Begin("Properties", &kShowGraph, flags);
+		{
+			ImGui::Text("Properties");
+			ImGui::Separator();
+		}
+		ImGui::End();
+
+		ImGui::PopStyleVar(2);
 	}
 }
 

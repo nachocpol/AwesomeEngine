@@ -11,12 +11,6 @@
 [submodule "Depen/assimp"]
 	path = Depen/assimp
 	url = https://github.com/assimp/assimp.git
-[submodule "Depen/bullet"]
-	path = Depen/bullet
-	url = https://github.com/bulletphysics/bullet3.git
-[submodule "Depen/reactphysics3d"]
-	path = Depen/reactphysics3d
-	url = https://github.com/DanielChappuis/reactphysics3d.git
 [submodule "Depen/PhysX"]
 	path = Depen/PhysX
 	url = https://github.com/NVIDIAGameWorks/PhysX.git
