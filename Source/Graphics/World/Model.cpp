@@ -69,6 +69,15 @@ Model* Graphics::ModelFactory::LoadFromFile(std::string path, GraphicsInterface*
 		return false;
 	}
 
+	// TO-DO: instead of fixing mesh by rotating it, we could check the imported axis.
+	//int totMeta = loadedScene->mMetaData->mNumProperties;
+	//for (int i = 0; i < totMeta; ++i)
+	//{
+	//	aiString key =  loadedScene->mMetaData->mKeys[i];;
+	//	aiMetadataEntry entry = loadedScene->mMetaData->mValues[i];
+	//	glm::cos(0);
+	//}
+
 	// Lets generate the meshes
 	uint32_t numMeshes = loadedScene->mNumMeshes;
 	model->Meshes = new Mesh[numMeshes];
@@ -77,7 +86,7 @@ Model* Graphics::ModelFactory::LoadFromFile(std::string path, GraphicsInterface*
 	{
 		const aiMesh* curLoadedMesh = loadedScene->mMeshes[i];
 		model->Meshes[i].Name = std::string(curLoadedMesh->mName.C_Str());
-
+		
 		uint32_t numVertices = curLoadedMesh->mNumVertices;
 		uint32_t vtxSize = sizeof(PosNorTanTexc_Vertex) * numVertices;
 		std::vector<PosNorTanTexc_Vertex> vertices;
@@ -127,6 +136,7 @@ Model* Graphics::ModelFactory::LoadFromFile(std::string path, GraphicsInterface*
 				vtx->Texcoord[0] = curLoadedMesh->mTextureCoords[0][v].x;
 				vtx->Texcoord[1] = curLoadedMesh->mTextureCoords[0][v].y;
 			}
+
 
 			vtx++;
 		}
