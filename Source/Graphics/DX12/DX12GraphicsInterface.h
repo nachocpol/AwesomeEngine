@@ -258,6 +258,7 @@ namespace Graphics{ namespace DX12
 		static D3D12_PRIMITIVE_TOPOLOGY ToDXGITopology(const Graphics::Topology::T& topology);
 		static D3D12_PRIMITIVE_TOPOLOGY_TYPE ToDXGIPrimitive(const Graphics::Primitive::T& primitive);
 		static D3D12_COMPARISON_FUNC ToDX12DepthFunc(const DepthFunc& func);
+		static D3D12_CULL_MODE ToDX12FaceCullMode(const FaceCullMode::T& mode);
 		static D3D12_BLEND ToDX12Blend(const BlendFunction& func);
 		static D3D12_BLEND_OP ToDX12BlendOp(const BlendOperation& op);
 

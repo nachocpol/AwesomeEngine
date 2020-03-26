@@ -211,7 +211,8 @@ namespace Graphics{namespace UI{
 		pdesc.DepthEnabled = false;
 		pdesc.DepthWriteEnabled = false;
 		pdesc.DepthFunction = Graphics::DepthFunc::Always;
-		
+		pdesc.CullMode = FaceCullMode::None;
+
 		uint32_t vec2Size = sizeof(float) * 2;
 		pdesc.VertexDescription.Elements.push_back({ "POSITION",0,Graphics::Format::RG_32_Float,0 });
 		pdesc.VertexDescription.Elements.push_back({ "TEXCOORD",0,Graphics::Format::RG_32_Float,vec2Size * 1 });

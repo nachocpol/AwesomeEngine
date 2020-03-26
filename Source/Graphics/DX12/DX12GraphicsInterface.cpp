@@ -506,7 +506,7 @@ namespace Graphics { namespace DX12 {
 		// Raster info
 		{
 			psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC::CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-			psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+			psoDesc.RasterizerState.CullMode = ToDX12FaceCullMode(desc.CullMode);
 			psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 		}
 		psoDesc.InputLayout = inputL;
@@ -611,7 +611,7 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
-	D3D12_COMPARISON_FUNC DX12GraphicsInterface::ToDX12DepthFunc(const DepthFunc & func)
+	D3D12_COMPARISON_FUNC DX12GraphicsInterface::ToDX12DepthFunc(const DepthFunc& func)
 	{
 		switch (func)
 		{
@@ -624,7 +624,18 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
-	D3D12_BLEND DX12GraphicsInterface::ToDX12Blend(const BlendFunction & func)
+	D3D12_CULL_MODE DX12GraphicsInterface::ToDX12FaceCullMode(const FaceCullMode::T& mode)
+	{
+		switch (mode)
+		{
+			case FaceCullMode::Front: return D3D12_CULL_MODE_FRONT;
+			case FaceCullMode::Back: return D3D12_CULL_MODE_BACK;
+			default:
+			case FaceCullMode::None: return D3D12_CULL_MODE_NONE;
+		}
+	}
+
+	D3D12_BLEND DX12GraphicsInterface::ToDX12Blend(const BlendFunction& func)
 	{
 		switch (func)
 		{

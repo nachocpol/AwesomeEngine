@@ -120,6 +120,16 @@ namespace Graphics
 		};
 	};
 
+	struct FaceCullMode
+	{
+		enum T
+		{
+			None,
+			Back,
+			Front
+		};
+	};
+
 	enum TextureFlags
 	{
 		TextureFlagNone = 0,
@@ -225,6 +235,7 @@ namespace Graphics
 		GraphicsPipelineDescription()
 		{
 			PrimitiveType = Primitive::Triangle;
+			CullMode = FaceCullMode::Back;
 			DepthEnabled = false;
 			DepthWriteEnabled = false;
 			memset(ColorFormats, 0, sizeof(ColorFormats));
@@ -234,6 +245,7 @@ namespace Graphics
 		ShaderDescription PixelShader;
 		VertexInputDescription VertexDescription;
 		Primitive::T PrimitiveType;
+		FaceCullMode::T CullMode;
 		bool DepthEnabled;
 		bool DepthWriteEnabled;
 		DepthFunc DepthFunction;
