@@ -1,6 +1,7 @@
 DOING:
 + Physx link warnings..
 + Recompile shaders, allow change debug flag
++ Make sure physx rotations are correct, glm transofms take quat as .wxyz
 
 TO-DO:
 + Guizmo for rotate translate and scale
