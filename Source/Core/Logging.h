@@ -3,6 +3,19 @@
 #include <stdio.h>
 #include <windows.h> // this is not cross plat.
 
+class Logger
+{
+public:
+	static Logger* GetInstance();
+private:
+	Logger() {}
+	Logger(const Logger& other) {}
+	~Logger() {}
+public:
+	void Add(const char* msg);
+	void Render();
+};
+
 #define OUT_DEBUG_STR(str) OutputDebugStringA(str);
 
 static void OUT_IMPL(const char* msg, const char* type, const char* file, int line, ...)
@@ -21,6 +34,8 @@ static void OUT_IMPL(const char* msg, const char* type, const char* file, int li
 	sprintf_s(fullMsg, 2048, "%s(%s%s)(%d): %s \n", type, fileName, fileExt, line, buff);
 	OUT_DEBUG_STR(fullMsg);
 	va_end(argptr);
+
+	Logger::GetInstance()->Add(fullMsg);
 }
 
 #define INFO(msg, ...) OUT_IMPL(msg, "[INFORMATION]", __FILE__, __LINE__,  __VA_ARGS__)

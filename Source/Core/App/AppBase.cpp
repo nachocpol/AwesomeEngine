@@ -5,6 +5,7 @@
 #include "Graphics/UI/UIInterface.h"
 #include "Graphics/DebugDraw.h"
 #include "Core/FileSystem.h"
+#include "Core/Logging.h"
 
 AppBase::AppBase():
 	 TotalTime(0.0f)
@@ -54,6 +55,7 @@ void AppBase::Update()
 
 void AppBase::EndFrame()
 {
+	Logger::GetInstance()->Render();
 	Graphics::DebugDraw::GetInstance()->EndFrame();
 	mUIInterface->EndFrame();
 	mGraphicsInterface->EndFrame();
