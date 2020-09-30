@@ -19,11 +19,7 @@ filter { "platforms:x64" }
 		"Depen/TinyObj",
 		"Depen/GLM",
 		"Depen/STB",
-		"Assets/Shaders",
-		"Depen/DirectXTex/DirectXTex",
-		"Depen/assimp/include",
-		"Depen/PhysX/physx/include",
-		"Depen/PhysX/pxshared/include",
+		"Assets/Shaders"
 	}
 	files
 	{
@@ -33,41 +29,17 @@ filter { "platforms:x64" }
 filter {"configurations:Debug"}
 	libdirs
 	{
-		"Depen/DirectXTex/DirectXTex/Bin/Windows10_2019/x64/Debug",
-		"Depen/assimp/lib/Debug",
-		"Depen/PhysX/physx/bin/win.x86_64.vc142.mt/debug"
 	}
 	links
 	{
-		"DirectXTex",
-		"assimp-vc142-mtd",
-		"IrrXMLd",
-		"zlibstaticd",
-		"PhysXCommon_64",
-		"PhysX_64",
-		"PhysXFoundation_64",
-		"PhysXExtensions_static_64",
-		"PhysXPvdSDK_static_64"
 	}
 
 filter {"configurations:Release"}
 	libdirs
 	{
-		"Depen/DirectXTex/DirectXTex/Bin/Windows10_2019/x64/Release",
-		"Depen/assimp/lib/Release",
-		"Depen/PhysX/physx/bin/win.x86_64.vc142.mt/release"
 	}
 	links
 	{
-		"DirectXTex",
-		"assimp-vc142-mt",
-		"IrrXML",
-		"zlibstatic",
-		"PhysXCommon_64",
-		"PhysX_64",
-		"PhysXFoundation_64",
-		"PhysXExtensions_static_64",
-		"PhysXPvdSDK_static_64"
 	}
 	defines
 	{
@@ -154,10 +126,6 @@ project "AwesomeAdvanced"
 		}
 		postbuildcommands 
 		{
-			"copy %{wks.location}Depen\\assimp\\bin\\%{cfg.buildcfg}\\assimp-vc141-mtd.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\assimp-vc141-mtd.dll",
-			"copy %{wks.location}Depen\\PhysX\\physX\\bin\\win.x86_64.vc141.mt\\debug\\PhysXCommon_64.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\PhysXCommon_64.dll",
-			"copy %{wks.location}Depen\\PhysX\\physX\\bin\\win.x86_64.vc141.mt\\debug\\PhysX_64.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\PhysX_64.dll",
-			"copy %{wks.location}Depen\\PhysX\\physX\\bin\\win.x86_64.vc141.mt\\debug\\PhysXFoundation_64.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\PhysXFoundation_64.dll"
 		}
 	filter "configurations:Release"
 		optimize "On"
@@ -167,8 +135,4 @@ project "AwesomeAdvanced"
 		}
 		postbuildcommands 
 		{
-			"copy %{wks.location}Depen\\assimp\\bin\\%{cfg.buildcfg}\\assimp-vc141-mt.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\assimp-vc141-mt.dll",
-			"copy %{wks.location}Depen\\PhysX\\physX\\bin\\win.x86_64.vc141.mt\\release\\PhysXCommon_64.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\PhysXCommon_64.dll",
-			"copy %{wks.location}Depen\\PhysX\\physX\\bin\\win.x86_64.vc141.mt\\release\\PhysX_64.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\PhysX_64.dll",
-			"copy %{wks.location}Depen\\PhysX\\physX\\bin\\win.x86_64.vc141.mt\\release\\PhysXFoundation_64.dll %{wks.location}Build\\%{cfg.platform}\\%{cfg.buildcfg}\\PhysXFoundation_64.dll",
 		}
