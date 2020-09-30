@@ -5,13 +5,3 @@
 [submodule "Depen/STB"]
 	path = Depen/STB
 	url = https://github.com/nothings/stb.git
-[submodule "Depen/DirectXTex"]
-	path = Depen/DirectXTex
-	url = https://github.com/microsoft/DirectXTex.git
-[submodule "Depen/assimp"]
-	path = Depen/assimp
-	url = https://github.com/assimp/assimp.git
-[submodule "Depen/PhysX"]
-	path = Depen/PhysX
-	url = https://github.com/NVIDIAGameWorks/PhysX.git
-	branch = 4.1

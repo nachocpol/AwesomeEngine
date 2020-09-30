@@ -1,7 +1,7 @@
 workspace "AwesomeSolution"
 	configurations { "Debug", "Release"}
 	platforms "x64"
-	systemversion "10.0.16299.0"
+	systemversion "10"
 	staticruntime "on"
 
 filter { "platforms:x64" }
@@ -33,14 +33,14 @@ filter { "platforms:x64" }
 filter {"configurations:Debug"}
 	libdirs
 	{
-		"Depen/DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Debug",
+		"Depen/DirectXTex/DirectXTex/Bin/Windows10_2019/x64/Debug",
 		"Depen/assimp/lib/Debug",
-		"Depen/PhysX/physx/bin/win.x86_64.vc141.mt/debug"
+		"Depen/PhysX/physx/bin/win.x86_64.vc142.mt/debug"
 	}
 	links
 	{
 		"DirectXTex",
-		"assimp-vc141-mtd",
+		"assimp-vc142-mtd",
 		"IrrXMLd",
 		"zlibstaticd",
 		"PhysXCommon_64",
@@ -53,14 +53,14 @@ filter {"configurations:Debug"}
 filter {"configurations:Release"}
 	libdirs
 	{
-		"Depen/DirectXTex/DirectXTex/Bin/Desktop_2017_Win10/x64/Release",
+		"Depen/DirectXTex/DirectXTex/Bin/Windows10_2019/x64/Release",
 		"Depen/assimp/lib/Release",
-		"Depen/PhysX/physx/bin/win.x86_64.vc141.mt/release"
+		"Depen/PhysX/physx/bin/win.x86_64.vc142.mt/release"
 	}
 	links
 	{
 		"DirectXTex",
-		"assimp-vc141-mt",
+		"assimp-vc142-mt",
 		"IrrXML",
 		"zlibstatic",
 		"PhysXCommon_64",
