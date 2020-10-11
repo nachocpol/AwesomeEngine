@@ -203,9 +203,9 @@ namespace Graphics{ namespace DX12
 		void EndFrame()final override;
 		void FlushAndWait()final override;
 		BufferHandle CreateBuffer(BufferType::T type, CPUAccess::T cpuAccess, GPUAccess::T gpuAccess, uint64_t size, uint32_t stride = 0, void* data = nullptr)final override;
-		TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
-		TextureHandle CreateTextureCube(uint32_t size, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
-		TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
+		TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
+		TextureHandle CreateTextureCube(uint32_t size, uint32_t mips, uint32_t layers, Format::T format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
+		TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
 		GPUQueryHandle CreateQuery(const GPUQueryType::T& type)final override;
 		GraphicsPipeline CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)final override;
 		ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc)final override;
@@ -217,7 +217,7 @@ namespace Graphics{ namespace DX12
 		void ReleaseBuffer(BufferHandle& buffer) final override;
 		void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)final override;
 		void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize)final override;
-		void SetIndexBuffer(const BufferHandle& buffer,int size, Format idxFormat)final override;
+		void SetIndexBuffer(const BufferHandle& buffer,int size, Format::T idxFormat)final override;
 		void SetTopology(const Topology::T& topology)final override;
 		void SetComputePipeline(const ComputePipeline& pipeline)final override;
 		void SetGraphicsPipeline(const GraphicsPipeline& pipeline)final override;
@@ -234,7 +234,7 @@ namespace Graphics{ namespace DX12
 		void SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth) final override;
 		void ClearTargets(uint8_t num, TextureHandle* colorTargets, float clear[4], TextureHandle* depth, float d, uint8_t stencil)final override;
 		void DisableAllTargets()final override;
-		Format GetOutputFormat()final override;
+		Format::T GetOutputFormat()final override;
 		bool MapBuffer(BufferHandle buffer, unsigned char** outPtr, bool writeOnly = true)final override;
 		void UnMapBuffer(BufferHandle buffer, bool writeOnly = true)final override;
 		void SetBlendFactors(float blend[4])override;;
@@ -253,10 +253,10 @@ namespace Graphics{ namespace DX12
 		void FlushBarriers();
 		void CreatePSO(const GraphicsPipelineDescription& desc, GraphicsPipelineEntry& entry);
 		void CreatePSO(const ComputePipelineDescription& desc, ComputePipelineEntry& entry);
-		static DXGI_FORMAT ToDXGIFormat(const Graphics::Format& format);
-		static DXGI_FORMAT ToDXGIFormatTypeless(const Graphics::Format& format);
-		static D3D12_PRIMITIVE_TOPOLOGY ToDXGITopology(const Graphics::Topology::T& topology);
-		static D3D12_PRIMITIVE_TOPOLOGY_TYPE ToDXGIPrimitive(const Graphics::Primitive::T& primitive);
+		static DXGI_FORMAT ToDXGIFormat(const Format::T& format);
+		static DXGI_FORMAT ToDXGIFormatTypeless(const Format::T& format);
+		static D3D12_PRIMITIVE_TOPOLOGY ToDXGITopology(const Topology::T& topology);
+		static D3D12_PRIMITIVE_TOPOLOGY_TYPE ToDXGIPrimitive(const Primitive::T& primitive);
 		static D3D12_COMPARISON_FUNC ToDX12DepthFunc(const DepthFunc& func);
 		static D3D12_CULL_MODE ToDX12FaceCullMode(const FaceCullMode::T& mode);
 		static D3D12_BLEND ToDX12Blend(const BlendFunction& func);
@@ -265,7 +265,7 @@ namespace Graphics{ namespace DX12
 		DisplaySurface mDefaultSurface;
 		ID3D12Device* mDevice;
 		D3D12_FEATURE_DATA_D3D12_OPTIONS mDeviceFeatures;
-		Graphics::Format mOutputFormat;
+		Format::T mOutputFormat;
 
 		// Buffer pool
 		ResourcePool<BufferEntry> mBuffersPool;

@@ -112,7 +112,7 @@ namespace Graphics{namespace UI{
 
 			size_t vtxStride = sizeof(ImDrawVert);
 			size_t idxStride = sizeof(ImDrawIdx);
-			Graphics::Format idxFmt = idxStride == 2 ? Format::R_16_Uint : Format::R_32_Uint;
+			Graphics::Format::T idxFmt = idxStride == 2 ? Format::R_16_Uint : Format::R_32_Uint;
 
 			// Bind state
 			float imBlend[4] = { 0.0f, 0.0f, 0.0f, 0.0f };

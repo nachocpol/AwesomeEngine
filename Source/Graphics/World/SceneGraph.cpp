@@ -75,7 +75,7 @@ void SceneGraph::RenderUI()
 		ImGui::End();
 
 		ImGui::SetNextWindowPos(ImVec2(0, 512 + 16 + 1));
-		ImGui::SetNextWindowSize(ImVec2(256, totalh - (512 + 16)));
+		ImGui::SetNextWindowSize(ImVec2((float)256, (float)totalh - (512 + 16)));
 		ImGui::SetNextWindowBgAlpha(0.65f);
 		ImGui::Begin("Properties", &kShowGraph, flags);
 		{

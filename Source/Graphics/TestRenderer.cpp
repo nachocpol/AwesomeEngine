@@ -66,7 +66,7 @@ void TestRenderer::Initialize(AppBase * app)
 		pdesc.DepthEnabled = true;
 		pdesc.DepthWriteEnabled = true;
 		pdesc.DepthFunction = Graphics::LessEqual;
-		pdesc.DepthFormat = Graphics::Depth24_Stencil8;
+		pdesc.DepthFormat = Format::Depth24_Stencil8;
 		pdesc.ColorFormats[0] = Graphics::Format::RGBA_16_Float;
 		pdesc.BlendTargets[0].Enabled = false;
 		pdesc.DepthFormat = Graphics::Format::Depth24_Stencil8;

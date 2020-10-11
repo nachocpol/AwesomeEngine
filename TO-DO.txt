@@ -1,7 +1,8 @@
 DOING:
-+ Physx link warnings..
+
++ Members should be m_... 
++ Finish input for ImGUI
 + Recompile shaders, allow change debug flag
-+ Make sure physx rotations are correct, glm transofms take quat as .wxyz
 
 TO-DO:
 + Guizmo for rotate translate and scale
@@ -20,7 +21,6 @@ TO-DO:
 + Timing events (for pix)
 + Auto magic PSO without setting render target and depth formats..
 + Make constant buffer binding more clever, as in, if we don´t change a slot ,do not trash it...
-+ Console to display logs
 + Check proper resizing..
 + Replace rand with something better (spherical distribution)
 + Combine dx12 texture creation code
@@ -30,10 +30,10 @@ TO-DO:
 + Add curl noise
 + Begin end compute pipeline?
 + Profiler
-+ Finish input for ImGUI
 + Clustered renderer.
 
 DONE:
++ Console to display logs
 + IBL
 + Make pools for every type of resource
 + Probe

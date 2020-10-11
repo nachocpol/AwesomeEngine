@@ -80,21 +80,24 @@ namespace Graphics
 	};
 
 
-	enum Format
+	struct Format
 	{
-		Unknown = 0,
-		RGBA_16_Float = 1,
-		RG_32_Float = 2,
-		RGB_32_Float = 3,
-		RGBA_32_Float = 4,
-		Depth24_Stencil8 = 5,
-		RGBA_8_Unorm = 6,
-		RGBA_8_Snorm = 7,
-		R_16_Uint = 8,
-		R_32_Uint = 9,
-		R_8_Unorm = 10,
-		R_32_Float = 11,
-		R_11_G_11_B_10_Float = 12
+		enum T
+		{
+			Unknown = 0,
+			RGBA_16_Float = 1,
+			RG_32_Float = 2,
+			RGB_32_Float = 3,
+			RGBA_32_Float = 4,
+			Depth24_Stencil8 = 5,
+			RGBA_8_Unorm = 6,
+			RGBA_8_Snorm = 7,
+			R_16_Uint = 8,
+			R_32_Uint = 9,
+			R_8_Unorm = 10,
+			R_32_Float = 11,
+			R_11_G_11_B_10_Float = 12
+		};
 	};
 
 	struct Primitive
@@ -223,7 +226,7 @@ namespace Graphics
 		{
 			std::string Semantic;
 			uint8_t Idx;
-			Format EleFormat;
+			Format::T EleFormat;
 			uint32_t Offset;
 		};
 		std::vector<VertexInputElement> Elements;
@@ -249,8 +252,8 @@ namespace Graphics
 		bool DepthEnabled;
 		bool DepthWriteEnabled;
 		DepthFunc DepthFunction;
-		Format DepthFormat;
-		Format ColorFormats[8];
+		Format::T DepthFormat;
+		Format::T ColorFormats[8];
 		struct BlendDesc
 		{
 			BlendDesc() :Enabled(false),WriteMask(15) { }
@@ -291,9 +294,9 @@ namespace Graphics
 		// If it is a GPUBuffer, size is the number of elements, and user should
 		// provide a stride. For other buffer types, stride will be ignored.
 		virtual BufferHandle CreateBuffer(BufferType::T type, CPUAccess::T cpuAccess, GPUAccess::T gpuAccess, uint64_t size, uint32_t stride = 0, void* data = nullptr) = 0;
-		virtual TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr) = 0;
-		virtual TextureHandle CreateTextureCube(uint32_t size, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr) = 0;
-		virtual TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags = TextureFlagNone, void* data = nullptr) = 0;
+		virtual TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags flags = TextureFlagNone, void* data = nullptr) = 0;
+		virtual TextureHandle CreateTextureCube(uint32_t size, uint32_t mips, uint32_t layers, Format::T format, TextureFlags flags = TextureFlagNone, void* data = nullptr) = 0;
+		virtual TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags flags = TextureFlagNone, void* data = nullptr) = 0;
 		virtual GPUQueryHandle CreateQuery(const GPUQueryType::T& type) = 0;
 		virtual GraphicsPipeline CreateGraphicsPipeline(const GraphicsPipelineDescription& desc) = 0;
 		virtual ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc) = 0;
@@ -305,7 +308,7 @@ namespace Graphics
 		virtual void ReleaseBuffer(BufferHandle& buffer) = 0;
 		virtual void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data) = 0;
 		virtual void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize) = 0;
-		virtual void SetIndexBuffer(const BufferHandle& buffer, int size, Format idxFormat) = 0;
+		virtual void SetIndexBuffer(const BufferHandle& buffer, int size, Format::T idxFormat) = 0;
 		virtual void SetTopology(const Topology::T& topology) = 0;
 		virtual void SetGraphicsPipeline(const GraphicsPipeline& pipeline) = 0;
 		virtual void SetComputePipeline(const ComputePipeline& pipeline) = 0;
@@ -322,7 +325,7 @@ namespace Graphics
 		virtual void SetTargets(uint8_t num, TextureHandle* colorTargets, TextureHandle* depth) = 0;
 		virtual void ClearTargets(uint8_t num, TextureHandle* colorTargets,float clear[4], TextureHandle* depth,float d, uint8_t stencil) = 0;
 		virtual void DisableAllTargets() = 0;
-		virtual Format GetOutputFormat() = 0;
+		virtual Format::T GetOutputFormat() = 0;
 		virtual bool MapBuffer(BufferHandle buffer, unsigned char** outPtr,bool writeOnly = true) = 0;
 		virtual void UnMapBuffer(BufferHandle buffer, bool writeOnly = true) = 0;
 		virtual void SetBlendFactors(float blend[4]) {}

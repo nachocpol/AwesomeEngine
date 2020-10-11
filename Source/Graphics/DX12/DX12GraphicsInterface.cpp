@@ -543,7 +543,7 @@ namespace Graphics { namespace DX12 {
 		mDevice->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
 	}
 
-	DXGI_FORMAT DX12GraphicsInterface::ToDXGIFormat(const Graphics::Format& format)
+	DXGI_FORMAT DX12GraphicsInterface::ToDXGIFormat(const Graphics::Format::T& format)
 	{
 		switch (format)
 		{
@@ -564,7 +564,7 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
-	DXGI_FORMAT DX12GraphicsInterface::ToDXGIFormatTypeless(const Graphics::Format & format)
+	DXGI_FORMAT DX12GraphicsInterface::ToDXGIFormatTypeless(const Graphics::Format::T & format)
 	{
 		switch (format)
 		{
@@ -932,7 +932,7 @@ namespace Graphics { namespace DX12 {
 		return handle;
 	}
 
-	TextureHandle DX12GraphicsInterface::CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags /* = TextureFlagNone*/, void* data /*= nullptr*/)
+	TextureHandle DX12GraphicsInterface::CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags flags /* = TextureFlagNone*/, void* data /*= nullptr*/)
 	{
 		if ((width * height * layers * mips) == 0)
 		{
@@ -1118,7 +1118,7 @@ namespace Graphics { namespace DX12 {
 		return handle;
 	}
 
-	TextureHandle DX12GraphicsInterface::CreateTextureCube(uint32_t size, uint32_t mips, uint32_t layers, Format format, TextureFlags flags, void * data)
+	TextureHandle DX12GraphicsInterface::CreateTextureCube(uint32_t size, uint32_t mips, uint32_t layers, Format::T format, TextureFlags flags, void * data)
 	{
 		if ((size * layers * mips) == 0)
 		{
@@ -1336,7 +1336,7 @@ namespace Graphics { namespace DX12 {
 		return handle;
 	}
 
-	TextureHandle DX12GraphicsInterface::CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags flags /* = TextureFlagNone*/, void* data /*= nullptr*/)
+	TextureHandle DX12GraphicsInterface::CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags flags /* = TextureFlagNone*/, void* data /*= nullptr*/)
 	{
 		if ((width * height * layers * mips) == 0)
 		{
@@ -1651,7 +1651,7 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
-	void DX12GraphicsInterface::SetIndexBuffer(const BufferHandle& buffer,int size, Format idxFormat)
+	void DX12GraphicsInterface::SetIndexBuffer(const BufferHandle& buffer,int size, Format::T idxFormat)
 	{
 		BufferEntry& bufferEntry = mBuffersPool.GetEntry(buffer.Handle);
 		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && bufferEntry.Buffer != nullptr)
@@ -1972,7 +1972,7 @@ namespace Graphics { namespace DX12 {
 		mDefaultSurface.CmdContext->OMSetRenderTargets(1, &mDefaultSurface.RenderTargets[idx], false, nullptr);
 	}
 
-	Format DX12GraphicsInterface::GetOutputFormat()
+	Format::T DX12GraphicsInterface::GetOutputFormat()
 	{
 		return mOutputFormat;
 	}
