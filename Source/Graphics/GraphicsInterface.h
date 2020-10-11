@@ -144,13 +144,16 @@ namespace Graphics
 		};
 	};
 
-	enum DepthFunc
+	struct DepthFunc
 	{
-		Always = 0,
-		Never = 1,
-		Equal = 2,
-		LessEqual = 3,
-		GreatEqual = 4
+		enum T
+		{
+			Always = 0,
+			Never = 1,
+			Equal = 2,
+			LessEqual = 3,
+			GreatEqual = 4
+		};
 	};
 
 	enum BlendOperation
@@ -254,7 +257,7 @@ namespace Graphics
 		FaceCullMode::T CullMode;
 		bool DepthEnabled;
 		bool DepthWriteEnabled;
-		DepthFunc DepthFunction;
+		DepthFunc::T DepthFunction;
 		Format::T DepthFormat;
 		Format::T ColorFormats[8];
 		struct BlendDesc

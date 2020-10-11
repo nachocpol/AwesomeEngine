@@ -49,8 +49,8 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 		pdesc.VertexDescription.NumElements = (uint8_t)pdesc.VertexDescription.Elements.size();
 		pdesc.DepthEnabled = true;
 		pdesc.DepthWriteEnabled = false;
-		pdesc.DepthFunction = Graphics::LessEqual;
-		pdesc.ColorFormats[0] =Graphics::Format::RGBA_16_Float;
+		pdesc.DepthFunction = DepthFunc::LessEqual;
+		pdesc.ColorFormats[0] = Graphics::Format::RGBA_16_Float;
 		pdesc.DepthFormat = Graphics::Format::Depth24_Stencil8;
 
 		mDebugPipelineLines = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
@@ -74,7 +74,7 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 		pdesc.VertexDescription.NumElements = (uint8_t)pdesc.VertexDescription.Elements.size();
 		pdesc.DepthEnabled = true;
 		pdesc.DepthWriteEnabled = false;
-		pdesc.DepthFunction = Graphics::LessEqual;
+		pdesc.DepthFunction = DepthFunc::LessEqual;
 		pdesc.ColorFormats[0] = Graphics::Format::RGBA_16_Float;
 		pdesc.DepthFormat = Graphics::Format::Depth24_Stencil8;
 		

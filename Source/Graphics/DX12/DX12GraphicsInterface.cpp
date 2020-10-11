@@ -611,7 +611,7 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
-	D3D12_COMPARISON_FUNC DX12GraphicsInterface::ToDX12DepthFunc(const DepthFunc& func)
+	D3D12_COMPARISON_FUNC DX12GraphicsInterface::ToDX12DepthFunc(const DepthFunc::T& func)
 	{
 		switch (func)
 		{

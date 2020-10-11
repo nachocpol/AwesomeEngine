@@ -65,7 +65,7 @@ void TestRenderer::Initialize(AppBase * app)
 		pdesc.VertexDescription.NumElements = (uint8_t)pdesc.VertexDescription.Elements.size();
 		pdesc.DepthEnabled = true;
 		pdesc.DepthWriteEnabled = true;
-		pdesc.DepthFunction = Graphics::LessEqual;
+		pdesc.DepthFunction = DepthFunc::LessEqual;
 		pdesc.DepthFormat = Format::Depth24_Stencil8;
 		pdesc.ColorFormats[0] = Graphics::Format::RGBA_16_Float;
 		pdesc.BlendTargets[0].Enabled = false;
@@ -78,7 +78,7 @@ void TestRenderer::Initialize(AppBase * app)
 	{
 		Graphics::GraphicsPipelineDescription desc;
 		desc.DepthEnabled = false;
-		desc.DepthFunction = Graphics::Always;
+		desc.DepthFunction = DepthFunc::Always;
 		desc.VertexShader.ShaderEntryPoint = "VSFullScreen";
 		desc.VertexShader.ShaderPath = "shadersrc:Common.hlsl";
 		desc.VertexShader.Type = Graphics::ShaderType::Vertex;

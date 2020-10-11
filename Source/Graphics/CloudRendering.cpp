@@ -27,7 +27,7 @@ namespace Graphics
 			Graphics::GraphicsPipelineDescription desc;
 			desc.DepthEnabled = true;
 			desc.DepthWriteEnabled = false;
-			desc.DepthFunction = Graphics::Equal; // we paint it at far (so we can discard fragments from it)
+			desc.DepthFunction = DepthFunc::Equal; // we paint it at far (so we can discard fragments from it)
 			desc.DepthFormat = Graphics::Format::Depth24_Stencil8;
 			desc.VertexShader.ShaderEntryPoint = "VSClouds";
 			desc.VertexShader.ShaderPath = "Clouds.hlsl";
@@ -56,7 +56,7 @@ namespace Graphics
 			Graphics::GraphicsPipelineDescription desc;
 			desc.DepthEnabled = true;
 			desc.DepthWriteEnabled = false;
-			desc.DepthFunction = Graphics::Equal; // we paint it at far (so we can discard fragments from it)
+			desc.DepthFunction = DepthFunc::Equal; // we paint it at far (so we can discard fragments from it)
 			desc.DepthFormat = Graphics::Format::Depth24_Stencil8;
 			desc.VertexShader.ShaderEntryPoint = "VSClouds";
 			desc.VertexShader.ShaderPath = "Clouds.hlsl";
