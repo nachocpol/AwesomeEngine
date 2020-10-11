@@ -56,7 +56,7 @@ namespace Graphics
 		Graphics::Format::T format;
 		if (LoadTexture(path, tData, x, y, m, format, true))
 		{
-			mLoadedTextures[path] = mGraphicsInterface->CreateTexture2D(x, y, m, 1, format, Graphics::TextureFlagNone, tData);
+			mLoadedTextures[path] = mGraphicsInterface->CreateTexture2D(x, y, m, 1, format, TextureFlags::TextureFlagNone, tData);
 			FreeLoadedTexture(tData);
 			return mLoadedTextures[path];
 		}

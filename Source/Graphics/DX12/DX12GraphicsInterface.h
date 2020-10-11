@@ -203,9 +203,9 @@ namespace Graphics{ namespace DX12
 		void EndFrame()final override;
 		void FlushAndWait()final override;
 		BufferHandle CreateBuffer(BufferType::T type, CPUAccess::T cpuAccess, GPUAccess::T gpuAccess, uint64_t size, uint32_t stride = 0, void* data = nullptr)final override;
-		TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
-		TextureHandle CreateTextureCube(uint32_t size, uint32_t mips, uint32_t layers, Format::T format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
-		TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags flags = TextureFlagNone, void* data = nullptr)final override;
+		TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags::T flags = TextureFlags::TextureFlagNone, void* data = nullptr)final override;
+		TextureHandle CreateTextureCube(uint32_t size, uint32_t mips, uint32_t layers, Format::T format, TextureFlags::T flags = TextureFlags::TextureFlagNone, void* data = nullptr)final override;
+		TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags::T flags = TextureFlags::TextureFlagNone, void* data = nullptr)final override;
 		GPUQueryHandle CreateQuery(const GPUQueryType::T& type)final override;
 		GraphicsPipeline CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)final override;
 		ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc)final override;

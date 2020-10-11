@@ -220,7 +220,7 @@ namespace Graphics
 					texData[u + v * tw] = TexelRGBA{ n,n,n, 255 };
 				}
 			}
-			mCloudCoverage = mGraphicsInterface->CreateTexture2D(tw, th, 1, 1, Graphics::Format::RGBA_8_Unorm, Graphics::TextureFlagNone, texData);
+			mCloudCoverage = mGraphicsInterface->CreateTexture2D(tw, th, 1, 1, Graphics::Format::RGBA_8_Unorm, TextureFlags::TextureFlagNone, texData);
 			delete[] texData;
 		}
 
@@ -264,7 +264,7 @@ namespace Graphics
 				}
 			}
 
-			mBaseNoise = mGraphicsInterface->CreateTexture3D(tw, th, 1, td, Graphics::Format::R_8_Unorm, Graphics::TextureFlagNone, texData);
+			mBaseNoise = mGraphicsInterface->CreateTexture3D(tw, th, 1, td, Graphics::Format::R_8_Unorm, TextureFlags::TextureFlagNone, texData);
 			delete[] texData;
 		}
 
@@ -327,7 +327,7 @@ namespace Graphics
 				}
 			}
 
-			mDetailNoise = mGraphicsInterface->CreateTexture3D(tw, th, 1, td, Graphics::Format::R_11_G_11_B_10_Float, Graphics::TextureFlagNone, texData);
+			mDetailNoise = mGraphicsInterface->CreateTexture3D(tw, th, 1, td, Graphics::Format::R_11_G_11_B_10_Float, TextureFlags::TextureFlagNone, texData);
 			delete[] texData;
 		}
 	}

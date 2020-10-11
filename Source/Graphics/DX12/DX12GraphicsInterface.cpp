@@ -932,7 +932,7 @@ namespace Graphics { namespace DX12 {
 		return handle;
 	}
 
-	TextureHandle DX12GraphicsInterface::CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags flags /* = TextureFlagNone*/, void* data /*= nullptr*/)
+	TextureHandle DX12GraphicsInterface::CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags::T flags /* = TextureFlagNone*/, void* data /*= nullptr*/)
 	{
 		if ((width * height * layers * mips) == 0)
 		{
@@ -945,16 +945,16 @@ namespace Graphics { namespace DX12 {
 		bool isUav = false;
 
 		D3D12_RESOURCE_FLAGS dxflags = D3D12_RESOURCE_FLAG_NONE;
-		if ((flags & UnorderedAccess) == UnorderedAccess)
+		if ((flags & TextureFlags::UnorderedAccess) == TextureFlags::UnorderedAccess)
 		{
 			isUav = true;
 			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 		}
-		if ((flags & RenderTarget) == RenderTarget)
+		if ((flags & TextureFlags::RenderTarget) == TextureFlags::RenderTarget)
 		{
 			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 		}
-		if ((flags & DepthStencil) == DepthStencil)
+		if ((flags & TextureFlags::DepthStencil) == TextureFlags::DepthStencil)
 		{
 			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 		}
@@ -1024,7 +1024,7 @@ namespace Graphics { namespace DX12 {
 		delete[] rowSizes;
 
 		// Render target views
-		if ((flags & RenderTarget) == RenderTarget)
+		if ((flags & TextureFlags::RenderTarget) == TextureFlags::RenderTarget)
 		{
 			D3D12_RENDER_TARGET_VIEW_DESC rtDesc = {};
 			rtDesc.Format = ToDXGIFormat(format);
@@ -1037,7 +1037,7 @@ namespace Graphics { namespace DX12 {
 			mRenderTargetHeap->OffsetHandles(1);
 		}
 		// Depth stencil views
-		if ((flags & DepthStencil) == DepthStencil)
+		if ((flags & TextureFlags::DepthStencil) == TextureFlags::DepthStencil)
 		{
 			D3D12_DEPTH_STENCIL_VIEW_DESC depthDesc = {};
 			depthDesc.Format = ToDXGIFormat(format);
@@ -1118,7 +1118,7 @@ namespace Graphics { namespace DX12 {
 		return handle;
 	}
 
-	TextureHandle DX12GraphicsInterface::CreateTextureCube(uint32_t size, uint32_t mips, uint32_t layers, Format::T format, TextureFlags flags, void * data)
+	TextureHandle DX12GraphicsInterface::CreateTextureCube(uint32_t size, uint32_t mips, uint32_t layers, Format::T format, TextureFlags::T flags, void * data)
 	{
 		if ((size * layers * mips) == 0)
 		{
@@ -1132,16 +1132,16 @@ namespace Graphics { namespace DX12 {
 		bool isCubeArray = layers > 1;
 
 		D3D12_RESOURCE_FLAGS dxflags = D3D12_RESOURCE_FLAG_NONE;
-		if ((flags & UnorderedAccess) == UnorderedAccess)
+		if ((flags & TextureFlags::UnorderedAccess) == TextureFlags::UnorderedAccess)
 		{
 			isUav = true;
 			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 		}
-		if ((flags & RenderTarget) == RenderTarget)
+		if ((flags & TextureFlags::RenderTarget) == TextureFlags::RenderTarget)
 		{
 			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 		}
-		if ((flags & DepthStencil) == DepthStencil)
+		if ((flags & TextureFlags::DepthStencil) == TextureFlags::DepthStencil)
 		{
 			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 		}
@@ -1213,7 +1213,7 @@ namespace Graphics { namespace DX12 {
 		delete[] rowSizes;
 
 		// Render target views
-		if ((flags & RenderTarget) == RenderTarget)
+		if ((flags & TextureFlags::RenderTarget) == TextureFlags::RenderTarget)
 		{
 			// Implement this
 			assert(false);
@@ -1228,7 +1228,7 @@ namespace Graphics { namespace DX12 {
 			//mRenderTargetHeap->OffsetHandles(1);
 		}
 		// Depth stencil views
-		if ((flags & DepthStencil) == DepthStencil)
+		if ((flags & TextureFlags::DepthStencil) == TextureFlags::DepthStencil)
 		{
 			// implement this
 			assert(false);
@@ -1336,7 +1336,7 @@ namespace Graphics { namespace DX12 {
 		return handle;
 	}
 
-	TextureHandle DX12GraphicsInterface::CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags flags /* = TextureFlagNone*/, void* data /*= nullptr*/)
+	TextureHandle DX12GraphicsInterface::CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags::T flags /* = TextureFlagNone*/, void* data /*= nullptr*/)
 	{
 		if ((width * height * layers * mips) == 0)
 		{
@@ -1348,17 +1348,17 @@ namespace Graphics { namespace DX12 {
 		bool isUav = false;
 
 		D3D12_RESOURCE_FLAGS dxflags = D3D12_RESOURCE_FLAG_NONE;
-		if ((flags & UnorderedAccess) == UnorderedAccess)
+		if ((flags & TextureFlags::UnorderedAccess) == TextureFlags::UnorderedAccess)
 		{
 			isUav = true;
 			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 		}
-		if ((flags & RenderTarget) == RenderTarget)
+		if ((flags & TextureFlags::RenderTarget) == TextureFlags::RenderTarget)
 		{
 			assert(false); // This is actually supported, not implemented tho
 			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 		}
-		if ((flags & DepthStencil) == DepthStencil)
+		if ((flags & TextureFlags::DepthStencil) == TextureFlags::DepthStencil)
 		{
 			assert(false); // This is not supported
 			dxflags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
@@ -1428,11 +1428,11 @@ namespace Graphics { namespace DX12 {
 		delete[] rowSizes;
 
 		// Render target view (can we have 3D rts???)
-		if ((flags & RenderTarget) == RenderTarget)
+		if ((flags & TextureFlags::RenderTarget) == TextureFlags::RenderTarget)
 		{
 		}
 		// Depthstencil view (can we have 3d depths??)
-		if ((flags & DepthStencil) == DepthStencil)
+		if ((flags & TextureFlags::DepthStencil) == TextureFlags::DepthStencil)
 		{
 		}
 		// Full view
