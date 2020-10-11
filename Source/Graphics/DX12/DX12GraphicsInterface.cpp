@@ -635,7 +635,7 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
-	D3D12_BLEND DX12GraphicsInterface::ToDX12Blend(const BlendFunction& func)
+	D3D12_BLEND DX12GraphicsInterface::ToDX12Blend(const BlendFunction::T& func)
 	{
 		switch (func)
 		{
@@ -654,7 +654,7 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
-	D3D12_BLEND_OP DX12GraphicsInterface::ToDX12BlendOp(const BlendOperation & op)
+	D3D12_BLEND_OP DX12GraphicsInterface::ToDX12BlendOp(const BlendOperation::T& op)
 	{
 		switch (op)
 		{

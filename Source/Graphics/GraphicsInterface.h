@@ -156,27 +156,33 @@ namespace Graphics
 		};
 	};
 
-	enum BlendOperation
+	struct BlendOperation
 	{
-		BlendOpAdd = 0,
-		BlendOpSubstract = 1,
-		BlendOpMin = 2,
-		BlendOpMax = 3
+		enum T
+		{
+			BlendOpAdd = 0,
+			BlendOpSubstract = 1,
+			BlendOpMin = 2,
+			BlendOpMax = 3
+		};
 	};
 
-	enum BlendFunction
+	struct BlendFunction
 	{
-		BlendZero = 0,
-		BlendOne = 1,
-		BlendSrcColor = 2,
-		BlendInvSrcColor = 3,
-		BlendSrcAlpha = 4,
-		BlendInvSrcAlpha = 5,
-		BlendDstAlpha = 6,
-		BlendInvDstAlpha = 7,
-		BlendDstColor = 8,
-		BlendInvDstColor = 9,
-		BlendFactor = 10
+		enum T
+		{
+			BlendZero = 0,
+			BlendOne = 1,
+			BlendSrcColor = 2,
+			BlendInvSrcColor = 3,
+			BlendSrcAlpha = 4,
+			BlendInvSrcAlpha = 5,
+			BlendDstAlpha = 6,
+			BlendInvDstAlpha = 7,
+			BlendDstColor = 8,
+			BlendInvDstColor = 9,
+			BlendFactor = 10
+		};
 	};
 
 	struct BufferHandle
@@ -265,12 +271,12 @@ namespace Graphics
 			BlendDesc() :Enabled(false),WriteMask(15) { }
 			bool Enabled;
 			uint8_t WriteMask;
-			BlendFunction SrcBlendColor;
-			BlendFunction DstBlendColor;
-			BlendOperation BlendOpColor;
-			BlendFunction SrcBlendAlpha;
-			BlendFunction DstBlendAlpha;
-			BlendOperation BlendOpAlpha;
+			BlendFunction::T SrcBlendColor;
+			BlendFunction::T DstBlendColor;
+			BlendOperation::T BlendOpColor;
+			BlendFunction::T SrcBlendAlpha;
+			BlendFunction::T DstBlendAlpha;
+			BlendOperation::T BlendOpAlpha;
 		}BlendTargets[8];
 	};
 
