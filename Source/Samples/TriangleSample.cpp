@@ -5,6 +5,7 @@
 #include "Graphics/GraphicsInterface.h"
 #include "Graphics/Platform/BaseWindow.h"
 #include "Graphics/UI/UIInterface.h"
+#include "Graphics/VertexDescription.h"
 
 using namespace Graphics;
 struct Vertex
@@ -48,9 +49,11 @@ void TriangleApp::Init()
 		pdesc.VertexShader.ShaderPath = "shadersrc:TriangleSample.hlsl";
 		pdesc.VertexShader.Type = ShaderType::Vertex;
 
-		pdesc.VertexDescription.Elements.push_back({ "POSITION",0,Format::RGB_32_Float ,0 });
-		pdesc.VertexDescription.Elements.push_back({ "COLOR",0,Format::RGB_32_Float ,sizeof(float) * 3 });
-		pdesc.VertexDescription.NumElements = (uint8_t)pdesc.VertexDescription.Elements.size();
+		//pdesc.VertexDescription.Elements.push_back({ "POSITION",0,Format::RGB_32_Float ,0 });
+		//pdesc.VertexDescription.Elements.push_back({ "COLOR",0,Format::RGB_32_Float ,sizeof(float) * 3 });
+		//pdesc.VertexDescription.NumElements = (uint8_t)pdesc.VertexDescription.Elements.size();
+		pdesc.VertexDescription = PosColorVertexDescription::GetDescription();
+
 		pdesc.ColorFormats[0] = mGraphicsInterface->GetOutputFormat();
 		m_Pipeline = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
 	}

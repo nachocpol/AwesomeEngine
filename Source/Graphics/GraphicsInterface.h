@@ -236,12 +236,12 @@ namespace Graphics
 		uint8_t NumElements;
 		struct VertexInputElement
 		{
-			std::string Semantic;
+			const char* Semantic;
 			uint8_t Idx;
 			Format::T EleFormat;
-			uint32_t Offset;
+			size_t Offset;
 		};
-		std::vector<VertexInputElement> Elements;
+		VertexInputElement* Elements;
 		bool NeedRelease;
 	};
 

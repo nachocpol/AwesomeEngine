@@ -13,6 +13,7 @@
 #include "DebugDraw.h"
 #include "UI/IMGUI/imgui.h"
 #include "Core/Logging.h"
+#include "Graphics/VertexDescription.h"
 
 #include "World/TransformComponent.h"
 
@@ -58,11 +59,7 @@ void TestRenderer::Initialize(AppBase * app)
 		pdesc.VertexShader.ShaderPath = "shadersrc:Surface.hlsl";
 		pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
 
-		pdesc.VertexDescription.Elements.push_back({ "POSITION", 0, Graphics::Format::RGB_32_Float, 0 });
-		pdesc.VertexDescription.Elements.push_back({ "NORMAL", 0, Graphics::Format::RGB_32_Float, 12 });
-		pdesc.VertexDescription.Elements.push_back({ "TANGENT", 0,	Graphics::Format::RGB_32_Float, 24 });
-		pdesc.VertexDescription.Elements.push_back({ "TEXCOORD", 0, Graphics::Format::RG_32_Float, 36 });
-		pdesc.VertexDescription.NumElements = (uint8_t)pdesc.VertexDescription.Elements.size();
+		pdesc.VertexDescription = PosNormalTangentTexCoordDescription::GetDescription();
 		pdesc.DepthEnabled = true;
 		pdesc.DepthWriteEnabled = true;
 		pdesc.DepthFunction = DepthFunc::LessEqual;
@@ -86,8 +83,7 @@ void TestRenderer::Initialize(AppBase * app)
 		desc.PixelShader.ShaderPath = "shadersrc:Common.hlsl";
 		desc.PixelShader.Type = Graphics::ShaderType::Pixel;
 
-		desc.VertexDescription.Elements.push_back({ "POSITION",0, Graphics::Format::RGB_32_Float,0 });
-		desc.VertexDescription.NumElements = (uint8_t)desc.VertexDescription.Elements.size();
+		desc.VertexDescription = PosVertexDescription::GetDescription();
 
 		desc.ColorFormats[0] = Graphics::Format::RGBA_8_Unorm;
 		desc.DepthFormat = Graphics::Format::Depth24_Stencil8;

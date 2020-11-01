@@ -1,5 +1,6 @@
 #include "UIInterface.h"
 #include "Graphics/Platform/BaseWindow.h"
+#include "Graphics/VertexDescription.h"
 #include "Core/Platform/InputManager.h"
 #include "IMGUI/imgui.h"
 
@@ -213,11 +214,7 @@ namespace Graphics{namespace UI{
 		pdesc.DepthFunction = Graphics::DepthFunc::Always;
 		pdesc.CullMode = FaceCullMode::None;
 
-		uint32_t vec2Size = sizeof(float) * 2;
-		pdesc.VertexDescription.Elements.push_back({ "POSITION",0,Graphics::Format::RG_32_Float,0 });
-		pdesc.VertexDescription.Elements.push_back({ "TEXCOORD",0,Graphics::Format::RG_32_Float,vec2Size * 1 });
-		pdesc.VertexDescription.Elements.push_back({ "COLOR",0,Graphics::Format::RGBA_8_Unorm,vec2Size * 2 });
-		pdesc.VertexDescription.NumElements = (uint8_t)pdesc.VertexDescription.Elements.size();
+		pdesc.VertexDescription = Pos2TexCoordColorDescription::GetDescription();
 
 		pdesc.BlendTargets[0].Enabled = true;
 

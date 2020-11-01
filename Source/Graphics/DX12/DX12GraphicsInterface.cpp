@@ -457,7 +457,7 @@ namespace Graphics { namespace DX12 {
 		eles.resize(desc.VertexDescription.NumElements);
 		for (int i = 0; i < desc.VertexDescription.NumElements; i++)
 		{
-			eles[i].SemanticName = desc.VertexDescription.Elements[i].Semantic.c_str();
+			eles[i].SemanticName = desc.VertexDescription.Elements[i].Semantic;
 			eles[i].SemanticIndex = desc.VertexDescription.Elements[i].Idx;
 			eles[i].Format = ToDXGIFormat(desc.VertexDescription.Elements[i].EleFormat);
 			eles[i].AlignedByteOffset = desc.VertexDescription.Elements[i].Offset;

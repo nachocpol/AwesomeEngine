@@ -2,6 +2,7 @@
 #include "World/CameraComponent.h"	
 #include "World/Model.h"
 #include "Core/Logging.h"
+#include "Graphics/VertexDescription.h"
 
 using namespace Graphics;
 
@@ -44,9 +45,8 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 		pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
 
 		pdesc.PrimitiveType = Primitive::Line;
-		pdesc.VertexDescription.Elements.push_back({ "POSITION", 0, Graphics::Format::RGB_32_Float,  0 });
-		pdesc.VertexDescription.Elements.push_back({ "COLOR",    0, Graphics::Format::RGBA_32_Float, 12 });
-		pdesc.VertexDescription.NumElements = (uint8_t)pdesc.VertexDescription.Elements.size();
+
+		pdesc.VertexDescription = PosColorVertexDescription::GetDescription();
 		pdesc.DepthEnabled = true;
 		pdesc.DepthWriteEnabled = false;
 		pdesc.DepthFunction = DepthFunc::LessEqual;
@@ -67,11 +67,7 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 		pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
 
 		pdesc.PrimitiveType = Primitive::Triangle;
-		pdesc.VertexDescription.Elements.push_back({ "POSITION", 0, Graphics::Format::RGB_32_Float, 0 });
-		pdesc.VertexDescription.Elements.push_back({ "NORMAL", 0, Graphics::Format::RGB_32_Float, 12 });
-		pdesc.VertexDescription.Elements.push_back({ "TANGENT", 0,	Graphics::Format::RGB_32_Float, 24 });
-		pdesc.VertexDescription.Elements.push_back({ "TEXCOORD", 0, Graphics::Format::RG_32_Float, 36 });
-		pdesc.VertexDescription.NumElements = (uint8_t)pdesc.VertexDescription.Elements.size();
+		pdesc.VertexDescription = PosNormalTangentTexCoordDescription::GetDescription();
 		pdesc.DepthEnabled = true;
 		pdesc.DepthWriteEnabled = false;
 		pdesc.DepthFunction = DepthFunc::LessEqual;
