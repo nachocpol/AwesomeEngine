@@ -66,7 +66,7 @@ namespace Graphics{ namespace DX12
 
 	struct QueryEntry
 	{
-		GPUQueryType::T Type;
+		GPUQueryType Type;
 		uint64_t HeapIdx; // Points to the 'heap Type' index for this query
 		ID3D12Fence* Fences[NUM_BACK_BUFFERS];
 		uint64_t FenceValues[NUM_BACK_BUFFERS];
@@ -89,7 +89,7 @@ namespace Graphics{ namespace DX12
 		ID3D12Resource* Buffer;
 		ID3D12Resource* UploadHeap;
 		D3D12_RESOURCE_STATES State;
-		BufferType::T Type;
+		BufferType Type;
 		CPUAccess::T CPUAccessMode;
 		GPUAccess::T GPUAccessMode;
 		uint64_t LastFrame;
@@ -202,11 +202,11 @@ namespace Graphics{ namespace DX12
 		void RenderUI() final override;
 		void EndFrame()final override;
 		void FlushAndWait()final override;
-		BufferHandle CreateBuffer(BufferType::T type, CPUAccess::T cpuAccess, GPUAccess::T gpuAccess, uint64_t size, uint32_t stride = 0, void* data = nullptr)final override;
+		BufferHandle CreateBuffer(BufferType type, CPUAccess::T cpuAccess, GPUAccess::T gpuAccess, uint64_t size, uint32_t stride = 0, void* data = nullptr)final override;
 		TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags::T flags = TextureFlags::TextureFlagNone, void* data = nullptr)final override;
 		TextureHandle CreateTextureCube(uint32_t size, uint32_t mips, uint32_t layers, Format::T format, TextureFlags::T flags = TextureFlags::TextureFlagNone, void* data = nullptr)final override;
 		TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format::T format, TextureFlags::T flags = TextureFlags::TextureFlagNone, void* data = nullptr)final override;
-		GPUQueryHandle CreateQuery(const GPUQueryType::T& type)final override;
+		GPUQueryHandle CreateQuery(const GPUQueryType& type)final override;
 		GraphicsPipeline CreateGraphicsPipeline(const GraphicsPipelineDescription& desc)final override;
 		ComputePipeline CreateComputePipeline(const ComputePipelineDescription& desc)final override;
 		void ReloadGraphicsPipeline(GraphicsPipeline& pipeline)final override;
@@ -239,8 +239,8 @@ namespace Graphics{ namespace DX12
 		void UnMapBuffer(BufferHandle buffer, bool writeOnly = true)final override;
 		void SetBlendFactors(float blend[4])override;;
 		glm::u32vec2 GetCurrentRenderingSize()final override;
-		void BeginQuery(const GPUQueryHandle& query, const GPUQueryType::T& type)final override;
-		void EndQuery(const GPUQueryHandle& query, const GPUQueryType::T& type)final override;
+		void BeginQuery(const GPUQueryHandle& query, const GPUQueryType& type)final override;
+		void EndQuery(const GPUQueryHandle& query, const GPUQueryType& type)final override;
 		ViewHandle Create2DView(TextureHandle resource, int firstMip, int numMips, bool rw = false)final override;
 		ViewHandle Create3DView(TextureHandle resource, int firstMip, int numMips, int firstSlice, int numSlices, bool rw = false)final override;
 

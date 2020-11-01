@@ -813,7 +813,7 @@ namespace Graphics { namespace DX12 {
 		tmpFence->Release();
 	}
 
-	BufferHandle DX12GraphicsInterface::CreateBuffer(BufferType::T type, CPUAccess::T cpuAccess, GPUAccess::T gpuAccess, uint64_t size, uint32_t stride /*= 0*/, void* data /*= nullptr*/)
+	BufferHandle DX12GraphicsInterface::CreateBuffer(BufferType type, CPUAccess::T cpuAccess, GPUAccess::T gpuAccess, uint64_t size, uint32_t stride /*= 0*/, void* data /*= nullptr*/)
 	{
 		// TO-DO: If CPU read none (static buffer) we could delete upload buffer once done with it.
 
@@ -1498,7 +1498,7 @@ namespace Graphics { namespace DX12 {
 		return handle;
 	}
 
-	GPUQueryHandle DX12GraphicsInterface::CreateQuery(const GPUQueryType::T& type)
+	GPUQueryHandle DX12GraphicsInterface::CreateQuery(const GPUQueryType& type)
 	{
 		GPUQueryHandle handle;
 		switch (type)
@@ -2040,7 +2040,7 @@ namespace Graphics { namespace DX12 {
 		return glm::u32vec2(mDefaultSurface.Window->GetWidth(), mDefaultSurface.Window->GetHeight());
 	}
 
-	void DX12GraphicsInterface::BeginQuery(const GPUQueryHandle& query, const GPUQueryType::T& type)
+	void DX12GraphicsInterface::BeginQuery(const GPUQueryHandle& query, const GPUQueryType& type)
 	{
 		switch (type)
 		{
@@ -2055,7 +2055,7 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
-	void DX12GraphicsInterface::EndQuery(const GPUQueryHandle& query, const GPUQueryType::T& type)
+	void DX12GraphicsInterface::EndQuery(const GPUQueryHandle& query, const GPUQueryType& type)
 	{
 		switch (type)
 		{

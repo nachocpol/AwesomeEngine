@@ -23,7 +23,7 @@ namespace World
 
 	private:
 		std::string mSourceEnvMap;
-		Graphics::ProbeShape::T mShape;
+		Graphics::ProbeShape mShape;
 		bool mInitialized;
 	};
 };
