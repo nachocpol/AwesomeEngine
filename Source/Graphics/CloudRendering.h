@@ -29,7 +29,7 @@ namespace Graphics
 
 		ComputePipeline mCloudsPipelineCompute;
 		TextureHandle mCloudsIntermediate;
-		glm::vec2 mCurRenderSize;
+		glm::u32vec2 mCurRenderSize;
 
 		ComputePipeline mCloudShadowPipeline;
 		TextureHandle mCloudShadowTexture;

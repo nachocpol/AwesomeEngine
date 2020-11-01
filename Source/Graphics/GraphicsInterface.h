@@ -341,7 +341,7 @@ namespace Graphics
 		virtual bool MapBuffer(BufferHandle buffer, unsigned char** outPtr,bool writeOnly = true) = 0;
 		virtual void UnMapBuffer(BufferHandle buffer, bool writeOnly = true) = 0;
 		virtual void SetBlendFactors(float blend[4]) {}
-		virtual glm::vec2 GetCurrentRenderingSize() = 0;
+		virtual glm::u32vec2 GetCurrentRenderingSize() = 0;
 		virtual void BeginQuery(const GPUQueryHandle& query, const GPUQueryType::T& type) = 0;
 		virtual void EndQuery(const GPUQueryHandle& query, const GPUQueryType::T& type) = 0;
 		virtual ViewHandle Create2DView(TextureHandle resource, int firstMip, int numMips, bool rw = false) = 0;

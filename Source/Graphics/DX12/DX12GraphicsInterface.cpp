@@ -441,7 +441,7 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::FlushBarriers()
 	{
-		size_t numBarriers = mPendingBarriers.size();
+		UINT numBarriers = (UINT)mPendingBarriers.size();
 		if (numBarriers > 0)
 		{
 			mDefaultSurface.CmdContext->ResourceBarrier(numBarriers, mPendingBarriers.data());
@@ -460,7 +460,7 @@ namespace Graphics { namespace DX12 {
 			eles[i].SemanticName = desc.VertexDescription.Elements[i].Semantic;
 			eles[i].SemanticIndex = desc.VertexDescription.Elements[i].Idx;
 			eles[i].Format = ToDXGIFormat(desc.VertexDescription.Elements[i].EleFormat);
-			eles[i].AlignedByteOffset = desc.VertexDescription.Elements[i].Offset;
+			eles[i].AlignedByteOffset = (UINT)desc.VertexDescription.Elements[i].Offset;
 			eles[i].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
 			eles[i].InstanceDataStepRate = 0;
 			eles[i].InputSlot = 0;
@@ -844,7 +844,7 @@ namespace Graphics { namespace DX12 {
 			size = ((size + 255) & ~255);
 		}
 
-		uint32_t resourceSize = isStructuredBuffer ? size * stride : size;
+		uint64_t resourceSize = isStructuredBuffer ? size * stride : size;
 
 		// GPU resource
 		D3D12_HEAP_PROPERTIES heapDesc = {};
@@ -871,7 +871,7 @@ namespace Graphics { namespace DX12 {
 			// Also create a view for the resource:
 			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
 			cbvDesc.BufferLocation = bufferEntry.Buffer->GetGPUVirtualAddress();
-			cbvDesc.SizeInBytes = resourceSize;
+			cbvDesc.SizeInBytes = (UINT)resourceSize;
 			bufferEntry.CBV = mViewsHeap.GetCPU();
 			mDevice->CreateConstantBufferView(&cbvDesc, bufferEntry.CBV);
 			mViewsHeap.OffsetHandles(1);
@@ -886,7 +886,7 @@ namespace Graphics { namespace DX12 {
 				srvDesc.Format = DXGI_FORMAT_UNKNOWN;
 				srvDesc.Buffer.FirstElement = 0;
 				srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-				srvDesc.Buffer.NumElements = size;
+				srvDesc.Buffer.NumElements = (UINT)size;
 				srvDesc.Buffer.StructureByteStride = stride;
 				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 				bufferEntry.GPUBufferView = mViewsHeap.GetCPU();
@@ -899,7 +899,7 @@ namespace Graphics { namespace DX12 {
 				uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 				uavDesc.Format = DXGI_FORMAT_UNKNOWN;
 				uavDesc.Buffer.FirstElement = 0;
-				uavDesc.Buffer.NumElements = size;
+				uavDesc.Buffer.NumElements = (UINT)size;
 				uavDesc.Buffer.StructureByteStride = stride;
 				uavDesc.Buffer.CounterOffsetInBytes = 0;
 				uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
@@ -1000,8 +1000,8 @@ namespace Graphics { namespace DX12 {
 		if (data)
 		{
 			auto baseDesc = curTexEntry.Resource->GetDesc();
-			int curOff = 0;
-			for (int i = 0; i < mips; i++)
+			uint64_t curOff = 0;
+			for (uint32_t i = 0; i < mips; i++)
 			{
 				const D3D12_PLACED_SUBRESOURCE_FOOTPRINT& curPrint = footPrints[i];
 
@@ -1083,7 +1083,7 @@ namespace Graphics { namespace DX12 {
 			desc2D.Texture2D.ResourceMinLODClamp = 0.0f;
 
 			curTexEntry.MipViews = new D3D12_CPU_DESCRIPTOR_HANDLE[mips];
-			for (int m = 0; m < mips; m++)
+			for (uint32_t m = 0; m < mips; m++)
 			{
 				desc2D.Texture2D.MostDetailedMip = m;
 				curTexEntry.MipViews[m] = mViewsHeap.GetCPU();
@@ -1105,7 +1105,7 @@ namespace Graphics { namespace DX12 {
 				desc2dRW.Texture2D.PlaneSlice = 0;
 
 				curTexEntry.MipViewsRW = new D3D12_CPU_DESCRIPTOR_HANDLE[mips];
-				for (int m = 0; m < mips; m++)
+				for (uint32_t m = 0; m < mips; m++)
 				{
 					desc2dRW.Texture2D.MipSlice = m;
 					curTexEntry.MipViewsRW[m] = mViewsHeap.GetCPU();
@@ -1189,8 +1189,8 @@ namespace Graphics { namespace DX12 {
 			// Implement this..
 			assert(false);
 			auto baseDesc = curTexEntry.Resource->GetDesc();
-			int curOff = 0;
-			for (int i = 0; i < mips; i++)
+			uint64_t curOff = 0;
+			for (uint32_t i = 0; i < mips; i++)
 			{
 				const D3D12_PLACED_SUBRESOURCE_FOOTPRINT& curPrint = footPrints[i];
 
@@ -1295,7 +1295,7 @@ namespace Graphics { namespace DX12 {
 			}
 
 			curTexEntry.MipViews = new D3D12_CPU_DESCRIPTOR_HANDLE[mips];
-			for (int m = 0; m < mips; m++)
+			for (uint32_t m = 0; m < mips; m++)
 			{
 				if (isCubeArray)
 				{
@@ -1323,7 +1323,7 @@ namespace Graphics { namespace DX12 {
 				descCubeRW.Texture2DArray.FirstArraySlice = 0;
 
 				curTexEntry.MipViewsRW = new D3D12_CPU_DESCRIPTOR_HANDLE[mips];
-				for (int m = 0; m < mips; m++)
+				for (uint32_t m = 0; m < mips; m++)
 				{
 					descCubeRW.Texture2DArray.MipSlice = m;
 					curTexEntry.MipViewsRW[m] = mViewsHeap.GetCPU();
@@ -1404,8 +1404,8 @@ namespace Graphics { namespace DX12 {
 		if (data)
 		{
 			auto baseDesc = curTexEntry.Resource->GetDesc();
-			int curOff = 0;
-			for (int i = 0; i < mips; i++)
+			uint64_t curOff = 0;
+			for (uint32_t i = 0; i < mips; i++)
 			{
 				const D3D12_PLACED_SUBRESOURCE_FOOTPRINT& curPrint = footPrints[i];
 
@@ -1460,7 +1460,7 @@ namespace Graphics { namespace DX12 {
 			desc3D.Texture3D.ResourceMinLODClamp = 0.0f;
 
 			curTexEntry.MipViews = new D3D12_CPU_DESCRIPTOR_HANDLE[mips];
-			for (int m = 0; m < mips; m++)
+			for (uint32_t m = 0; m < mips; m++)
 			{
 				desc3D.Texture3D.MostDetailedMip = m;
 				curTexEntry.MipViews[m] = mViewsHeap.GetCPU();
@@ -1483,7 +1483,7 @@ namespace Graphics { namespace DX12 {
 				desc3dRW.Texture3D.WSize = layers;
 
 				curTexEntry.MipViewsRW = new D3D12_CPU_DESCRIPTOR_HANDLE[mips];
-				for (int m = 0; m < mips; m++)
+				for (uint32_t m = 0; m < mips; m++)
 				{
 					desc3dRW.Texture3D.MipSlice = m;
 					curTexEntry.MipViewsRW[m] = mViewsHeap.GetCPU();
@@ -1779,7 +1779,7 @@ namespace Graphics { namespace DX12 {
 				}
 				const CD3DX12_RANGE  read(0, 0);
 				uint8_t* pData = nullptr;
-				uint32_t intermediateOffset = 0;
+				uint64_t intermediateOffset = 0;
 				bufferEntry.UploadHeap->Map(0, &read, reinterpret_cast<void**>(&pData));
 				{
 					intermediateOffset	+= ((CB_INTERMIDIATE_SIZE) / NUM_BACK_BUFFERS) * mCurBackBuffer;
@@ -2035,9 +2035,9 @@ namespace Graphics { namespace DX12 {
 		mDefaultSurface.CmdContext->OMSetBlendFactor(blend);
 	}
 
-	glm::vec2 DX12GraphicsInterface::GetCurrentRenderingSize()
+	glm::u32vec2 DX12GraphicsInterface::GetCurrentRenderingSize()
 	{
-		return glm::vec2(mDefaultSurface.Window->GetWidth(), mDefaultSurface.Window->GetHeight());
+		return glm::u32vec2(mDefaultSurface.Window->GetWidth(), mDefaultSurface.Window->GetHeight());
 	}
 
 	void DX12GraphicsInterface::BeginQuery(const GPUQueryHandle& query, const GPUQueryType::T& type)
@@ -2062,7 +2062,7 @@ namespace Graphics { namespace DX12 {
 			case GPUQueryType::Timestamp:
 			{
 				QueryEntry& entry = mTimeStampQueriesPool.GetEntry(query.Handle);
-				mDefaultSurface.CmdContext->EndQuery(mTimeStampsHeap, D3D12_QUERY_TYPE_TIMESTAMP, query.Handle);
+				mDefaultSurface.CmdContext->EndQuery(mTimeStampsHeap, D3D12_QUERY_TYPE_TIMESTAMP, (UINT)query.Handle);
 				mDefaultSurface.Queue->Signal(entry.Fences[mCurBackBuffer], ++entry.FenceValues[mCurBackBuffer]);
 				break;
 			}

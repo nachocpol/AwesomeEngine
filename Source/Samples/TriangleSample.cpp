@@ -48,10 +48,6 @@ void TriangleApp::Init()
 		pdesc.VertexShader.ShaderEntryPoint = "VSSimple";
 		pdesc.VertexShader.ShaderPath = "shadersrc:TriangleSample.hlsl";
 		pdesc.VertexShader.Type = ShaderType::Vertex;
-
-		//pdesc.VertexDescription.Elements.push_back({ "POSITION",0,Format::RGB_32_Float ,0 });
-		//pdesc.VertexDescription.Elements.push_back({ "COLOR",0,Format::RGB_32_Float ,sizeof(float) * 3 });
-		//pdesc.VertexDescription.NumElements = (uint8_t)pdesc.VertexDescription.Elements.size();
 		pdesc.VertexDescription = PosColorVertexDescription::GetDescription();
 
 		pdesc.ColorFormats[0] = mGraphicsInterface->GetOutputFormat();

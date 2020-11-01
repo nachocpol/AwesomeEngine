@@ -260,7 +260,7 @@ void TestRenderer::Render(SceneGraph* scene)
 						mIBLData.Roughness = roughness;
 						mGraphicsInterface->SetConstantBuffer(mIBLDataCB, Declarations::kIBLDataSlot, sizeof(mIBLData), &mIBLData);
 						mGraphicsInterface->SetRWResource(curProbe->PrefilteredTexture, 0, mip);
-						int curSize = 256 * glm::pow(0.5f, mip);
+						int curSize = (int)(256 * glm::pow(0.5f, mip));
 						mGraphicsInterface->Dispatch(curSize / 8, curSize / 8, 6);
 					}
 				}

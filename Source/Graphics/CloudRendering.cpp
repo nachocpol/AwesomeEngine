@@ -120,10 +120,10 @@ namespace Graphics
 		mGraphicsInterface->SetResource(mDetailNoise, 2);
 		mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData), &mCloudsData);
 		mGraphicsInterface->SetRWResource(mCloudShadowTexture, 1);
-		int tx = ceil((float)128/ (float)16);
-		int ty = ceil((float)128 / (float)16);
-		int tz = ceil((float)32 / (float)4);
-		mGraphicsInterface->Dispatch(ceil(tx),ty,tz);
+		int tx = (int)ceil((float)128/ (float)16);
+		int ty = (int)ceil((float)128 / (float)16);
+		int tz = (int)ceil((float)32 / (float)4);
+		mGraphicsInterface->Dispatch((int)ceil(tx),ty,tz); // This ceil?
 
 		//mGraphicsInterface->SetGraphicsPipeline(mCloudsPipeline);
 		//mGraphicsInterface->SetConstantBuffer(mCloudsDataHandle, 0, sizeof(mCloudsData),&mCloudsData);
@@ -146,8 +146,8 @@ namespace Graphics
 
 			float cursizeX = mCurRenderSize.x * mDownScaleFactor;
 			float cursizeY = mCurRenderSize.y * mDownScaleFactor;
-			int tx = ceil((float)cursizeX / (float)32);
-			int ty = ceil((float)cursizeY / (float)32);
+			int tx = (int)ceil((float)cursizeX / (float)32);
+			int ty = (int)ceil((float)cursizeY / (float)32);
 			int tz = 1;
 			mGraphicsInterface->Dispatch(tx,ty,tz);
 		}
@@ -192,7 +192,11 @@ namespace Graphics
 		mCloudShadowTexture = mGraphicsInterface->CreateTexture3D(128, 128, 1, 32, Graphics::Format::R_32_Float, Graphics::TextureFlags::UnorderedAccess);
 
 		mCurRenderSize = mGraphicsInterface->GetCurrentRenderingSize();
-		mCloudsIntermediate = mGraphicsInterface->CreateTexture2D(mCurRenderSize.x * mDownScaleFactor, mCurRenderSize.y * mDownScaleFactor,1,1,Graphics::Format::RGBA_16_Float,Graphics::TextureFlags::UnorderedAccess);
+		uint32_t intermediateW = (uint32_t)((float)mCurRenderSize.x * mDownScaleFactor);
+		uint32_t intermediateH = (uint32_t)((float)mCurRenderSize.y * mDownScaleFactor);
+		mCloudsIntermediate = mGraphicsInterface->CreateTexture2D(
+			intermediateW, intermediateH, 1, 1, Graphics::Format::RGBA_16_Float, Graphics::TextureFlags::UnorderedAccess
+		);
 
 		struct TexelRGBA		{ uint8_t r, g, b, a; };
 		struct TexelR			{ uint8_t r; };

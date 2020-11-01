@@ -3,6 +3,8 @@ workspace "AwesomeSolution"
 	platforms "x64"
 	systemversion "10"
 	staticruntime "on"
+	--warnings "Extra"
+	flags {"FatalCompileWarnings"}
 
 filter { "platforms:x64" }
 	defines { "PLATFORM_WINDOWS" }

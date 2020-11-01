@@ -67,7 +67,7 @@ namespace Graphics{ namespace DX12
 	struct QueryEntry
 	{
 		GPUQueryType::T Type;
-		uint32_t HeapIdx; // Points to the 'heap Type' index for this query
+		uint64_t HeapIdx; // Points to the 'heap Type' index for this query
 		ID3D12Fence* Fences[NUM_BACK_BUFFERS];
 		uint64_t FenceValues[NUM_BACK_BUFFERS];
 	};
@@ -238,7 +238,7 @@ namespace Graphics{ namespace DX12
 		bool MapBuffer(BufferHandle buffer, unsigned char** outPtr, bool writeOnly = true)final override;
 		void UnMapBuffer(BufferHandle buffer, bool writeOnly = true)final override;
 		void SetBlendFactors(float blend[4])override;;
-		glm::vec2 GetCurrentRenderingSize()final override;
+		glm::u32vec2 GetCurrentRenderingSize()final override;
 		void BeginQuery(const GPUQueryHandle& query, const GPUQueryType::T& type)final override;
 		void EndQuery(const GPUQueryHandle& query, const GPUQueryType::T& type)final override;
 		ViewHandle Create2DView(TextureHandle resource, int firstMip, int numMips, bool rw = false)final override;
