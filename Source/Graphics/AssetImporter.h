@@ -22,7 +22,7 @@ namespace Graphics
 		AssetImporter(GraphicsInterface* graphics);
 		~AssetImporter();
 		bool LoadModel(const char* path, Graphics::Scene* scene);
-		bool LoadTexture(const char* path, void*& outData, int& width, int& height, int& mips, Graphics::Format::T& format, bool calcMips);
+		bool LoadTexture(const char* path, void*& outData, int& width, int& height, int& mips, Graphics::Format& format, bool calcMips);
 		void FreeLoadedTexture(void* loadedData);
 		Graphics::TextureHandle LoadAndCreateTexture(const char* path);
 	private:

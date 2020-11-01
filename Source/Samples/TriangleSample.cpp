@@ -42,11 +42,11 @@ void TriangleApp::Init()
 	{
 		GraphicsPipelineDescription pdesc = {};
 		pdesc.PixelShader.ShaderEntryPoint = "PSSimple";
-		pdesc.PixelShader.ShaderPath = "shadersrc:TriangleSample.hlsl";
+		pdesc.PixelShader.ShaderPath = "shadersrc:Samples/TriangleSample.hlsl";
 		pdesc.PixelShader.Type = ShaderType::Pixel;
 
 		pdesc.VertexShader.ShaderEntryPoint = "VSSimple";
-		pdesc.VertexShader.ShaderPath = "shadersrc:TriangleSample.hlsl";
+		pdesc.VertexShader.ShaderPath = "shadersrc:Samples/TriangleSample.hlsl";
 		pdesc.VertexShader.Type = ShaderType::Vertex;
 		pdesc.VertexDescription = PosColorVertexDescription::GetDescription();
 

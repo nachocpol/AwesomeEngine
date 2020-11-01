@@ -24,7 +24,7 @@ namespace Graphics
 		return true;
 	}
 
-	bool AssetImporter::LoadTexture(const char* path, void*& outData, int& width, int& height,int& mips, Graphics::Format::T& format, bool calcMips )
+	bool AssetImporter::LoadTexture(const char* path, void*& outData, int& width, int& height,int& mips, Graphics::Format& format, bool calcMips )
 	{
 		std::string fullPath = path;
 		if (!Core::FileSystem::GetInstance()->FixupPath(fullPath))
@@ -53,7 +53,7 @@ namespace Graphics
 		// ...otherwise load it
 		void* tData = nullptr;
 		int x, y,m;
-		Graphics::Format::T format;
+		Graphics::Format format;
 		if (LoadTexture(path, tData, x, y, m, format, true))
 		{
 			mLoadedTextures[path] = mGraphicsInterface->CreateTexture2D(x, y, m, 1, format, TextureFlags::TextureFlagNone, tData);
