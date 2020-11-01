@@ -110,7 +110,7 @@ project "AwesomeTriangle"
 			"Graphics", "Core"
 		}
 
-project "AwesomeAdvanced"
+project "AwesomeCube"
 	kind "WindowedApp"
 	language "C++"
 	location "Temp/VSFiles"
@@ -118,7 +118,7 @@ project "AwesomeAdvanced"
 	files
 	{
 		"Source/Samples/**.h",
-		"Source/Samples/AdvancedSample.cpp"
+		"Source/Samples/CubeSample.cpp"
 	}
 	filter "configurations:Debug"
 		symbols "On"
