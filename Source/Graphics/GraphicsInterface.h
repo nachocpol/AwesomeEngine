@@ -112,16 +112,13 @@ namespace Graphics
 		};
 	};
 
-	struct Topology
+	enum class Topology
 	{
-		enum T
-		{
-			InvalidTopology,
-			TriangleList,
-			LineList,
-			LineStrip,
-		};
-	};
+		InvalidTopology,
+		TriangleList,
+		LineList,
+		LineStrip,
+	};	
 
 	struct FaceCullMode
 	{
@@ -242,7 +239,6 @@ namespace Graphics
 			size_t Offset;
 		};
 		VertexInputElement* Elements;
-		bool NeedRelease;
 	};
 
 	struct GraphicsPipelineDescription
@@ -321,7 +317,7 @@ namespace Graphics
 		virtual void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data) = 0;
 		virtual void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize) = 0;
 		virtual void SetIndexBuffer(const BufferHandle& buffer, int size, Format::T idxFormat) = 0;
-		virtual void SetTopology(const Topology::T& topology) = 0;
+		virtual void SetTopology(const Topology& topology) = 0;
 		virtual void SetGraphicsPipeline(const GraphicsPipeline& pipeline) = 0;
 		virtual void SetComputePipeline(const ComputePipeline& pipeline) = 0;
 		virtual void Dispatch(int x, int y, int z) = 0;

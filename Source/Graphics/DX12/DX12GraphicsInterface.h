@@ -218,7 +218,7 @@ namespace Graphics{ namespace DX12
 		void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)final override;
 		void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize)final override;
 		void SetIndexBuffer(const BufferHandle& buffer,int size, Format::T idxFormat)final override;
-		void SetTopology(const Topology::T& topology)final override;
+		void SetTopology(const Topology& topology)final override;
 		void SetComputePipeline(const ComputePipeline& pipeline)final override;
 		void SetGraphicsPipeline(const GraphicsPipeline& pipeline)final override;
 		void Dispatch(int x, int y, int z)final override;
@@ -255,7 +255,7 @@ namespace Graphics{ namespace DX12
 		void CreatePSO(const ComputePipelineDescription& desc, ComputePipelineEntry& entry);
 		static DXGI_FORMAT ToDXGIFormat(const Format::T& format);
 		static DXGI_FORMAT ToDXGIFormatTypeless(const Format::T& format);
-		static D3D12_PRIMITIVE_TOPOLOGY ToDXGITopology(const Topology::T& topology);
+		static D3D12_PRIMITIVE_TOPOLOGY ToDXGITopology(const Topology& topology);
 		static D3D12_PRIMITIVE_TOPOLOGY_TYPE ToDXGIPrimitive(const Primitive::T& primitive);
 		static D3D12_COMPARISON_FUNC ToDX12DepthFunc(const DepthFunc::T& func);
 		static D3D12_CULL_MODE ToDX12FaceCullMode(const FaceCullMode::T& mode);

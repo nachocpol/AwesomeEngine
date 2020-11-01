@@ -585,7 +585,7 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
-	D3D12_PRIMITIVE_TOPOLOGY DX12GraphicsInterface::ToDXGITopology(const Graphics::Topology::T& topology)
+	D3D12_PRIMITIVE_TOPOLOGY DX12GraphicsInterface::ToDXGITopology(const Topology& topology)
 	{
 		switch (topology)
 		{
@@ -1664,7 +1664,7 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
-	void DX12GraphicsInterface::SetTopology(const Topology::T& topology)
+	void DX12GraphicsInterface::SetTopology(const Topology& topology)
 	{
 		mDefaultSurface.CmdContext->IASetPrimitiveTopology(ToDXGITopology(topology));
 	}
