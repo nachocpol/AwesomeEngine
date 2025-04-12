@@ -7,11 +7,14 @@
 #include "Core/FileSystem.h"
 #include "Core/Logging.h"
 
-AppBase::AppBase():
-	 TotalTime(0.0f)
-	,DeltaTime(0.0f)
-	,mName("Default")
-	,mFullScreen(false)
+AppBase::AppBase() 
+	: TotalTime(0.0f)
+	, DeltaTime(0.0f)
+	, m_GraphicsInterface(nullptr)
+	, m_UIInterface(nullptr)
+	, m_Window(nullptr)
+	, m_Name("Default")
+	, m_FullScreen(false)
 {
 }
 
@@ -21,31 +24,31 @@ AppBase::~AppBase()
 
 void AppBase::Configure(const char* name, bool fullScreen)
 {
-	mName = name;
-	mFullScreen = fullScreen;
+	m_Name = name;
+	m_FullScreen = fullScreen;
 }
 
 void AppBase::Init()
 {
 	Core::FileSystem::GetInstance()->Initialize();
 
-	mWindow = new Graphics::Platform::Windows::WWindow();
-	mWindow->Initialize(mName, mFullScreen, 1920, 1080);
+	m_Window = new Graphics::Platform::Windows::WWindow();
+	m_Window->Initialize(m_Name, m_FullScreen, 1920, 1080);
 
-	mGraphicsInterface = new Graphics::DX12::DX12GraphicsInterface();
-	mGraphicsInterface->Initialize(mWindow);
+	m_GraphicsInterface = new Graphics::DX12::DX12GraphicsInterface();
+	m_GraphicsInterface->Initialize(m_Window);
 
-	mUIInterface = new Graphics::UI::UIInterface();
-	mUIInterface->Initialize(mWindow, mGraphicsInterface);
+	m_UIInterface = new Graphics::UI::UIInterface();
+	m_UIInterface->Initialize(m_Window, m_GraphicsInterface);
 
-	Graphics::DebugDraw::GetInstance()->Initialize(mGraphicsInterface);
+	Graphics::DebugDraw::GetInstance()->Initialize(m_GraphicsInterface);
 }
 
 void AppBase::StartFrame()
 {
-	mWindow->Update(); // This will query new events...
-	mGraphicsInterface->StartFrame();
-	mUIInterface->StartFrame();
+	m_Window->Update(); // This will query new events...
+	m_GraphicsInterface->StartFrame();
+	m_UIInterface->StartFrame();
 	Graphics::DebugDraw::GetInstance()->StartFrame();
 }
 
@@ -57,8 +60,8 @@ void AppBase::EndFrame()
 {
 	Logger::GetInstance()->Render();
 	Graphics::DebugDraw::GetInstance()->EndFrame();
-	mUIInterface->EndFrame();
-	mGraphicsInterface->EndFrame();
+	m_UIInterface->EndFrame();
+	m_GraphicsInterface->EndFrame();
 }
 
 void AppBase::Release()
@@ -67,15 +70,15 @@ void AppBase::Release()
 
 bool AppBase::Running()
 {
-	return !mWindow->IsClosed();
+	return !m_Window->IsClosed();
 }
 
 Graphics::GraphicsInterface* AppBase::GetGraphicsInterface() const
 {
-	return mGraphicsInterface;
+	return m_GraphicsInterface;
 }
 
 Graphics::Platform::BaseWindow* AppBase::GetWindow() const
 {
-	return mWindow;
+	return m_Window;
 }

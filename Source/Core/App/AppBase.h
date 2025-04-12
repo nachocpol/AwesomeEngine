@@ -33,12 +33,12 @@ public:
 	float DeltaTime;
 
 protected:
-	Graphics::Platform::BaseWindow* mWindow;
-	Graphics::GraphicsInterface* mGraphicsInterface;
-	Graphics::UI::UIInterface* mUIInterface;
-	const char* mName;
-	bool mFullScreen;
+	Graphics::Platform::BaseWindow* m_Window;
+	Graphics::GraphicsInterface* m_GraphicsInterface;
+	Graphics::UI::UIInterface* m_UIInterface;
+	const char* m_Name;
+	bool m_FullScreen;
 
 private:
-	AppBase(const AppBase& other) {};
+	AppBase(const AppBase& other) = default;
 };

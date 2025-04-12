@@ -14,9 +14,9 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 	{
 	// KEY UP
 	case WM_KEYUP:
-		switch (wParam)
 		{
-		default: inputManager->KeyStates[(unsigned char)wParam] = KeyState::StateUp; printf("UP:%c\n", wParam); break;
+			inputManager->KeyStates[(unsigned char)wParam] = KeyState::StateUp; 
+			//printf("UP:%c\n", wParam); 
 		}
 		break;
 
@@ -38,7 +38,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 			case VK_F12:	inputManager->SpecialKeyStates[SpecialKey::F12] = KeyState::StateDown; break;
 			case VK_ESCAPE:	inputManager->SpecialKeyStates[SpecialKey::ESC] = KeyState::StateDown; break;
 			case VK_TAB:	inputManager->SpecialKeyStates[SpecialKey::TAB]	= KeyState::StateDown; break;
-			default:		inputManager->KeyStates[(unsigned char)wParam]			= KeyState::StateDown; printf("DOWN:%c\n", wParam);  break;
+			default:		inputManager->KeyStates[(unsigned char)wParam]			= KeyState::StateDown; /*printf("DOWN:%c\n", wParam);*/  break;
 		}
 		break;
 

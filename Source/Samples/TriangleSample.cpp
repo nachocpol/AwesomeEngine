@@ -38,7 +38,7 @@ void TriangleApp::Init()
 		0.0f,  0.5f, 0.5f,   0.0f, 1.0f, 0.0f,
 		0.5f, -0.5f, 0.5f,   0.0f, 0.0f, 1.0f
 	};
-	m_VertexBuffer = mGraphicsInterface->CreateBuffer(BufferType::VertexBuffer, CPUAccess::None, GPUAccess::None, sizeof(Vertex) * 3, 0, &arr[0]);
+	m_VertexBuffer = m_GraphicsInterface->CreateBuffer(BufferType::VertexBuffer, CPUAccess::None, GPUAccess::None, sizeof(Vertex) * 3, 0, &arr[0]);
 	{
 		GraphicsPipelineDescription pdesc = {};
 		pdesc.PixelShader.ShaderEntryPoint = "PSSimple";
@@ -50,22 +50,22 @@ void TriangleApp::Init()
 		pdesc.VertexShader.Type = ShaderType::Vertex;
 		pdesc.VertexDescription = PosColorVertexDescription::GetDescription();
 
-		pdesc.ColorFormats[0] = mGraphicsInterface->GetOutputFormat();
-		m_Pipeline = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
+		pdesc.ColorFormats[0] = m_GraphicsInterface->GetOutputFormat();
+		m_Pipeline = m_GraphicsInterface->CreateGraphicsPipeline(pdesc);
 	}
 
-	mGraphicsInterface->FlushAndWait();
+	m_GraphicsInterface->FlushAndWait();
 }
 
 void TriangleApp::Update()
 {
 	AppBase::Update();
 
-	mGraphicsInterface->SetScissor(0, 0, mWindow->GetWidth(), mWindow->GetHeight());
-	mGraphicsInterface->SetTopology(Topology::TriangleList);
-	mGraphicsInterface->SetGraphicsPipeline(m_Pipeline);
-	mGraphicsInterface->SetVertexBuffer(m_VertexBuffer, sizeof(Vertex) * 3, sizeof(Vertex));
-	mGraphicsInterface->Draw(3, 0);
+	m_GraphicsInterface->SetScissor(0, 0, m_Window->GetWidth(), m_Window->GetHeight());
+	m_GraphicsInterface->SetTopology(Topology::TriangleList);
+	m_GraphicsInterface->SetGraphicsPipeline(m_Pipeline);
+	m_GraphicsInterface->SetVertexBuffer(m_VertexBuffer, sizeof(Vertex) * 3, sizeof(Vertex));
+	m_GraphicsInterface->Draw(3, 0);
 
 	ImGui::Begin("Paco");
 	ImGui::End();
@@ -73,7 +73,7 @@ void TriangleApp::Update()
 
 void TriangleApp::Release()
 {
-	mGraphicsInterface->ReleaseGraphicsPipeline(m_Pipeline);
+	m_GraphicsInterface->ReleaseGraphicsPipeline(m_Pipeline);
 	AppBase::Release();
 }
 

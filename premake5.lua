@@ -35,6 +35,10 @@ filter {"configurations:Debug"}
 	links
 	{
 	}
+	defines
+	{
+		"DEBUG"
+	}
 
 filter {"configurations:Release"}
 	libdirs

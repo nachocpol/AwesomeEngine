@@ -45,7 +45,7 @@ void Graphics::ValueNoise1D::Initialize(uint32_t width, uint32_t seed /*=1*/)
 	srand(seed);
 	mWidth = width;
 	mValues = new float[width];
-	for (int i = 0; i < width; i++)
+	for (uint32_t i = 0; i < width; i++)
 	{
 		mValues[i] = glm::clamp((float)rand() / (float)RAND_MAX, 0.0f, 1.0f);
 		assert(mValues[i] <= 1.0f && mValues[i] >= 0.0f);
@@ -57,7 +57,7 @@ float Graphics::ValueNoise1D::Sample(float x)
 	int ipart = (int)x;
 	int minIdx = ipart % mWidth;
 	int maxIdx = (ipart + 1) % mWidth;
-	assert(maxIdx <= mWidth - 1);
+	assert(maxIdx <= (int)mWidth - 1);
 	return glm::mix(mValues[minIdx], mValues[maxIdx], x - (float)ipart);
 }
 
@@ -81,7 +81,7 @@ void Graphics::ValueNoise2D::Initialize(uint32_t width, uint32_t height, uint32_
 	mWidth = width;
 	mHeight = height;
 	mValues = new float[width * height];
-	for (int i = 0; i < width * height; i++)
+	for (uint32_t i = 0; i < width * height; i++)
 	{
 		mValues[i] = glm::clamp((float)rand() / (float)RAND_MAX, 0.0f, 1.0f);
 		assert(mValues[i] <= 1.0f && mValues[i] >= 0.0f);
@@ -163,7 +163,7 @@ void Graphics::ValueNoise3D::Initialize(uint32_t width, uint32_t height, uint32_
 	mHeight = height;
 	mDepth = depth;
 	mValues = new float[width * height * depth];
-	for (int i = 0; i < width * height * depth; i++)
+	for (uint32_t i = 0; i < width * height * depth; i++)
 	{
 		mValues[i] = glm::clamp((float)rand() / (float)RAND_MAX, 0.0f, 1.0f);
 		assert(mValues[i] <= 1.0f && mValues[i] >= 0.0f);
@@ -187,9 +187,9 @@ float Graphics::ValueNoise3D::Sample(float x, float y,float z)
 		c010--------c110
 	*/
 
-	int ix = floor(x);
-	int iy = floor(y);
-	int iz = floor(z);
+	int ix = (int)floor(x);
+	int iy = (int)floor(y);
+	int iz = (int)floor(z);
 
 	int32_t slizeSize = mWidth * mHeight;
 	int32_t slizeOff = slizeSize * (iz % (mDepth - 1));
@@ -256,7 +256,7 @@ void Graphics::GradientNoise2D::Initialize(uint32_t width, uint32_t height, uint
 	mHeight = height;
 	srand(seed);
 	mValues = new glm::vec2[width * height];
-	for (int i = 0; i < width*height; i++)
+	for (uint32_t i = 0; i < width*height; i++)
 	{
 		glm::vec2 cur(0.0f);
 		cur.x = glm::clamp((float)rand() / (float)RAND_MAX, 0.0f, 1.0f) * 2.0f - 1.0f;
@@ -275,8 +275,8 @@ float Graphics::GradientNoise2D::Sample(float x, float y)
 		c01	|		c11
 	*/
 	// Integer part
-	int ix = floor(x);
-	int iy = floor(y);
+	int ix = (int)floor(x);
+	int iy = (int)floor(y);
 
 	// Define min and max (y)
 	int minx = ix % mWidth;
@@ -356,7 +356,7 @@ void Graphics::GradientNoise3D::Initialize(uint32_t width, uint32_t height, uint
 	mDepth = depth;
 	srand(seed);
 	mValues = new glm::vec3[width * height * depth];
-	for (int i = 0; i < width*height*depth; i++)
+	for (uint32_t i = 0; i < width*height*depth; i++)
 	{
 		glm::vec3 cur(0.0f);
 		cur.x = glm::clamp((float)rand() / (float)RAND_MAX, 0.0f, 1.0f) * 2.0f - 1.0f;
@@ -369,9 +369,9 @@ void Graphics::GradientNoise3D::Initialize(uint32_t width, uint32_t height, uint
 float Graphics::GradientNoise3D::Sample(float x, float y, float z)
 {
 	// Integer part
-	int ix = floor(x);
-	int iy = floor(y);
-	int iz = floor(z);
+	int ix = (int)floor(x);
+	int iy = (int)floor(y);
+	int iz = (int)floor(z);
 
 	// Define min and max (y)
 	int minx = ix % mWidth;
@@ -484,8 +484,8 @@ float Graphics::WorleyNoise2D::Sample(float x, float y)
 	x *= (float)mWidth;
 	y *= (float)mHeight;
 
-	int ix = floor(x);
-	int iy = floor(y);
+	int ix = (int)floor(x);
+	int iy = (int)floor(y);
 	
 	float fx = x - float(ix);
 	float fy = y - float(iy);
@@ -556,9 +556,9 @@ float Graphics::WorleyNoise3D::Sample(float x, float y, float z)
 	y *= (float)mHeight;
 	z *= (float)mDepth;
 
-	int ix = floor(x);
-	int iy = floor(y);
-	int iz = floor(z);
+	int ix = (int)floor(x);
+	int iy = (int)floor(y);
+	int iz = (int)floor(z);
 
 	float fx = x - float(ix);
 	float fy = y - float(iy);

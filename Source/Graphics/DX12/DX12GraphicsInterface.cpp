@@ -42,6 +42,9 @@ namespace Graphics { namespace DX12 {
 		UINT factoryFlags = 0;
 		ID3D12Debug* debugController = nullptr;
 		static bool enableDebug = false;
+#ifdef DEBUG
+		enableDebug = true;
+#endif
 		if (enableDebug && SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 		{
 			static bool enableGPUValidation = false;
