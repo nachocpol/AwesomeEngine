@@ -5,13 +5,14 @@
 
 #include "Utils.hlsl"
 #include "Declarations.h"
+#include "Samplers.hlsl"
+
 
 //////////////////////////////////////
 // Resources
 //////////////////////////////////////
 
 Texture2D MainTex : register(t0);
-SamplerState LinearWrapSampler : register(s0);
 
 //////////////////////////////////////
 // Vertex inputs and outputs definitions
@@ -94,7 +95,7 @@ float4 PSToneGamma(FullscrenVSOut i): SV_Target0
 UIVSOut VSUI(UIVSIn i)
 {
 	UIVSOut o;
-	o.ClipPos = mul(gUIData.ProjectionUI, float4(i.Position,0.0,1.0));
+	o.ClipPos = mul(gUIData.ProjectionUI, float4(i.Position, 0.0, 1.0));
 	o.VertexColor = i.VertexColor;
 	o.TexCoord = i.TexCoord;
 	return o;
@@ -102,7 +103,7 @@ UIVSOut VSUI(UIVSIn i)
 
 float4 PSUI(UIVSOut i): SV_Target0
 {
-	return MainTex.Sample(LinearWrapSampler,(i.TexCoord * 1.0)) * i.VertexColor;
+	return MainTex.Sample(LinearClampSampler, i.TexCoord) * i.VertexColor;
 }
 
 //////////////////////////////////////

@@ -213,7 +213,7 @@ void TestRenderer::Render(SceneGraph* scene)
 			mCurLightCount = 0;
 			for (LightComponent* light : lights)
 			{
-				Declarations::Light dataLight;
+				::Light dataLight;
 				dataLight.Color = light->GetColor();
 				dataLight.Type = (int)light->GetLightType();
 				dataLight.Radius = light->GetRadius();

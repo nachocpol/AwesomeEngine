@@ -75,7 +75,7 @@ namespace Graphics
 		// Lights:
 		int mCurLightCount;
 		int kMaxLights = 1024; 
-		std::vector<Declarations::Light> mCurLightsData;
+		std::vector<Light> mCurLightsData;
 		BufferHandle mLightsListSB;
 
 		int kNumTilesW = 11;

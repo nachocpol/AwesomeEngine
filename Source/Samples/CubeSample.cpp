@@ -2,12 +2,15 @@
 
 #include "Core/EntryPoint.h"
 #include "Core/App/AppBase.h"
+#include "Core/Platform/InputManager.h"
 
 #include "Graphics/GraphicsInterface.h"
 #include "Graphics/VertexDescription.h"
 #include "Graphics/Platform/Windows/WWindow.h"
+#include "Graphics/UI/UIInterface.h"
 
 #include "../Assets/Shaders/HLSL/Samples/CubeSample.hlsl"
+
 
 using namespace Graphics;
 
@@ -102,8 +105,22 @@ void CubeApp::Update()
 	m_GraphicsInterface->SetTopology(Topology::TriangleList);
 	m_GraphicsInterface->SetGraphicsPipeline(m_CubePSO);
 	m_GraphicsInterface->SetVertexBuffer(m_CubeVB, sizeof(PosVertexDescription) * 8, sizeof(PosVertexDescription));
-	m_GraphicsInterface->SetIndexBuffer(m_CubeIB, 36 * 8, Format::R_32_Uint); // MMM format? look into how it works with the low level code
+	
+	// TODO: This size stuff... We already pass the format, can we do the * 4 inside?
+	m_GraphicsInterface->SetIndexBuffer(m_CubeIB, 36 * 4, Format::R_32_Uint); // Whats up with the format? We don't pass any formats to the index buffer creation bro
 	m_GraphicsInterface->DrawIndexed(36);
+
+	if (ImGui::Begin("Test"))
+	{
+		ImGui::Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam ac euismod ante, tristique tempor leo");
+		static float temp = 3.14f;
+		ImGui::SliderAngle("angle", &temp);
+		glm::vec2 ps = Core::InputManager::GetInstance()->GetMousePos();
+
+		ImGui::Text("x:%f, y:%f", ps.x, ps.y);
+
+		ImGui::End();
+	}
 }
 
 void CubeApp::Release()

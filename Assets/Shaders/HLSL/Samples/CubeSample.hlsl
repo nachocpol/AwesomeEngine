@@ -5,8 +5,6 @@ CBUFFER(CubeConstants)
 	float4x4 ViewProjection;
 CBUFFER_END(CubeConstants, 0)
 
-#include "..\ShaderDeclarationMacrosEnd.h"
-
 #if !defined(__cplusplus)
 
 struct VSInput

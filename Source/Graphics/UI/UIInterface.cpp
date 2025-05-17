@@ -185,7 +185,7 @@ namespace Graphics{namespace UI{
 		io.Fonts->GetTexDataAsRGBA32(&fontData, &w, &h);
 		Graphics::TextureHandle fontTex;
 		fontTex = mGraphicsInterface->CreateTexture2D(w, h, 1, 1, Format::RGBA_8_Unorm, TextureFlags::TextureFlagNone, fontData);
-		io.Fonts->SetTexID((void*)fontTex.Handle);
+		io.Fonts->SetTexID((ImTextureID)fontTex.Handle);
 
 		// Buffers
 		mMaxVertices = 50000;

@@ -301,6 +301,17 @@ namespace Graphics { namespace DX12 {
 			);
 			samplers.push_back(s1);
 		}
+		// PointClampSampler (s2)
+		{
+			CD3DX12_STATIC_SAMPLER_DESC s2;
+			s2.Init
+			(
+				2	,
+				D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT,
+				D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP
+			);
+			samplers.push_back(s2);
+		}
 		rsDesc.Init((UINT)params.size(), params.data(), (UINT)samplers.size(),samplers.data());
 		rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 

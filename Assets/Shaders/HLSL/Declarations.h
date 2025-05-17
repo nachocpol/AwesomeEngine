@@ -3,6 +3,9 @@
 */
 #pragma once
 
+#ifndef DECLARATIONS_H
+#define DECLARATIONS_H
+
 #include "ShaderDeclarationMacros.h"
 
 struct Light
@@ -49,4 +52,4 @@ CBUFFER(IBLData)
 	float Roughness;
 CBUFFER_END(IBLData, 0)
 
-#include "ShaderDeclarationMacrosEnd.h"
+#endif
