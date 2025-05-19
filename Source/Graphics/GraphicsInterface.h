@@ -300,7 +300,7 @@ namespace Graphics
 		virtual void ReleaseBuffer(BufferHandle& buffer) = 0;
 		virtual void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data) = 0;
 		virtual void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize) = 0;
-		virtual void SetIndexBuffer(const BufferHandle& buffer, int size, Format idxFormat) = 0;
+		virtual void SetIndexBuffer(const BufferHandle& buffer, int indexCount, Format format) = 0;
 		virtual void SetTopology(const Topology& topology) = 0;
 		virtual void SetGraphicsPipeline(const GraphicsPipeline& pipeline) = 0;
 		virtual void SetComputePipeline(const ComputePipeline& pipeline) = 0;

@@ -680,6 +680,29 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
+	int DX12GraphicsInterface::GetFormatSize(const Format& format)
+	{
+		switch (format)
+		{
+		case Format::R_16_Uint:
+			return 2;
+
+		case Format::R_32_Uint:
+		case Format::Depth24_Stencil8:
+		case Format::R_32_Float:
+		case Format::RGBA_8_Snorm:
+		case Format::RGBA_8_Unorm:
+			return 4;
+
+		case Format::RGBA_32_Float:
+			return 16;			
+
+		default:
+			assert(false);
+		}
+		return 0;
+	}
+
 	void DX12GraphicsInterface::StartFrame()
 	{
 		if (mDefaultSurface.Recording)
@@ -1665,14 +1688,14 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
-	void DX12GraphicsInterface::SetIndexBuffer(const BufferHandle& buffer,int size, Format idxFormat)
+	void DX12GraphicsInterface::SetIndexBuffer(const BufferHandle& buffer, int indexCount, Format idxFormat)
 	{
 		BufferEntry& bufferEntry = mBuffersPool.GetEntry(buffer.Handle);
 		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && bufferEntry.Buffer != nullptr)
 		{
 			D3D12_INDEX_BUFFER_VIEW view = {};
 			view.BufferLocation = bufferEntry.Buffer->GetGPUVirtualAddress();
-			view.SizeInBytes = size;
+			view.SizeInBytes = GetFormatSize(idxFormat) * indexCount;
 			view.Format = ToDXGIFormat(idxFormat);
 			mDefaultSurface.CmdContext->IASetIndexBuffer(&view);
 		}

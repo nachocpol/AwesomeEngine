@@ -217,7 +217,7 @@ namespace Graphics{ namespace DX12
 		void ReleaseBuffer(BufferHandle& buffer) final override;
 		void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data)final override;
 		void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize)final override;
-		void SetIndexBuffer(const BufferHandle& buffer,int size, Format idxFormat)final override;
+		void SetIndexBuffer(const BufferHandle& buffer, int indexCount, Format idxFormat)final override;
 		void SetTopology(const Topology& topology)final override;
 		void SetComputePipeline(const ComputePipeline& pipeline)final override;
 		void SetGraphicsPipeline(const GraphicsPipeline& pipeline)final override;
@@ -261,6 +261,8 @@ namespace Graphics{ namespace DX12
 		static D3D12_CULL_MODE ToDX12FaceCullMode(const FaceCullMode::T& mode);
 		static D3D12_BLEND ToDX12Blend(const BlendFunction::T& func);
 		static D3D12_BLEND_OP ToDX12BlendOp(const BlendOperation::T& op);
+		
+		static int GetFormatSize(const Format& format);
 
 		DisplaySurface mDefaultSurface;
 		ID3D12Device* mDevice;
