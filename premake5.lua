@@ -142,3 +142,32 @@ project "AwesomeCube"
 		postbuildcommands 
 		{
 		}
+
+project "AwesomeModelViewer"
+	kind "WindowedApp"
+	language "C++"
+	location "Temp/VSFiles"
+	targetdir "Build/%{cfg.platform}/%{cfg.buildcfg}"
+	files
+	{
+		"Source/Samples/**.h",
+		"Source/Samples/ModelViewer.cpp"
+	}
+	filter "configurations:Debug"
+		symbols "On"
+		links
+		{
+			"Graphics", "Core"
+		}
+		postbuildcommands 
+		{
+		}
+	filter "configurations:Release"
+		optimize "On"
+		links
+		{
+			"Graphics", "Core"
+		}
+		postbuildcommands 
+		{
+		}
