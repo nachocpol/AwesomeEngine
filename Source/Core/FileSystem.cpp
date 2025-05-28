@@ -30,8 +30,8 @@ void FileSystem::Initialize()
 	static bool kInitialized = false;
 	if (!kInitialized)
 	{
-		AddFileDevice({ "../../Assets/", FileDevice::Type::Assets, "assets" });
-		AddFileDevice({ "../../Assets/Shaders/HLSL/", FileDevice::Type::ShaderSource, "shadersrc" });
+		AddFileDevice({ "../../Data/", FileDevice::Type::Assets, "data" });
+		AddFileDevice({ "../../Source/Graphics/Shaders/", FileDevice::Type::ShaderSource, "shadersrc" });
 		kInitialized = true;
 	}
 }

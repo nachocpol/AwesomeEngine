@@ -2,7 +2,7 @@
 
 #include "IMGUI/imgui.h"
 #include "Graphics/GraphicsInterface.h"
-#include "HLSL/Declarations.h"
+#include "Declarations.h"
 
 namespace Graphics
 { 

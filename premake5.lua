@@ -16,16 +16,15 @@ filter { "platforms:x64" }
 	includedirs 
 	{
 		"Source",
+		"Source/Graphics/Shaders",
 		"Depen/DX12",
 		"Depen/JSON",
 		"Depen/TinyObj",
 		"Depen/GLM",
-		"Depen/STB",
-		"Assets/Shaders"
+		"Depen/STB"
 	}
 	files
 	{
-		"Assets/Shaders/**.h"
 	}
 
 filter {"configurations:Debug"}

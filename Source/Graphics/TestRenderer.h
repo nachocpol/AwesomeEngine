@@ -3,7 +3,7 @@
 #include "RendererBase.h"
 #include "GraphicsInterface.h"
 #include "Core/Math.h"
-#include "HLSL/Declarations.h"
+#include "Declarations.h"
 #include "World/Model.h"
 
 #include <vector>

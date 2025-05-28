@@ -145,7 +145,7 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 
 	// Debug cubemap
 	{
-		mSphereModel = Graphics::ModelFactory::Get()->LoadFromFile("assets:Meshes/sphere.obj", mGraphicsInterface);
+		mSphereModel = Graphics::ModelFactory::Get()->LoadFromFile("data:Models/sphere.obj", mGraphicsInterface);
 	}
 
 	mDebugDataCB = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(mDebugData));

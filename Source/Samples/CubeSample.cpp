@@ -9,8 +9,7 @@
 #include "Graphics/Platform/Windows/WWindow.h"
 #include "Graphics/UI/UIInterface.h"
 
-#include "../Assets/Shaders/HLSL/Samples/CubeSample.hlsl"
-
+#include "Samples/CubeSample.hlsl"
 
 using namespace Graphics;
 

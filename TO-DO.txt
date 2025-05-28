@@ -78,6 +78,33 @@ To render something, you have
 + Material, a shader, this material will reference some textures.
 + Transformation, where should we render, scale, rotation!
 
+
+Currently thinking about loading models, textures
++ Maybe just start with an easy format (obj)
+
+..or.. What if I focus on deciding the scene hierarchy and how will this interact with the renderer system
+
+And just have, cubes! yep. After that, go ahead and maybe make this more complex?
+
+So, 1o1 
+
++ camera
++ light
++ model
+
+This are "entities/actors"
+
+So, have a base Actor class and then inherit. 
+
+Scene
+ - Actor:camera
+ - Actor:light (sun)
+ - Actor:model (ground)
+
+And for now, that's it.
+
+
+
 A model can have many meshes!
 
 
