@@ -36,14 +36,12 @@ namespace World
 		virtual void UpdateLate();
 		virtual void RenderUI();
 
-		// Getters for components frequently used
 		TransformComponent* Transform = nullptr;
-		RigidBodyComponent* RigidBody = nullptr;
 
 	protected:
 		void AddChild(Actor* child);
 
-		Actor* mParent;
+		Actor* m_Parent;
 		std::vector<Actor*> mChilds;
 		std::vector<Component*> mComponents;
 		SceneGraph* mSceneOwner;

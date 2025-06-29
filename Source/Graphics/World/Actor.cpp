@@ -6,7 +6,7 @@
 using namespace World;
 
 Actor::Actor():
-	 mParent(nullptr)
+	 m_Parent(nullptr)
 	,mSceneOwner(nullptr)
 {
 }
@@ -32,7 +32,7 @@ const std::vector<Actor*>& Actor::GetChilds() const
 
 Actor* World::Actor::GetParent() const
 {
-	return mParent;
+	return m_Parent;
 }
 
 void World::Actor::UpdatePhysics()
@@ -81,7 +81,7 @@ void Actor::RenderUI()
 
 void Actor::AddChild(Actor* child)
 {
-	child->mParent = this;
+	child->m_Parent = this;
 	mChilds.push_back(child);
 }
 
@@ -100,6 +100,6 @@ RigidBodyComponent* Actor::AddComponent<RigidBodyComponent>()
 {
 	RigidBodyComponent* rbComponent = new RigidBodyComponent(this);
 	mComponents.push_back(rbComponent);
-	RigidBody = rbComponent;
+	//RigidBody = rbComponent;
 	return rbComponent;
 }

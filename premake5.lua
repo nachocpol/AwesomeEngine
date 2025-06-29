@@ -21,7 +21,8 @@ filter { "platforms:x64" }
 		"Depen/JSON",
 		"Depen/TinyObj",
 		"Depen/GLM",
-		"Depen/STB"
+		"Depen/STB",
+		"Depen/tinyobj"
 	}
 	files
 	{
@@ -76,6 +77,9 @@ project "Graphics"
 	{
 		"Source/Graphics/**.h",
 		"Source/Graphics/**.cpp"
+	}
+	includedirs
+	{		
 	}
 	filter "configurations:Debug"
 		symbols "On"
