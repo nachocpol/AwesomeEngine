@@ -20,6 +20,60 @@ public:
 ModelViewer app;
 ENTRY_POINT(app, "Model Viewer", false);
 
+char* OBJGetDataStart(char* data, int maxLen)
+{
+	for (int i = 0; i < maxLen; ++i)
+	{
+		if (*data == ' ')
+		{
+			return ++data;
+		}
+		++data;
+	}
+	return nullptr;
+}
+
+// Parses a single data line from an obj file. Line is either: v, vt or vn
+// Returns the number of digits parsed or 0 if something bad happened.
+int OBJParseDataLine(glm::vec4& parsedData, char* inputData, int inputLen)
+{
+	if (!inputData || inputLen == 0)
+	{
+		return 0;
+	}
+
+	char* curC = OBJGetDataStart(inputData, inputLen);
+
+	int parsedDigits = 0;
+	bool newLine = false;
+	while (!newLine)
+	{
+		char curDigit[128];
+		memset(curDigit, 0, 128);
+		int counter = 0;
+		bool nextDigit = false;
+		while (!nextDigit)
+		{
+			curDigit[counter++] = *curC;
+			++curC;
+			if (*curC == 0x20) // Space
+			{
+				nextDigit = true;
+				++curC; // Advance extra position							
+			}
+			else if (*curC == 0x0) // New line
+			{
+				newLine = true;
+				nextDigit = true; // Stop parsing
+			}
+		}
+		curDigit[counter] = 0;
+		parsedData[parsedDigits++] = std::stof(curDigit);
+	}
+
+	return parsedDigits;
+}
+
 void ModelViewer::Init()
 {
 	AppBase::Init();
@@ -29,6 +83,22 @@ void ModelViewer::Init()
 	std::string objPath = "data:Models/cube.obj";
 	if (Core::FileSystem::GetInstance()->FixupPath(objPath))
 	{
+		struct OBJData
+		{
+			std::vector<glm::vec3> positions;
+			std::vector<glm::vec2> texCoords;
+			std::vector<glm::vec3> normals;
+
+		} dataBuffers;
+
+		dataBuffers.positions.resize(100);
+		dataBuffers.texCoords.resize(100);
+		dataBuffers.normals.resize(100);
+
+		int posCount = 0;
+		int texCoordCount = 0;
+		int normalsCount = 0;
+
 		std::ifstream fileStream(objPath);
 		if (fileStream.is_open())
 		{
@@ -36,52 +106,57 @@ void ModelViewer::Init()
 			while (fileStream.getline(dataLine, 128))
 			{
 				char schema = dataLine[0];
+				char schemaB = dataLine[1];
+
+				// Note for 'v' we ignore the fact that we could get a w value! xyz=xyz/w (implicit w = 1)
 				if (schema == 'v')
 				{
-					float dataVector[4]; // Max of 4 elements: xyz[w] (w is optional)
-					char* curC = &dataLine[2]; // Start of the data str
-					int parsedDigits = 0;
-					bool newLine = false;
-					while (!newLine)
+					if (schemaB == ' ')
 					{
-						char curDigit[128];
-						memset(curDigit, 0, 128);
-						int counter = 0;
-						bool nextDigit = false;
-						while (!nextDigit)
+						glm::vec4 vertex;
+						int elements = OBJParseDataLine(vertex, dataLine, 128);
+						if (elements != 3)
 						{
-							curDigit[counter++] = *curC;
-							++curC;
-							if (*curC == 0x20) // space
-							{
-								nextDigit = true;
-								++curC; // advance extra position							
-							}
-							else if (*curC == 0x0) // new line
-							{
-								newLine = true;
-								nextDigit = true; // to stop parsing
-							}
+							assert(false);
 						}
-						curDigit[counter] = 0;
-						dataVector[parsedDigits++] = std::stof(curDigit);
+						dataBuffers.positions.push_back(glm::vec3(vertex));
+						++posCount;
 					}
-					INFO("Data: %f, %f, %f", dataVector[0], dataVector[1], dataVector[2]);
-				}
-				else if (schema == 'vt')
-				{
-
-				}
-				else if (schema == 'vn')
-				{
-
+					else if (schemaB == 't')
+					{
+						glm::vec4 texCoord;
+						int elements = OBJParseDataLine(texCoord, dataLine, 128);
+						if (elements != 2)
+						{
+							assert(false);
+						}
+						dataBuffers.texCoords.push_back(glm::vec2(texCoord));
+						++texCoord;
+					}
+					else if (schemaB == 'n')
+					{
+						glm::vec4 normal;
+						int elements = OBJParseDataLine(normal, dataLine, 128);
+						if (elements != 3)
+						{
+							assert(false);
+						}
+						normal = glm::normalize(normal);
+						dataBuffers.normals.push_back(glm::vec3(normal));
+						++normalsCount;
+					}
+					else
+					{
+						assert(false);
+					}					
 				}
 				else if (schema == 'f')
 				{
 
 				}
 			}
-		}		
+		}
+		INFO("Finished loading obj");
 	}
 	else
 	{
