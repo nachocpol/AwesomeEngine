@@ -287,7 +287,7 @@ void TestRenderer::Render(SceneGraph* scene)
 
 		// Output to the screen:
 		mGraphicsInterface->SetGraphicsPipeline(mPresentPipeline);
-		mGraphicsInterface->SetVertexBuffer(mPresentVtxBuffer, sizeof(VertexScreen) * 6, sizeof(VertexScreen));
+		mGraphicsInterface->SetVertexBuffer(mPresentVtxBuffer, 6, sizeof(VertexScreen));
 		mGraphicsInterface->SetResource(mColourRt, 0);
 		mGraphicsInterface->Draw(6, 0);
 	}
@@ -453,7 +453,7 @@ void TestRenderer::RenderItems(World::CameraComponent* camera, const std::vector
 			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, Declarations::kCameraDataSlot, sizeof(Declarations::CameraData), &mCameraData);
 			mGraphicsInterface->SetConstantBuffer(mItemDataCb, Declarations::kItemDataSlot, sizeof(Declarations::ItemData), &mItemData);
 			mGraphicsInterface->SetResource(mLightsListSB, Declarations::kLightsSlot);
-			mGraphicsInterface->SetVertexBuffer(mesh->VertexBuffer, mesh->VertexSize * mesh->NumVertex, mesh->VertexSize);
+			mGraphicsInterface->SetVertexBuffer(mesh->VertexBuffer, mesh->NumVertex, mesh->VertexSize);
 			mGraphicsInterface->SetIndexBuffer(mesh->IndexBuffer, mesh->NumIndices * sizeof(uint32_t), Graphics::Format::R_32_Uint);
 			mGraphicsInterface->DrawIndexed(mesh->NumIndices);
 		}

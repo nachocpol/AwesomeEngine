@@ -64,7 +64,7 @@ void TriangleApp::Update()
 	m_GraphicsInterface->SetScissor(0, 0, m_Window->GetWidth(), m_Window->GetHeight());
 	m_GraphicsInterface->SetTopology(Topology::TriangleList);
 	m_GraphicsInterface->SetGraphicsPipeline(m_Pipeline);
-	m_GraphicsInterface->SetVertexBuffer(m_VertexBuffer, sizeof(Vertex) * 3, sizeof(Vertex));
+	m_GraphicsInterface->SetVertexBuffer(m_VertexBuffer, 3, sizeof(Vertex));
 	m_GraphicsInterface->Draw(3, 0);
 
 	ImGui::Begin("Paco");

@@ -193,7 +193,7 @@ void Graphics::DebugDraw::Flush(World::CameraComponent* camera)
 			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, Declarations::kCameraDataSlot, sizeof(Declarations::CameraData), &mCameraData);
 			mGraphicsInterface->SetConstantBuffer(mItemDataCb, Declarations::kItemDataSlot, sizeof(Declarations::ItemData), &mItemData);
 			mGraphicsInterface->SetTopology(Topology::LineList);
-			mGraphicsInterface->SetVertexBuffer(mLinesVtxBuffer, sizeof(DebugVertex) * 2 * numLines, sizeof(DebugVertex));
+			mGraphicsInterface->SetVertexBuffer(mLinesVtxBuffer, 2 * numLines, sizeof(DebugVertex));
 			mGraphicsInterface->Draw(numLines * 2, 0);
 		}
 	}
@@ -213,7 +213,7 @@ void Graphics::DebugDraw::Flush(World::CameraComponent* camera)
 			mGraphicsInterface->SetConstantBuffer(mCameraDataCb, Declarations::kCameraDataSlot, sizeof(Declarations::CameraData), &mCameraData);
 			mGraphicsInterface->SetConstantBuffer(mItemDataCb, Declarations::kItemDataSlot, sizeof(Declarations::ItemData), &mItemData);
 			mGraphicsInterface->SetTopology(Topology::LineList);
-			mGraphicsInterface->SetVertexBuffer(mWireSphereVtxBuffer, sizeof(DebugVertex) * mWireSphereNumVtx, sizeof(DebugVertex));
+			mGraphicsInterface->SetVertexBuffer(mWireSphereVtxBuffer, mWireSphereNumVtx, sizeof(DebugVertex));
 			mGraphicsInterface->Draw(mWireSphereNumVtx, 0);
 		}
 	}
@@ -239,7 +239,7 @@ void Graphics::DebugDraw::Flush(World::CameraComponent* camera)
 			uint8_t slot = cubeitem.Equirectangular ? 1 : 0;
 			mGraphicsInterface->SetResource(cubeitem.Texture, slot);
 
-			mGraphicsInterface->SetVertexBuffer(mSphereModel->Meshes[0].VertexBuffer, mSphereModel->Meshes[0].NumVertex * mSphereModel->Meshes[0].VertexSize, mSphereModel->Meshes[0].VertexSize);
+			mGraphicsInterface->SetVertexBuffer(mSphereModel->Meshes[0].VertexBuffer, mSphereModel->Meshes[0].NumVertex, mSphereModel->Meshes[0].VertexSize);
 			mGraphicsInterface->SetIndexBuffer(mSphereModel->Meshes[0].IndexBuffer, mSphereModel->Meshes[0].NumIndices * sizeof(uint32_t), Format::R_32_Uint);
 			mGraphicsInterface->DrawIndexed(mSphereModel->Meshes[0].NumIndices);
 		}

@@ -285,7 +285,7 @@ namespace Graphics
 		virtual void FlushAndWait() = 0;
 		// If it is a GPUBuffer, size is the number of elements, and user should
 		// provide a stride. For other buffer types, stride will be ignored.
-		virtual BufferHandle CreateBuffer(BufferType type, CPUAccess::T cpuAccess, GPUAccess::T gpuAccess, uint64_t size, uint32_t stride = 0, void* data = nullptr) = 0;
+		virtual BufferHandle CreateBuffer(BufferType type, CPUAccess::T cpuAccess, GPUAccess::T gpuAccess, uint64_t size, uint32_t stride = 0, void* data = nullptr, const char* name = nullptr) = 0;
 		virtual TextureHandle CreateTexture2D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags::T flags = TextureFlags::TextureFlagNone, void* data = nullptr) = 0;
 		virtual TextureHandle CreateTextureCube(uint32_t size, uint32_t mips, uint32_t layers, Format format, TextureFlags::T flags = TextureFlags::TextureFlagNone, void* data = nullptr) = 0;
 		virtual TextureHandle CreateTexture3D(uint32_t width, uint32_t height, uint32_t mips, uint32_t layers, Format format, TextureFlags::T flags = TextureFlags::TextureFlagNone, void* data = nullptr) = 0;
@@ -299,7 +299,7 @@ namespace Graphics
 		virtual void ReleaseComputePipeline(ComputePipeline& pipeline) = 0;
 		virtual void ReleaseBuffer(BufferHandle& buffer) = 0;
 		virtual void SetBufferData(const BufferHandle& buffer, int size, int offset, void* data) = 0;
-		virtual void SetVertexBuffer(const BufferHandle& buffer, int size, int eleSize) = 0;
+		virtual void SetVertexBuffer(const BufferHandle& buffer, int eleCount, int eleSize) = 0;
 		virtual void SetIndexBuffer(const BufferHandle& buffer, int indexCount, Format format) = 0;
 		virtual void SetTopology(const Topology& topology) = 0;
 		virtual void SetGraphicsPipeline(const GraphicsPipeline& pipeline) = 0;

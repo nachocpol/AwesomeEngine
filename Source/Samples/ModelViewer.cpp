@@ -162,14 +162,19 @@ void ModelViewer::Init()
 	{
 		ERR("File: %s can not be resolved!", objPath.c_str());
 	}
+
+	// A bit nasty, need to maybe get rid of it.. On graphics creation, we leave the cmdlist open and recording, as we may submit copy commands
+	// to init buffers, textures etc..
+	// Probably should change the scheme and defer that copy to when we are actually in the "render frame"... Anyways :) 
+	m_GraphicsInterface->FlushAndWait();
 }
 
 void ModelViewer::Update()
 {
 	if (ImGui::Begin("Model Viewer"))
 	{
-		ImGui::End();
 	}
+	ImGui::End();
 }
 
 void ModelViewer::Release()

@@ -114,6 +114,7 @@ namespace Graphics { namespace DX12 {
 		}
 
 		// Mute some annoyances:
+#ifdef DEBUG
 		ID3D12InfoQueue* infoQueue = nullptr;
 		mDevice->QueryInterface(IID_PPV_ARGS(&infoQueue));
 		if (infoQueue)
@@ -127,8 +128,10 @@ namespace Graphics { namespace DX12 {
 			filter.DenyList.NumIDs = sizeof(idList) / sizeof(D3D12_MESSAGE_ID);
 			filter.DenyList.pIDList = idList;
 			infoQueue->AddStorageFilterEntries(&filter);
+			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
 			infoQueue->Release();
 		}
+#endif
 
 		// Initialize the display surface:
 		InitSurface(&mDefaultSurface);
@@ -850,7 +853,7 @@ namespace Graphics { namespace DX12 {
 		tmpFence->Release();
 	}
 
-	BufferHandle DX12GraphicsInterface::CreateBuffer(BufferType type, CPUAccess::T cpuAccess, GPUAccess::T gpuAccess, uint64_t size, uint32_t stride /*= 0*/, void* data /*= nullptr*/)
+	BufferHandle DX12GraphicsInterface::CreateBuffer(BufferType type, CPUAccess::T cpuAccess, GPUAccess::T gpuAccess, uint64_t size, uint32_t stride /*= 0*/, void* data /*= nullptr*/, const char* name /*= nullptr*/)
 	{
 		// TO-DO: If CPU read none (static buffer) we could delete upload buffer once done with it.
 
@@ -898,6 +901,15 @@ namespace Graphics { namespace DX12 {
 			IID_PPV_ARGS(&bufferEntry.Buffer)
 		);
 		
+#if DEBUG
+		if (name)
+		{
+			// Not nice..
+			std::wstring lname(name, name + strlen(name));
+			bufferEntry.Buffer->SetName(lname.c_str());
+		}
+#endif
+
 		// Upload resource
 		heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		desc = CD3DX12_RESOURCE_DESC::Buffer(resourceSize);
@@ -945,12 +957,21 @@ namespace Graphics { namespace DX12 {
 				mViewsHeap.OffsetHandles(1);
 			}
 		}
+
 		if (type != BufferType::ConstantBuffer && isCPUWrite)
 		{
 			// CPUAccess::Write, we can now Map the buffer, but we need to do it
 			// in a safer way so we do not override data
 			desc.Width *= NUM_BACK_BUFFERS;
 		}
+
+		// Should we nuke Map/Unamp and simply allow to call setbuffer data? right now all buffers end up bound as the commited resource anyways, we just
+		// use the upload ones as intermediates.. So what's the point? Lets just have commited resources and when we need created temporary upload ones to update data...
+
+		// Aggg but this is crap, because if we want to init the buffer (on creation) but we don't need CPUAccess then what???
+
+		// This really needs some thouhg? Maybe we need a system to create intermediate upload buffers that aren't tied to the resource.. Not sure :/ 
+
 		mDevice->CreateCommittedResource
 		(
 			&heapProp,
@@ -1675,14 +1696,14 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
-	void DX12GraphicsInterface::SetVertexBuffer(const BufferHandle& buffer,int size, int eleSize)
+	void DX12GraphicsInterface::SetVertexBuffer(const BufferHandle& buffer,int eleCount, int eleSize)
 	{
 		BufferEntry& bufferEntry = mBuffersPool.GetEntry(buffer.Handle);
 		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && bufferEntry.Buffer != nullptr)
 		{
 			D3D12_VERTEX_BUFFER_VIEW view	= {};
 			view.BufferLocation				= bufferEntry.Buffer->GetGPUVirtualAddress();
-			view.SizeInBytes				= size;
+			view.SizeInBytes				= eleCount * eleSize;
 			view.StrideInBytes				= eleSize;
 			mDefaultSurface.CmdContext->IASetVertexBuffers(0, 1, &view);
 		}

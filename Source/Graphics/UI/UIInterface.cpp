@@ -118,8 +118,8 @@ namespace Graphics{namespace UI{
 			// Bind state
 			float imBlend[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 			float defBlend[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-			mGraphicsInterface->SetVertexBuffer(mVertexBuffer, mMaxVertices * (int)vtxStride, (int)vtxStride);
-			mGraphicsInterface->SetIndexBuffer(mIndexBuffer, mMaxIndices * (int)idxStride, idxFmt);
+			mGraphicsInterface->SetVertexBuffer(mVertexBuffer, mMaxVertices, (int)vtxStride);
+			mGraphicsInterface->SetIndexBuffer(mIndexBuffer, mMaxIndices, idxFmt);
 			mGraphicsInterface->SetGraphicsPipeline(mGraphicsPipeline);
 			mGraphicsInterface->SetBlendFactors(imBlend);
 			mGraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
@@ -190,11 +190,11 @@ namespace Graphics{namespace UI{
 		// Buffers
 		mMaxVertices = 50000;
 		uint64_t vtxBufferSize = sizeof(ImDrawVert) * mMaxVertices;
-		mVertexBuffer = mGraphicsInterface->CreateBuffer(BufferType::VertexBuffer, CPUAccess::Write, GPUAccess::Read, vtxBufferSize);
+		mVertexBuffer = mGraphicsInterface->CreateBuffer(BufferType::VertexBuffer, CPUAccess::Write, GPUAccess::Read, vtxBufferSize, 0, nullptr,"UIVertexBuffer");
 
 		mMaxIndices = 50000;
 		uint64_t idxBufferSize = sizeof(ImDrawIdx) * mMaxIndices;
-		mIndexBuffer = mGraphicsInterface->CreateBuffer(BufferType::IndexBuffer, CPUAccess::Write, GPUAccess::Read, idxBufferSize);
+		mIndexBuffer = mGraphicsInterface->CreateBuffer(BufferType::IndexBuffer, CPUAccess::Write, GPUAccess::Read, idxBufferSize, 0, nullptr, "UIIndexBuffer");
 
 		mUIDataHandle = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(mUIData));
 

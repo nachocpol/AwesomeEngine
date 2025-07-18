@@ -82,6 +82,8 @@ void CubeApp::Init()
 	m_CubeConstantsBuffer = m_GraphicsInterface->CreateBuffer(
 		Graphics::BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(m_CubeConstants)
 	);
+
+	m_GraphicsInterface->FlushAndWait();
 }
 
 void CubeApp::Update()
@@ -103,7 +105,7 @@ void CubeApp::Update()
 	
 	m_GraphicsInterface->SetTopology(Topology::TriangleList);
 	m_GraphicsInterface->SetGraphicsPipeline(m_CubePSO);
-	m_GraphicsInterface->SetVertexBuffer(m_CubeVB, sizeof(PosVertexDescription) * 8, sizeof(PosVertexDescription));
+	m_GraphicsInterface->SetVertexBuffer(m_CubeVB, 8, sizeof(PosVertexDescription));
 	
 	m_GraphicsInterface->SetIndexBuffer(m_CubeIB, 36, Format::R_32_Uint);
 	m_GraphicsInterface->DrawIndexed(36);
