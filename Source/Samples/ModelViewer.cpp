@@ -89,11 +89,19 @@ void ModelViewer::Init()
 			std::vector<glm::vec2> texCoords;
 			std::vector<glm::vec3> normals;
 
+			struct OBJTriangle
+			{
+				std::vector<int> posIndices3;
+				std::vector<int> texCoordIndices;
+				std::vector<int> normalIndices;
+			};
+			std::vector<OBJTriangle> triangles;
+
 		} dataBuffers;
 
-		dataBuffers.positions.resize(100);
-		dataBuffers.texCoords.resize(100);
-		dataBuffers.normals.resize(100);
+		dataBuffers.positions.reserve(100);
+		dataBuffers.texCoords.reserve(100);
+		dataBuffers.normals.reserve(100);
 
 		int posCount = 0;
 		int texCoordCount = 0;
@@ -152,7 +160,54 @@ void ModelViewer::Init()
 				}
 				else if (schema == 'f')
 				{
+					// Figure out if its a triangle
+					{
+						char* fCur = dataLine;
+						int spaces = 0;
+						while (*fCur != '\0')
+						{
+							if (*fCur == ' ')
+							{
+								++spaces;
+							}
+							++fCur;
+						}
 
+						// we should have 3 spaces for a triangle:  f 1/1/1 3/3/3 5/5/5
+						if (spaces != 3)
+						{
+							ERR("Unsupported OBJ");
+							assert(false);
+						}
+					}	
+
+					// Now parse it
+					bool hasNormals = dataBuffers.normals.size();
+					bool hasTexCoord = dataBuffers.positions.size();
+
+					if (!hasNormals || !hasTexCoord)
+					{
+						assert(false);
+					}
+
+					char* curChar = dataLine;
+					++curChar; //f
+					++curChar;// space
+
+					char curDigit[128];
+					char* digitPtr = curDigit;
+					while (curChar != '\0')
+					{
+						if (*curChar != '/')
+						{
+							*digitPtr = *curChar;
+							++digitPtr;
+							++curChar;
+						}
+					}
+
+
+					INFO("Faces");
 				}
 			}
 		}
