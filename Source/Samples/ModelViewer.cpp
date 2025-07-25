@@ -80,25 +80,26 @@ void ModelViewer::Init()
 
 	FILE* file = nullptr;
 
+	struct OBJTriangle
+	{
+		int positions[3];
+		int texCoords[3];
+		int normals[3];
+	};
+
+	struct OBJData
+	{
+		std::vector<glm::vec3> positions;
+		std::vector<glm::vec2> texCoords;
+		std::vector<glm::vec3> normals;
+
+		std::vector<OBJTriangle> triangles;
+
+	} dataBuffers;
+
 	std::string objPath = "data:Models/cube.obj";
 	if (Core::FileSystem::GetInstance()->FixupPath(objPath))
-	{
-		struct OBJData
-		{
-			std::vector<glm::vec3> positions;
-			std::vector<glm::vec2> texCoords;
-			std::vector<glm::vec3> normals;
-
-			struct OBJTriangle
-			{
-				std::vector<int> posIndices3;
-				std::vector<int> texCoordIndices;
-				std::vector<int> normalIndices;
-			};
-			std::vector<OBJTriangle> triangles;
-
-		} dataBuffers;
-
+	{	
 		dataBuffers.positions.reserve(100);
 		dataBuffers.texCoords.reserve(100);
 		dataBuffers.normals.reserve(100);
@@ -113,8 +114,11 @@ void ModelViewer::Init()
 			char dataLine[128];
 			while (fileStream.getline(dataLine, 128))
 			{
+				const int lineLen = (int)strlen(dataLine);
 				char schema = dataLine[0];
 				char schemaB = dataLine[1];
+
+				// Parsing like this, asumes all data will come sequentially (no mixed f,v etc..) not sure if obj even supports it?
 
 				// Note for 'v' we ignore the fact that we could get a w value! xyz=xyz/w (implicit w = 1)
 				if (schema == 'v')
@@ -190,24 +194,63 @@ void ModelViewer::Init()
 						assert(false);
 					}
 
+					// Insert a space so we let the parsing code handle the last index (otherwise it will stop before processing it..)
+					dataLine[lineLen] = ' ';
+					dataLine[lineLen + 1] = '\0';
+
+					// Prepare to parse
 					char* curChar = dataLine;
 					++curChar; //f
 					++curChar;// space
 
+					OBJTriangle curTriangle;
+
+					int curTriIndex = 0;
+					int curEleIndex = 0;
 					char curDigit[128];
 					char* digitPtr = curDigit;
-					while (curChar != '\0')
+					while (*curChar != '\0' )
 					{
-						if (*curChar != '/')
+						if (*curChar != '/' && *curChar != ' ')
 						{
 							*digitPtr = *curChar;
-							++digitPtr;
-							++curChar;
+							++digitPtr;							
+						}						
+						else
+						{
+							const int curIndex = std::stoi(curDigit) - 1; // OBJ arrays start at 1
+
+							if (curEleIndex == 0)
+							{
+								curTriangle.positions[curTriIndex] = curIndex;
+							}
+							else if (curEleIndex == 1)
+							{
+								curTriangle.texCoords[curTriIndex] = curIndex;
+							}
+							else if (curEleIndex == 2)
+							{
+								curTriangle.normals[curTriIndex] = curIndex;
+
+								// Done with this vertex.
+								++curTriIndex;
+								curEleIndex = 0;
+							}
+
+							// Reset digit
+							digitPtr = curDigit;
+							memset(curDigit, 0, 128);
+
+							if (*curChar != ' ')
+							{
+								++curEleIndex;
+							}
 						}
+
+						++curChar;
 					}
 
-
-					INFO("Faces");
+					dataBuffers.triangles.push_back(curTriangle);
 				}
 			}
 		}
@@ -217,6 +260,25 @@ void ModelViewer::Init()
 	{
 		ERR("File: %s can not be resolved!", objPath.c_str());
 	}
+
+	std::vector<Graphics::PosVertexDescription> positionsBuffer;
+
+	for (int i = 0; i < dataBuffers.triangles.size(); ++i)
+	{
+		const OBJTriangle& curTri = dataBuffers.triangles[i];
+		for (int j = 0; j < 3; ++j)
+		{
+			const glm::vec3 curPos = dataBuffers.positions[curTri.positions[j]];
+			Graphics::PosVertexDescription cur;
+			cur.m_Position[0] = curPos.x;
+			cur.m_Position[1] = curPos.y;
+			cur.m_Position[2] = curPos.z;
+			positionsBuffer.push_back(cur);
+		}
+	}
+	 
+
+	//m_GraphicsInterface->CreateBuffer(Graphics::BufferType::VertexBuffer, Graphics::CPUAccess::None, Graphics::GPUAccess::Read, )
 
 	// A bit nasty, need to maybe get rid of it.. On graphics creation, we leave the cmdlist open and recording, as we may submit copy commands
 	// to init buffers, textures etc..
