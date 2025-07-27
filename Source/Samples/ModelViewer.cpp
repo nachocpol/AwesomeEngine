@@ -3,8 +3,13 @@
 #include "Core/FileSystem.h"
 #include "Core/Logging.h"
 
+#include "Graphics/Platform/Windows/WWindow.h"
 #include "Graphics/UI/UIInterface.h"
 #include "Graphics/VertexDescription.h"
+
+#include "Samples/ModelViewer.hlsl" // This is a bit nasty... we are forced to include here the file so we can see the declarations.
+
+#include "glm/glm.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -15,6 +20,12 @@ public:
 	void Init();
 	void Update()override;
 	void Release() override;
+private:
+	Graphics::BufferHandle m_PositionsBuffer;
+	Graphics::GraphicsPipeline m_PSO;
+	Graphics::BufferHandle m_CB;
+	Declarations::ViewerConstants m_Constants;
+	int m_NumVertices;
 };
 
 ModelViewer app;
@@ -97,7 +108,7 @@ void ModelViewer::Init()
 
 	} dataBuffers;
 
-	std::string objPath = "data:Models/cube.obj";
+	std::string objPath = "data:Models/suzanne.obj";
 	if (Core::FileSystem::GetInstance()->FixupPath(objPath))
 	{	
 		dataBuffers.positions.reserve(100);
@@ -277,8 +288,25 @@ void ModelViewer::Init()
 		}
 	}
 	 
+	m_NumVertices = (int)positionsBuffer.size();
+	m_PositionsBuffer = m_GraphicsInterface->CreateBuffer(
+		Graphics::BufferType::GPUBuffer, Graphics::CPUAccess::None, Graphics::GPUAccess::Read, sizeof(Graphics::PosVertexDescription), m_NumVertices, positionsBuffer.data()
+	);
 
-	//m_GraphicsInterface->CreateBuffer(Graphics::BufferType::VertexBuffer, Graphics::CPUAccess::None, Graphics::GPUAccess::Read, )
+	Graphics::GraphicsPipelineDescription psoDesc;
+	psoDesc.ColorFormats[0] = m_GraphicsInterface->GetOutputFormat();
+	
+	psoDesc.VertexShader.ShaderPath = "shadersrc:Samples/ModelViewer.hlsl";
+	psoDesc.VertexShader.ShaderEntryPoint = "VSMain";
+	psoDesc.VertexShader.Type = Graphics::ShaderType::Vertex;
+	
+	psoDesc.PixelShader.ShaderPath = "shadersrc:Samples/ModelViewer.hlsl";
+	psoDesc.PixelShader.ShaderEntryPoint = "PSMain";
+	psoDesc.PixelShader.Type = Graphics::ShaderType::Pixel;
+
+	m_PSO = m_GraphicsInterface->CreateGraphicsPipeline(psoDesc);
+
+	m_CB = m_GraphicsInterface->CreateBuffer(Graphics::BufferType::ConstantBuffer, Graphics::CPUAccess::None, Graphics::GPUAccess::Read, sizeof(m_Constants));
 
 	// A bit nasty, need to maybe get rid of it.. On graphics creation, we leave the cmdlist open and recording, as we may submit copy commands
 	// to init buffers, textures etc..
@@ -288,10 +316,24 @@ void ModelViewer::Init()
 
 void ModelViewer::Update()
 {
-	if (ImGui::Begin("Model Viewer"))
-	{
-	}
-	ImGui::End();
+	glm::mat4x4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4x4 proj = glm::perspectiveFov(90.0f, (float)m_Window->GetWidth(), (float)m_Window->GetHeight(), 0.1f, 100.0f);
+
+	m_Constants.Model = glm::rotate(glm::mat4x4(), TotalTime, glm::vec3(1.0f, 0.0f, 0.0f));
+	m_Constants.Model = glm::rotate(m_Constants.Model, TotalTime, glm::vec3(0.0f, 1.0f, 0.0f));
+	m_Constants.Model = glm::rotate(m_Constants.Model, -TotalTime, glm::vec3(0.0f, 0.0f, 1.0f));
+
+	m_Constants.ViewProjection = proj * view;
+
+	m_GraphicsInterface->SetScissor(0, 0, m_Window->GetWidth(), m_Window->GetHeight());
+
+	m_GraphicsInterface->SetConstantBuffer(m_CB, Declarations::kViewerConstantsSlot, sizeof(m_Constants), &m_Constants);
+
+	m_GraphicsInterface->SetTopology(Graphics::Topology::TriangleList);
+	m_GraphicsInterface->SetGraphicsPipeline(m_PSO);
+	m_GraphicsInterface->SetResource(m_PositionsBuffer, 0);
+
+	m_GraphicsInterface->Draw(m_NumVertices, 0);
 }
 
 void ModelViewer::Release()

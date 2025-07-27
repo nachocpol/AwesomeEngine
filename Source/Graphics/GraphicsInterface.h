@@ -233,6 +233,7 @@ namespace Graphics
 			CullMode = FaceCullMode::Back;
 			DepthEnabled = false;
 			DepthWriteEnabled = false;
+			VertexDescription.NumElements = 0;
 			memset(ColorFormats, 0, sizeof(ColorFormats));
 			memset(&DepthFormat, 0, sizeof(DepthFormat));
 		}
