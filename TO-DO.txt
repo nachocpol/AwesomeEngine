@@ -1,3 +1,19 @@
+Target v1.0.0
+
+- Have a stable 1.0.0 version!
+-- Renderer working with minimal draw/dispatch support
+-- Automated transition of resources
+-- Consolidate shader loading?
+-- Utilities to map gpu resources
+-- GPU bindless? Maybe this should be an internal thing, look into it
+-- Basic model loading (obj for now)
+-- Texture loading
+-- Minimal input working
+-- Cleanup dead code
+
+- I would say, leave it simple, don't try to enforce a "renderer" or scene graph, all
+  of that will make prototyping with this framework more complicated and not needed
+
 DOING:
 
 + Members should be m_... 
