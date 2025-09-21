@@ -36,7 +36,7 @@ void ModelViewer::Init()
 	m_NumVertices = 0;
 
 	// Load model from file and create vertex buffer
-	std::string modelPath = "data:Models/sphere.obj";
+	std::string modelPath = "data:Models/suzanne.obj";
 	Core::OBJ::Data modelData = {};
 	if (Core::OBJ::LoadFromFile(modelPath, modelData))
 	{
@@ -52,6 +52,7 @@ void ModelViewer::Init()
 				cur.m_Position[0] = curPos.x;
 				cur.m_Position[1] = curPos.y;
 				cur.m_Position[2] = curPos.z;
+				cur.m_Position[3] = 32.0f;
 				positionsBuffer.push_back(cur);
 			}
 		}
@@ -109,4 +110,5 @@ void ModelViewer::Update()
 
 void ModelViewer::Release()
 {
+
 }

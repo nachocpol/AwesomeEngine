@@ -1,6 +1,6 @@
 #include "..\ShaderDeclarationMacros.h"
 
-STRUCTUREDBUFFER(g_Positions, float3, 0);
+STRUCTUREDBUFFER(g_Positions, float4, 0);
 
 CBUFFER(ViewerConstants)
 	float4x4 Model;
@@ -19,7 +19,7 @@ struct VSOut
 
 VSOut VSMain(uint vid : SV_VertexID)
 {
-    float3 modelPos = g_Positions[vid];
+    float3 modelPos = g_Positions[vid].xyz;
 
     VSOut vsOut;
     

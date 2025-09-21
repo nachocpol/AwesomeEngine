@@ -8,7 +8,7 @@ namespace Graphics
 
 	struct PosVertexDescription
 	{
-		float m_Position[3];
+		float m_Position[4];
 		static const VertexInputDescription& GetDescription();
 	};
 
