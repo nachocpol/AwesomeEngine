@@ -3,6 +3,7 @@
 #include "Core/FileSystem.h"
 #include "Core/Logging.h"
 #include "Core/Util/OBJLoader.h"
+#include "Core/Util/TextureLoader.h"
 
 #include "Graphics/Platform/Windows/WWindow.h"
 #include "Graphics/UI/UIInterface.h"
@@ -24,6 +25,7 @@ private:
 	Graphics::BufferHandle m_CB;
 	Declarations::ViewerConstants m_Constants;
 	int m_NumVertices;
+	Graphics::TextureHandle m_TestTexture;
 };
 
 ModelViewer app;
@@ -63,6 +65,19 @@ void ModelViewer::Init()
 		);
 	}
 
+	// Load test texture
+	std::string texturePath = "data:Textures/test_grid.jpeg";
+	Core::Texture::TextureData loadedTexture;
+	if (Core::Texture::LoadFromFile(texturePath, loadedTexture))
+	{		
+		m_TestTexture =  m_GraphicsInterface->CreateTexture2D(
+			loadedTexture.m_Width, loadedTexture.m_Height, 1, 1, 
+			loadedTexture.m_Format, 
+			Graphics::TextureFlags::TextureFlagNone, 
+			loadedTexture.m_Data
+		);
+	}
+
 	Graphics::GraphicsPipelineDescription psoDesc;
 	psoDesc.ColorFormats[0] = m_GraphicsInterface->GetOutputFormat();
 	
@@ -86,6 +101,12 @@ void ModelViewer::Init()
 
 void ModelViewer::Update()
 {
+	if (ImGui::Begin("Debug textures"))
+	{
+		ImGui::Image((ImTextureID)m_TestTexture.Handle, ImVec2(512, 512));
+		ImGui::End();
+	}
+
 	glm::mat4x4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::mat4x4 proj = glm::perspectiveFov(90.0f, (float)m_Window->GetWidth(), (float)m_Window->GetHeight(), 0.1f, 100.0f);
 

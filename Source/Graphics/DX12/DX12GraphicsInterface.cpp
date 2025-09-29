@@ -1028,7 +1028,7 @@ namespace Graphics { namespace DX12 {
 			dxflags
 		);
 		CD3DX12_HEAP_PROPERTIES heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		auto& state = curTexEntry.State;
+		auto& state = curTexEntry.State; // TODO: This default state doesn't make any sense, video decode? 
 		state = isUav ? UNORDERED_ACCESS : SRV_READ;
 		mDevice->CreateCommittedResource
 		(
