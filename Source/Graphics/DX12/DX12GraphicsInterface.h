@@ -265,7 +265,7 @@ namespace Graphics{ namespace DX12
 		static int GetFormatSize(const Format& format);
 
 		DisplaySurface mDefaultSurface;
-		ID3D12Device* mDevice;
+		ID3D12Device* m_Device;
 		D3D12_FEATURE_DATA_D3D12_OPTIONS mDeviceFeatures;
 		Format mOutputFormat;
 
@@ -286,7 +286,7 @@ namespace Graphics{ namespace DX12
 		//uint64_t mCurComputePipeline;
 
 		// Heaps
-		DX12Heap** mFrameHeap;
+		DX12Heap** m_FrameHeap;
 
 		// Storage heaps
 		DX12Heap* mRenderTargetHeap;

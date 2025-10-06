@@ -20,7 +20,7 @@ public:
 	void Update()override;
 	void Release() override;
 private:
-	Graphics::BufferHandle m_PositionsBuffer;
+	Graphics::BufferHandle m_VertexBuffer;
 	Graphics::GraphicsPipeline m_PSO;
 	Graphics::BufferHandle m_CB;
 	Declarations::ViewerConstants m_Constants;
@@ -42,7 +42,7 @@ void ModelViewer::Init()
 	Core::OBJ::Data modelData = {};
 	if (Core::OBJ::LoadFromFile(modelPath, modelData))
 	{
-		std::vector<Graphics::PosVertexDescription> positionsBuffer;
+		std::vector<VertexData> positionsBuffer;
 
 		for (int i = 0; i < modelData.m_Triangles.size(); ++i)
 		{
@@ -50,18 +50,16 @@ void ModelViewer::Init()
 			for (int j = 0; j < 3; ++j)
 			{
 				const glm::vec3 curPos = modelData.m_Positions[curTri.m_Positions[j]];
-				Graphics::PosVertexDescription cur;
-				cur.m_Position[0] = curPos.x;
-				cur.m_Position[1] = curPos.y;
-				cur.m_Position[2] = curPos.z;
-				cur.m_Position[3] = 32.0f;
-				positionsBuffer.push_back(cur);
+				VertexData curVert;
+				curVert.m_Position = glm::vec4(curPos, 1.0f);
+				curVert.m_UV = modelData.m_TexCoords[curTri.m_TexCoords[j]];
+				positionsBuffer.push_back(curVert);
 			}
 		}
 
 		m_NumVertices = (int)positionsBuffer.size();
-		m_PositionsBuffer = m_GraphicsInterface->CreateBuffer(
-			Graphics::BufferType::GPUBuffer, Graphics::CPUAccess::None, Graphics::GPUAccess::Read, sizeof(Graphics::PosVertexDescription), m_NumVertices, positionsBuffer.data()
+		m_VertexBuffer = m_GraphicsInterface->CreateBuffer(
+			Graphics::BufferType::GPUBuffer, Graphics::CPUAccess::None, Graphics::GPUAccess::Read, sizeof(VertexData), m_NumVertices, positionsBuffer.data()
 		);
 	}
 
@@ -103,7 +101,7 @@ void ModelViewer::Update()
 {
 	if (ImGui::Begin("Debug textures"))
 	{
-		ImGui::Image((ImTextureID)m_TestTexture.Handle, ImVec2(512, 512));
+		ImGui::Image((ImTextureID)m_TestTexture.Handle, ImVec2(128, 128));
 		ImGui::End();
 	}
 
@@ -124,7 +122,8 @@ void ModelViewer::Update()
 	m_GraphicsInterface->SetGraphicsPipeline(m_PSO);
 	if (m_NumVertices > 0)
 	{
-		m_GraphicsInterface->SetResource(m_PositionsBuffer, 0);
+		m_GraphicsInterface->SetResource(m_VertexBuffer, Declarations::kg_VertexBufferSlot);
+		m_GraphicsInterface->SetResource(m_TestTexture, Declarations::kg_TestTextureSlot);
 		m_GraphicsInterface->Draw(m_NumVertices, 0);
 	}
 }

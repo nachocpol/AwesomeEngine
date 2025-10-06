@@ -39,7 +39,7 @@ namespace Graphics{namespace DX12{
 		{
 			// Set a fence event:
 			ID3D12Fence* fence = nullptr;
-			mGraphicsInterface->mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+			mGraphicsInterface->m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 			mGraphicsInterface->mDefaultSurface.Queue->Signal(fence, 1);
 
 			ReleaseEntry entry;

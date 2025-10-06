@@ -13,9 +13,9 @@
 namespace Graphics { namespace DX12 {
 
 	DX12GraphicsInterface::DX12GraphicsInterface():
-		mDevice(nullptr),
+		m_Device(nullptr),
 		mGraphicsRootSignature(nullptr),
-		mFrameHeap(nullptr),
+		m_FrameHeap(nullptr),
 		mFrame(0),
 		mCurBackBuffer(0),
 		mNumDrawCalls(0),
@@ -93,13 +93,13 @@ namespace Graphics { namespace DX12 {
 		factory->Release();
 
 		// Create device:
-		if (FAILED(D3D12CreateDevice(mDefaultSurface.GPU, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&mDevice))))
+		if (FAILED(D3D12CreateDevice(mDefaultSurface.GPU, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_Device))))
 		{
 			std::cerr << "Could not create the device! \n";
 			return false;
 		}
 		// Query features
-		mDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &mDeviceFeatures, sizeof(mDeviceFeatures));
+		m_Device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &mDeviceFeatures, sizeof(mDeviceFeatures));
 		if (mDeviceFeatures.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_1)
 		{
 			INFO("Device binding tier 1");
@@ -116,7 +116,7 @@ namespace Graphics { namespace DX12 {
 		// Mute some annoyances:
 #ifdef DEBUG
 		ID3D12InfoQueue* infoQueue = nullptr;
-		mDevice->QueryInterface(IID_PPV_ARGS(&infoQueue));
+		m_Device->QueryInterface(IID_PPV_ARGS(&infoQueue));
 		if (infoQueue)
 		{
 			D3D12_INFO_QUEUE_FILTER filter = {};
@@ -143,25 +143,25 @@ namespace Graphics { namespace DX12 {
 		tsHeapDesc.Count = 8000;
 		tsHeapDesc.NodeMask = 0;
 		tsHeapDesc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
-		mDevice->CreateQueryHeap(&tsHeapDesc, IID_PPV_ARGS(&mTimeStampsHeap));
+		m_Device->CreateQueryHeap(&tsHeapDesc, IID_PPV_ARGS(&mTimeStampsHeap));
 		// Time stamps memory
 		// We just map it once and roll with it
 		// Also, note that we create up to NUM_BACK_BUFFERS!
 		CD3DX12_RESOURCE_DESC memTs = CD3DX12_RESOURCE_DESC::Buffer(8000 * 8 * NUM_BACK_BUFFERS, D3D12_RESOURCE_FLAG_NONE);
 		D3D12_HEAP_PROPERTIES memHeap = CD3DX12_HEAP_PROPERTIES::CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK);
-		mDevice->CreateCommittedResource(&memHeap, D3D12_HEAP_FLAG_NONE, &memTs, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&mTimeStampsMemory));
+		m_Device->CreateCommittedResource(&memHeap, D3D12_HEAP_FLAG_NONE, &memTs, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&mTimeStampsMemory));
 		mTimeStampsMemory->Map(0, nullptr, reinterpret_cast<void**>(&mTimeStampMemPtr));
 
-		mViewsHeap.Initialize(mDevice, 4096, false, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		mViewsHeap.Initialize(m_Device, 4096, false, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 		// Null resources
-		mNullsHeap.Initialize(mDevice, 4, false, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		mNullsHeap.Initialize(m_Device, 4, false, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		{
 			D3D12_UNORDERED_ACCESS_VIEW_DESC nullUav = {};
 			nullUav.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
 			nullUav.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D; 
 			mNullUav = mNullsHeap.GetCPU();
-			mDevice->CreateUnorderedAccessView(nullptr, nullptr, &nullUav, mNullUav);
+			m_Device->CreateUnorderedAccessView(nullptr, nullptr, &nullUav, mNullUav);
 			mNullsHeap.OffsetHandles(1);
 		}
 		{
@@ -170,13 +170,13 @@ namespace Graphics { namespace DX12 {
 			nullSrv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 			nullSrv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			mNullSrv = mNullsHeap.GetCPU();
-			mDevice->CreateShaderResourceView(nullptr, &nullSrv, mNullSrv);
+			m_Device->CreateShaderResourceView(nullptr, &nullSrv, mNullSrv);
 			mNullsHeap.OffsetHandles(1);
 		}
 		{
 			D3D12_CONSTANT_BUFFER_VIEW_DESC nullCbv = {};
 			mNullCbv = mNullsHeap.GetCPU();
-			mDevice->CreateConstantBufferView(&nullCbv, mNullCbv);
+			m_Device->CreateConstantBufferView(&nullCbv, mNullCbv);
 			mNullsHeap.OffsetHandles(1);
 		}
 		return true;
@@ -190,7 +190,7 @@ namespace Graphics { namespace DX12 {
 		queueDesc.NodeMask	= 0;
 		queueDesc.Priority	= D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
 		queueDesc.Type		= D3D12_COMMAND_LIST_TYPE_DIRECT;
-		mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&surface->Queue));
+		m_Device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&surface->Queue));
 
 		// Swap chain
 		auto width	= surface->Window->GetWidth();
@@ -237,9 +237,9 @@ namespace Graphics { namespace DX12 {
 		rtHeapDesc.Flags			= D3D12_DESCRIPTOR_HEAP_FLAG_NONE; // This disables shader access
 		rtHeapDesc.NodeMask			= 0;
 		rtHeapDesc.Type				= D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-		mDevice->CreateDescriptorHeap(&rtHeapDesc, IID_PPV_ARGS(&surface->Heap));
+		m_Device->CreateDescriptorHeap(&rtHeapDesc, IID_PPV_ARGS(&surface->Heap));
 		auto curHandle  = surface->Heap->GetCPUDescriptorHandleForHeapStart();
-		auto handleSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		auto handleSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 		for (int i = 0; i < NUM_BACK_BUFFERS; i++)
 		{
@@ -250,20 +250,20 @@ namespace Graphics { namespace DX12 {
 			name += std::to_string(i);
 			surface->BackBuffers[i]->SetName(std::wstring(name.begin(), name.end()).c_str());
 
-			mDevice->CreateRenderTargetView(surface->BackBuffers[i], nullptr, curHandle);
+			m_Device->CreateRenderTargetView(surface->BackBuffers[i], nullptr, curHandle);
 			surface->RenderTargets[i] = curHandle;
 			curHandle.ptr += handleSize;
 
-			mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&surface->Allocators[i]));
+			m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&surface->Allocators[i]));
 
-			mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&surface->GPUFences[i]));
+			m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&surface->GPUFences[i]));
 			surface->GPUFencesValues[i] = 0;
 		}
 		// Fence event
 		surface->GPUFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
 		// Create a cmd list
-		mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, surface->Allocators[0], nullptr, IID_PPV_ARGS(&surface->CmdContext));
+		m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, surface->Allocators[0], nullptr, IID_PPV_ARGS(&surface->CmdContext));
 		surface->Recording = true;
 	}
 
@@ -274,8 +274,8 @@ namespace Graphics { namespace DX12 {
 		std::vector<CD3DX12_STATIC_SAMPLER_DESC> samplers;
 
 		// param 0 (CBV) & (TEX) & (UAV)
-		CD3DX12_DESCRIPTOR_RANGE descriptorRanges[3];
 		{
+			CD3DX12_DESCRIPTOR_RANGE descriptorRanges[3];
 			CD3DX12_ROOT_PARAMETER rootParam;
 			descriptorRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, NUM_CBVS, 0);
 			descriptorRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, NUM_SRVS, 0, 0, NUM_CBVS);
@@ -283,6 +283,7 @@ namespace Graphics { namespace DX12 {
 			rootParam.InitAsDescriptorTable(sizeof(descriptorRanges) / sizeof(CD3DX12_DESCRIPTOR_RANGE), descriptorRanges);
 			params.push_back(rootParam);
 		}
+
 		// LineaWrapSampler (s0)
 		{
 			CD3DX12_STATIC_SAMPLER_DESC s0;
@@ -324,27 +325,27 @@ namespace Graphics { namespace DX12 {
 		{
 			OutputDebugStringA((char*)rsErrorBlob->GetBufferPointer());
 		}
-		mDevice->CreateRootSignature(0, rsBlob->GetBufferPointer(), rsBlob->GetBufferSize(), IID_PPV_ARGS(&mGraphicsRootSignature));
+		m_Device->CreateRootSignature(0, rsBlob->GetBufferPointer(), rsBlob->GetBufferSize(), IID_PPV_ARGS(&mGraphicsRootSignature));
 
 		// Lets init the shader visible heap
-		mFrameHeap = new DX12Heap*[NUM_BACK_BUFFERS];
+		m_FrameHeap = new DX12Heap*[NUM_BACK_BUFFERS];
 		for (int i = 0; i < NUM_BACK_BUFFERS; i++)
 		{
-			mFrameHeap[i] = new DX12Heap;
-			mFrameHeap[i]->Initialize(mDevice, 1000000, true, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			m_FrameHeap[i] = new DX12Heap;
+			m_FrameHeap[i]->Initialize(m_Device, 1000000, true, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 			// Name this heap:
 			std::string name = "Frame Heap ";
 			name += std::to_string(i);
 			std::wstring wname = std::wstring(name.begin(), name.end());
-			mFrameHeap[i]->GetHeap()->SetName(wname.c_str());
+			m_FrameHeap[i]->GetHeap()->SetName(wname.c_str());
 		}
 
 		// And some storage heaps
 		mRenderTargetHeap = new DX12Heap;
-		mRenderTargetHeap->Initialize(mDevice, 512, false, D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		mRenderTargetHeap->Initialize(m_Device, 512, false, D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		mDepthStencilHeap = new DX12Heap;
-		mDepthStencilHeap->Initialize(mDevice, 512, false, D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+		mDepthStencilHeap->Initialize(m_Device, 512, false, D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	}
 
 	bool DX12GraphicsInterface::LoadShader(const ShaderDescription& desc, D3D12_SHADER_BYTECODE& outShader)
@@ -376,10 +377,10 @@ namespace Graphics { namespace DX12 {
 		std::string target;
 		switch (desc.Type)
 		{
-		case ShaderType::Vertex:	target = "vs_5_0"; break;
-		case ShaderType::Pixel:		target = "ps_5_0"; break;
-		case ShaderType::Compute:	target = "cs_5_0"; break;
-		default:					target = "none_5_0"; break;
+		case ShaderType::Vertex:	target = "vs_5_1"; break;
+		case ShaderType::Pixel:		target = "ps_5_1"; break;
+		case ShaderType::Compute:	target = "cs_5_1"; break;
+		default:					target = "none_5_1"; break;
 		}
 		//UINT flags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_VALIDATION;// | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 		UINT flags = D3DCOMPILE_DEBUG;// | D3DCOMPILE_OPTIMIZATION_LEVEL3;
@@ -402,47 +403,47 @@ namespace Graphics { namespace DX12 {
 			mBindingState.Dirty = false;
 
 			// Start by copying the new descriptors:
-			auto destHandle = mFrameHeap[idx]->GetCPU();
+			auto destHandle = m_FrameHeap[idx]->GetCPU();
 			for (int cbslot = 0; cbslot < NUM_CBVS; ++cbslot)
 			{
 				if (!mBindingState.CBSlots[cbslot].Null)
 				{
-					mDevice->CopyDescriptorsSimple(1, destHandle, mBindingState.CBSlots[cbslot].CPUView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+					m_Device->CopyDescriptorsSimple(1, destHandle, mBindingState.CBSlots[cbslot].CPUView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 				}
-				destHandle.Offset(1, mFrameHeap[idx]->GetIncrementSize());
+				destHandle.Offset(1, m_FrameHeap[idx]->GetIncrementSize());
 			}
 
 			for (int srslot = 0; srslot < NUM_SRVS; ++srslot)
 			{
 				if (!mBindingState.SRSlots[srslot].Null)
 				{
-					mDevice->CopyDescriptorsSimple(1, destHandle, mBindingState.SRSlots[srslot].CPUView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+					m_Device->CopyDescriptorsSimple(1, destHandle, mBindingState.SRSlots[srslot].CPUView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 				}
-				destHandle.Offset(1, mFrameHeap[idx]->GetIncrementSize());
+				destHandle.Offset(1, m_FrameHeap[idx]->GetIncrementSize());
 			}
 
 			for (int uaslot = 0; uaslot < NUM_UAVS; ++uaslot)
 			{
 				if (!mBindingState.UASlots[uaslot].Null)
 				{
-					mDevice->CopyDescriptorsSimple(1, destHandle, mBindingState.UASlots[uaslot].CPUView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+					m_Device->CopyDescriptorsSimple(1, destHandle, mBindingState.UASlots[uaslot].CPUView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 				}
-				destHandle.Offset(1, mFrameHeap[idx]->GetIncrementSize());
+				destHandle.Offset(1, m_FrameHeap[idx]->GetIncrementSize());
 			}
 
 
 			// Now set the root parameter:
 			if (graphics)
 			{
-				mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(0, mFrameHeap[idx]->GetGPU());
+				mDefaultSurface.CmdContext->SetGraphicsRootDescriptorTable(0, m_FrameHeap[idx]->GetGPU());
 			}
 			else
 			{
-				mDefaultSurface.CmdContext->SetComputeRootDescriptorTable(0, mFrameHeap[idx]->GetGPU());
+				mDefaultSurface.CmdContext->SetComputeRootDescriptorTable(0, m_FrameHeap[idx]->GetGPU());
 			}
 
 			// Finally offset the handles:
-			mFrameHeap[idx]->OffsetHandles(NUM_SRVS + NUM_UAVS + NUM_CBVS);
+			m_FrameHeap[idx]->OffsetHandles(NUM_SRVS + NUM_UAVS + NUM_CBVS);
 		}
 	}
 
@@ -549,7 +550,7 @@ namespace Graphics { namespace DX12 {
 			psoDesc.RasterizerState.AntialiasedLineEnable = true;
 		}
 
-		mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
+		m_Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
 	}
 
 	void DX12GraphicsInterface::CreatePSO(const ComputePipelineDescription& desc, ComputePipelineEntry& entry)
@@ -557,7 +558,7 @@ namespace Graphics { namespace DX12 {
 		D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
 		psoDesc.pRootSignature = mGraphicsRootSignature;
 		LoadShader(desc.ComputeShader, psoDesc.CS);
-		mDevice->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
+		m_Device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
 	}
 
 	DXGI_FORMAT DX12GraphicsInterface::ToDXGIFormat(const Graphics::Format& format)
@@ -749,8 +750,8 @@ namespace Graphics { namespace DX12 {
 		context->RSSetViewports(1, &vp);
 
 		// Bind frame heap
-		mFrameHeap[idx]->Reset();
-		ID3D12DescriptorHeap* heaps[] = { mFrameHeap[idx]->GetHeap() };
+		m_FrameHeap[idx]->Reset();
+		ID3D12DescriptorHeap* heaps[] = { m_FrameHeap[idx]->GetHeap() };
 		context->SetDescriptorHeaps(1, heaps);
 
 		// New heap, so make sure we reset the binding state:
@@ -842,7 +843,7 @@ namespace Graphics { namespace DX12 {
 
 		// Now lets wait
 		ID3D12Fence* tmpFence;
-		mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&tmpFence));
+		m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&tmpFence));
 		HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 		mDefaultSurface.Queue->Signal(tmpFence, 1);
 		if (tmpFence->GetCompletedValue() != 1)
@@ -891,7 +892,7 @@ namespace Graphics { namespace DX12 {
 		auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 		auto desc = CD3DX12_RESOURCE_DESC::Buffer(resourceSize);
 		desc.Flags = isGPURw ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
-		mDevice->CreateCommittedResource
+		m_Device->CreateCommittedResource
 		(
 			&heapProp, 
 			D3D12_HEAP_FLAG_NONE, 
@@ -922,7 +923,7 @@ namespace Graphics { namespace DX12 {
 			cbvDesc.BufferLocation = bufferEntry.Buffer->GetGPUVirtualAddress();
 			cbvDesc.SizeInBytes = (UINT)resourceSize;
 			bufferEntry.CBV = mViewsHeap.GetCPU();
-			mDevice->CreateConstantBufferView(&cbvDesc, bufferEntry.CBV);
+			m_Device->CreateConstantBufferView(&cbvDesc, bufferEntry.CBV);
 			mViewsHeap.OffsetHandles(1);
 		}
 		else if (type == BufferType::GPUBuffer)
@@ -939,7 +940,7 @@ namespace Graphics { namespace DX12 {
 				srvDesc.Buffer.StructureByteStride = stride;
 				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 				bufferEntry.GPUBufferView = mViewsHeap.GetCPU();
-				mDevice->CreateShaderResourceView(bufferEntry.Buffer, &srvDesc, bufferEntry.GPUBufferView);
+				m_Device->CreateShaderResourceView(bufferEntry.Buffer, &srvDesc, bufferEntry.GPUBufferView);
 				mViewsHeap.OffsetHandles(1);
 			}
 			if (gpuAccess == GPUAccess::ReadWrite)
@@ -953,7 +954,7 @@ namespace Graphics { namespace DX12 {
 				uavDesc.Buffer.CounterOffsetInBytes = 0;
 				uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 				bufferEntry.GPURWBufferView = mViewsHeap.GetCPU();
-				mDevice->CreateUnorderedAccessView(bufferEntry.Buffer, nullptr, &uavDesc, bufferEntry.GPURWBufferView);
+				m_Device->CreateUnorderedAccessView(bufferEntry.Buffer, nullptr, &uavDesc, bufferEntry.GPURWBufferView);
 				mViewsHeap.OffsetHandles(1);
 			}
 		}
@@ -972,7 +973,7 @@ namespace Graphics { namespace DX12 {
 
 		// This really needs some thouhg? Maybe we need a system to create intermediate upload buffers that aren't tied to the resource.. Not sure :/ 
 
-		mDevice->CreateCommittedResource
+		m_Device->CreateCommittedResource
 		(
 			&heapProp,
 			D3D12_HEAP_FLAG_NONE,
@@ -1030,7 +1031,7 @@ namespace Graphics { namespace DX12 {
 		CD3DX12_HEAP_PROPERTIES heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 		auto& state = curTexEntry.State; // TODO: This default state doesn't make any sense, video decode? 
 		state = isUav ? UNORDERED_ACCESS : SRV_READ;
-		mDevice->CreateCommittedResource
+		m_Device->CreateCommittedResource
 		(
 			&heapP, D3D12_HEAP_FLAG_NONE,
 			&texDesc, state,
@@ -1042,13 +1043,13 @@ namespace Graphics { namespace DX12 {
 		UINT64 totalSize;
 		D3D12_PLACED_SUBRESOURCE_FOOTPRINT* footPrints = new D3D12_PLACED_SUBRESOURCE_FOOTPRINT[mips];
 		UINT64* rowSizes = new UINT64[mips];
-		mDevice->GetCopyableFootprints(&texDesc, 0, mips, 0, footPrints, nullptr, rowSizes, &totalSize);
+		m_Device->GetCopyableFootprints(&texDesc, 0, mips, 0, footPrints, nullptr, rowSizes, &totalSize);
 
 		// Upload buffer
 		// Sometimes the following CreateCommittedResource call will fail with "wrong memory preference..." 
 		// setting again fixes it. Prob because it is a static member¿??¿
 		heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-		mDevice->CreateCommittedResource
+		m_Device->CreateCommittedResource
 		(
 			&heapP, D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(totalSize), D3D12_RESOURCE_STATE_GENERIC_READ,
@@ -1090,7 +1091,7 @@ namespace Graphics { namespace DX12 {
 			rtDesc.Texture2D.MipSlice = 0;
 			rtDesc.Texture2D.PlaneSlice = 0;
 
-			mDevice->CreateRenderTargetView(curTexEntry.Resource, &rtDesc, mRenderTargetHeap->GetCPU());
+			m_Device->CreateRenderTargetView(curTexEntry.Resource, &rtDesc, mRenderTargetHeap->GetCPU());
 			curTexEntry.RenderTarget = mRenderTargetHeap->GetCPU();
 			mRenderTargetHeap->OffsetHandles(1);
 		}
@@ -1103,7 +1104,7 @@ namespace Graphics { namespace DX12 {
 			depthDesc.Flags = D3D12_DSV_FLAG_NONE;
 			depthDesc.Texture2D.MipSlice = 0;
 
-			mDevice->CreateDepthStencilView(curTexEntry.Resource, &depthDesc, mDepthStencilHeap->GetCPU());
+			m_Device->CreateDepthStencilView(curTexEntry.Resource, &depthDesc, mDepthStencilHeap->GetCPU());
 			curTexEntry.DepthStencil = mDepthStencilHeap->GetCPU();
 			mDepthStencilHeap->OffsetHandles(1);
 		}
@@ -1123,7 +1124,7 @@ namespace Graphics { namespace DX12 {
 			desc2D.Texture2D.ResourceMinLODClamp = 0.0f;
 
 			curTexEntry.FullView = mViewsHeap.GetCPU();
-			mDevice->CreateShaderResourceView(curTexEntry.Resource, &desc2D, curTexEntry.FullView);
+			m_Device->CreateShaderResourceView(curTexEntry.Resource, &desc2D, curTexEntry.FullView);
 			mViewsHeap.OffsetHandles(1);
 		}
 		// Per mip-view
@@ -1145,7 +1146,7 @@ namespace Graphics { namespace DX12 {
 			{
 				desc2D.Texture2D.MostDetailedMip = m;
 				curTexEntry.MipViews[m] = mViewsHeap.GetCPU();
-				mDevice->CreateShaderResourceView(curTexEntry.Resource, &desc2D, curTexEntry.MipViews[m]);
+				m_Device->CreateShaderResourceView(curTexEntry.Resource, &desc2D, curTexEntry.MipViews[m]);
 				mViewsHeap.OffsetHandles(1);
 			}
 		}
@@ -1167,7 +1168,7 @@ namespace Graphics { namespace DX12 {
 				{
 					desc2dRW.Texture2D.MipSlice = m;
 					curTexEntry.MipViewsRW[m] = mViewsHeap.GetCPU();
-					mDevice->CreateUnorderedAccessView(curTexEntry.Resource,nullptr, &desc2dRW, curTexEntry.MipViewsRW[m]);
+					m_Device->CreateUnorderedAccessView(curTexEntry.Resource,nullptr, &desc2dRW, curTexEntry.MipViewsRW[m]);
 					mViewsHeap.OffsetHandles(1);
 				}
 			}
@@ -1217,7 +1218,7 @@ namespace Graphics { namespace DX12 {
 		CD3DX12_HEAP_PROPERTIES heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 		auto& state = curTexEntry.State;
 		state = isUav ? UNORDERED_ACCESS : SRV_READ;
-		mDevice->CreateCommittedResource
+		m_Device->CreateCommittedResource
 		(
 			&heapP, D3D12_HEAP_FLAG_NONE,
 			&texDesc, state,
@@ -1229,13 +1230,13 @@ namespace Graphics { namespace DX12 {
 		UINT64 totalSize;
 		D3D12_PLACED_SUBRESOURCE_FOOTPRINT* footPrints = new D3D12_PLACED_SUBRESOURCE_FOOTPRINT[mips];
 		UINT64* rowSizes = new UINT64[mips];
-		mDevice->GetCopyableFootprints(&texDesc, 0, mips, 0, footPrints, nullptr, rowSizes, &totalSize);
+		m_Device->GetCopyableFootprints(&texDesc, 0, mips, 0, footPrints, nullptr, rowSizes, &totalSize);
 
 		// Upload buffer
 		// Sometimes the following CreateCommittedResource call will fail with "wrong memory preference..." 
 		// setting again fixes it. Prob because it is a static member¿??¿
 		heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-		mDevice->CreateCommittedResource
+		m_Device->CreateCommittedResource
 		(
 			&heapP, D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(totalSize), D3D12_RESOURCE_STATE_GENERIC_READ,
@@ -1281,7 +1282,7 @@ namespace Graphics { namespace DX12 {
 			//rtDesc.Texture2D.MipSlice = 0;
 			//rtDesc.Texture2D.PlaneSlice = 0;
 			//
-			//mDevice->CreateRenderTargetView(curTexEntry.Resource, &rtDesc, mRenderTargetHeap->GetCPU());
+			//m_Device->CreateRenderTargetView(curTexEntry.Resource, &rtDesc, mRenderTargetHeap->GetCPU());
 			//curTexEntry.RenderTarget = mRenderTargetHeap->GetCPU();
 			//mRenderTargetHeap->OffsetHandles(1);
 		}
@@ -1296,7 +1297,7 @@ namespace Graphics { namespace DX12 {
 			//depthDesc.Flags = D3D12_DSV_FLAG_NONE;
 			//depthDesc.Texture2D.MipSlice = 0;
 			//
-			//mDevice->CreateDepthStencilView(curTexEntry.Resource, &depthDesc, mDepthStencilHeap->GetCPU());
+			//m_Device->CreateDepthStencilView(curTexEntry.Resource, &depthDesc, mDepthStencilHeap->GetCPU());
 			//curTexEntry.DepthStencil = mDepthStencilHeap->GetCPU();
 			//mDepthStencilHeap->OffsetHandles(1);
 		}
@@ -1326,7 +1327,7 @@ namespace Graphics { namespace DX12 {
 			}
 
 			curTexEntry.FullView = mViewsHeap.GetCPU();
-			mDevice->CreateShaderResourceView(curTexEntry.Resource, &descCube, curTexEntry.FullView);
+			m_Device->CreateShaderResourceView(curTexEntry.Resource, &descCube, curTexEntry.FullView);
 			mViewsHeap.OffsetHandles(1);
 		}
 		// Per mip-view
@@ -1364,7 +1365,7 @@ namespace Graphics { namespace DX12 {
 					descCube.TextureCubeArray.MostDetailedMip = m;
 				}
 				curTexEntry.MipViews[m] = mViewsHeap.GetCPU();
-				mDevice->CreateShaderResourceView(curTexEntry.Resource, &descCube, curTexEntry.MipViews[m]);
+				m_Device->CreateShaderResourceView(curTexEntry.Resource, &descCube, curTexEntry.MipViews[m]);
 				mViewsHeap.OffsetHandles(1);
 			}
 		}
@@ -1385,7 +1386,7 @@ namespace Graphics { namespace DX12 {
 				{
 					descCubeRW.Texture2DArray.MipSlice = m;
 					curTexEntry.MipViewsRW[m] = mViewsHeap.GetCPU();
-					mDevice->CreateUnorderedAccessView(curTexEntry.Resource, nullptr, &descCubeRW, curTexEntry.MipViewsRW[m]);
+					m_Device->CreateUnorderedAccessView(curTexEntry.Resource, nullptr, &descCubeRW, curTexEntry.MipViewsRW[m]);
 					mViewsHeap.OffsetHandles(1);
 				}
 			}
@@ -1434,7 +1435,7 @@ namespace Graphics { namespace DX12 {
 		CD3DX12_HEAP_PROPERTIES heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 		auto& state = curTexEntry.State;
 		state = SRV_READ;
-		mDevice->CreateCommittedResource
+		m_Device->CreateCommittedResource
 		(
 			&heapP, D3D12_HEAP_FLAG_NONE,
 			&texDesc, state,
@@ -1446,13 +1447,13 @@ namespace Graphics { namespace DX12 {
 		UINT64 totalSize;
 		D3D12_PLACED_SUBRESOURCE_FOOTPRINT* footPrints = new D3D12_PLACED_SUBRESOURCE_FOOTPRINT[mips];
 		UINT64* rowSizes = new UINT64[mips];
-		mDevice->GetCopyableFootprints(&texDesc, 0, mips, 0, footPrints, nullptr, rowSizes, &totalSize);
+		m_Device->GetCopyableFootprints(&texDesc, 0, mips, 0, footPrints, nullptr, rowSizes, &totalSize);
 
 		// Upload buffer
 		// Sometimes the following CreateCommittedResource call will fail with "wrong memory preference..." 
 		// setting again fixes it. Prob because it is a static member¿??¿
 		heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-		mDevice->CreateCommittedResource
+		m_Device->CreateCommittedResource
 		(
 			&heapP, D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(totalSize), D3D12_RESOURCE_STATE_GENERIC_READ,
@@ -1504,7 +1505,7 @@ namespace Graphics { namespace DX12 {
 			desc3D.Texture3D.ResourceMinLODClamp = 0.0f;
 
 			curTexEntry.FullView = mViewsHeap.GetCPU();
-			mDevice->CreateShaderResourceView(curTexEntry.Resource, &desc3D, curTexEntry.FullView);
+			m_Device->CreateShaderResourceView(curTexEntry.Resource, &desc3D, curTexEntry.FullView);
 			mViewsHeap.OffsetHandles(1);
 		}
 		// Per mip-view
@@ -1522,7 +1523,7 @@ namespace Graphics { namespace DX12 {
 			{
 				desc3D.Texture3D.MostDetailedMip = m;
 				curTexEntry.MipViews[m] = mViewsHeap.GetCPU();
-				mDevice->CreateShaderResourceView(curTexEntry.Resource, &desc3D, curTexEntry.MipViews[m]);
+				m_Device->CreateShaderResourceView(curTexEntry.Resource, &desc3D, curTexEntry.MipViews[m]);
 				mViewsHeap.OffsetHandles(1);
 			}
 		}
@@ -1545,7 +1546,7 @@ namespace Graphics { namespace DX12 {
 				{
 					desc3dRW.Texture3D.MipSlice = m;
 					curTexEntry.MipViewsRW[m] = mViewsHeap.GetCPU();
-					mDevice->CreateUnorderedAccessView(curTexEntry.Resource, nullptr, &desc3dRW, curTexEntry.MipViewsRW[m]);
+					m_Device->CreateUnorderedAccessView(curTexEntry.Resource, nullptr, &desc3dRW, curTexEntry.MipViewsRW[m]);
 					mViewsHeap.OffsetHandles(1);
 
 					desc3dRW.Texture3D.WSize = desc3dRW.Texture3D.WSize / 2;
@@ -1569,7 +1570,7 @@ namespace Graphics { namespace DX12 {
 				for (int i = 0; i < NUM_BACK_BUFFERS; i++)
 				{
 					entry.FenceValues[i] = 0;
-					mDevice->CreateFence(entry.FenceValues[i], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&entry.Fences[i]));
+					m_Device->CreateFence(entry.FenceValues[i], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&entry.Fences[i]));
 				}
 				break;
 			}
@@ -1740,24 +1741,24 @@ namespace Graphics { namespace DX12 {
 			// Setup NULL views tier 1
 			// Why is this a compute only thing??
 			int idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
-			auto startSlot = mFrameHeap[idx]->GetCPU();
+			auto startSlot = m_FrameHeap[idx]->GetCPU();
 			for (int i = 0; i < NUM_CBVS; i++)
 			{
 				CD3DX12_CPU_DESCRIPTOR_HANDLE curSlot = {};
-				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, i *  mFrameHeap[idx]->GetIncrementSize());
-				mDevice->CopyDescriptorsSimple(1, curSlot, mNullCbv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, i *  m_FrameHeap[idx]->GetIncrementSize());
+				m_Device->CopyDescriptorsSimple(1, curSlot, mNullCbv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			}
 			for (int i = 0; i < NUM_SRVS; i++)
 			{
 				CD3DX12_CPU_DESCRIPTOR_HANDLE curSlot = {};
-				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, (i + NUM_CBVS) *  mFrameHeap[idx]->GetIncrementSize());
-				mDevice->CopyDescriptorsSimple(1, curSlot, mNullSrv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, (i + NUM_CBVS) *  m_FrameHeap[idx]->GetIncrementSize());
+				m_Device->CopyDescriptorsSimple(1, curSlot, mNullSrv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			}
 			for (int i = 0; i < NUM_UAVS; i++)
 			{
 				CD3DX12_CPU_DESCRIPTOR_HANDLE curSlot = {};
-				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, (i + NUM_CBVS + NUM_SRVS) *  mFrameHeap[idx]->GetIncrementSize());
-				mDevice->CopyDescriptorsSimple(1, curSlot, mNullUav	, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, (i + NUM_CBVS + NUM_SRVS) *  m_FrameHeap[idx]->GetIncrementSize());
+				m_Device->CopyDescriptorsSimple(1, curSlot, mNullUav	, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			}
 		}
 	}
@@ -2151,7 +2152,7 @@ namespace Graphics { namespace DX12 {
 			desc.Format = textureDesc.Format;
 			desc.Texture2D.MipSlice = firstMip;
 			desc.Texture2D.PlaneSlice = 0;
-			mDevice->CreateUnorderedAccessView(texture.Resource, nullptr, &desc, heapHandle);
+			m_Device->CreateUnorderedAccessView(texture.Resource, nullptr, &desc, heapHandle);
 		}
 		else
 		{
@@ -2162,7 +2163,7 @@ namespace Graphics { namespace DX12 {
 			desc.Texture2D.MostDetailedMip = firstMip;
 			desc.Texture2D.MipLevels = numMips;
 			desc.Texture2D.ResourceMinLODClamp = 0.0f;
-			mDevice->CreateShaderResourceView(texture.Resource, &desc, heapHandle);
+			m_Device->CreateShaderResourceView(texture.Resource, &desc, heapHandle);
 		}
 
 		// Ahmmmm yeah...
@@ -2193,7 +2194,7 @@ namespace Graphics { namespace DX12 {
 			desc.Texture3D.FirstWSlice = firstSlice;
 			desc.Texture3D.MipSlice = firstMip;
 			desc.Texture3D.WSize = numSlices;
-			mDevice->CreateUnorderedAccessView(texture.Resource, nullptr, &desc, heapHandle);
+			m_Device->CreateUnorderedAccessView(texture.Resource, nullptr, &desc, heapHandle);
 		}
 		else
 		{
@@ -2206,7 +2207,7 @@ namespace Graphics { namespace DX12 {
 			desc.Texture3D.MipLevels = numMips;
 			desc.Texture3D.MostDetailedMip = firstMip;
 			desc.Texture3D.ResourceMinLODClamp = 0.0f;
-			mDevice->CreateShaderResourceView(texture.Resource, &desc, heapHandle);
+			m_Device->CreateShaderResourceView(texture.Resource, &desc, heapHandle);
 		}
 
 		// Ahmmmm yeah...

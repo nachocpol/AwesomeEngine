@@ -6,6 +6,7 @@
 	#define CBUFFER(name) namespace Declarations { struct name {
 	#define CBUFFER_END(name, slot) }; static const unsigned int k##name##Slot = slot; }
 	#define STRUCTUREDBUFFER(name, type, slot) namespace Declarations { static const unsigned int k##name##Slot = slot; static const unsigned int k##name##Stride = sizeof(type); }
+	#define TEXTURE_2D(name, slot) namespace Declarations { static const unsigned int k##name##Slot = slot; }
 	
 	#define float4x4	glm::mat4
 	#define float4		glm::vec4
@@ -15,4 +16,5 @@
 	#define CBUFFER(name) struct name {
 	#define CBUFFER_END(name, slot) }; cbuffer name##CB : register(b##slot) { name g##name; }; 
 	#define STRUCTUREDBUFFER(name, type, slot) StructuredBuffer<type> name : register(t##slot); RWStructuredBuffer<type> RW##name : register(u##slot);
+	#define TEXTURE_2D(name, slot) Texture2D name : register(t##slot);
 #endif
