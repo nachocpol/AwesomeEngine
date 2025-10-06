@@ -51,14 +51,14 @@ void CubeApp::Init()
 	m_CubePSO = m_GraphicsInterface->CreateGraphicsPipeline(psoDesc);
 
 	PosVertexDescription vtxData[] = {
-		 1.0f,-1.0f,-1.0f,
-		 1.0f,-1.0f, 1.0f,
-		-1.0f,-1.0f, 1.0f,
-		-1.0f,-1.0f,-1.0f,
-		 1.0f, 1.0f,-1.0f,
-		 1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f,-1.0f
+		 1.0f,-1.0f,-1.0f, 0.0f,
+		 1.0f,-1.0f, 1.0f, 0.0f,
+		-1.0f,-1.0f, 1.0f, 0.0f,
+		-1.0f,-1.0f,-1.0f, 0.0f,
+		 1.0f, 1.0f,-1.0f, 0.0f,
+		 1.0f, 1.0f, 1.0f, 0.0f,
+		-1.0f, 1.0f, 1.0f, 0.0f,
+		-1.0f, 1.0f,-1.0f, 0.0f
 	};
 	
 	m_CubeVB = m_GraphicsInterface->CreateBuffer(

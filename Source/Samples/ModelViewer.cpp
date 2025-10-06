@@ -8,6 +8,7 @@
 #include "Graphics/Platform/Windows/WWindow.h"
 #include "Graphics/UI/UIInterface.h"
 #include "Graphics/VertexDescription.h"
+#include "Graphics/DebugDraw.h"
 
 #include "Samples/ModelViewer.hlsl" // This is a bit nasty... we are forced to include here the file so we can see the declarations.
 
@@ -89,7 +90,7 @@ void ModelViewer::Init()
 
 	m_PSO = m_GraphicsInterface->CreateGraphicsPipeline(psoDesc);
 
-	m_CB = m_GraphicsInterface->CreateBuffer(Graphics::BufferType::ConstantBuffer, Graphics::CPUAccess::None, Graphics::GPUAccess::Read, sizeof(m_Constants));
+	m_CB = m_GraphicsInterface->CreateBuffer(Graphics::BufferType::ConstantBuffer, Graphics::CPUAccess::None, Graphics::GPUAccess::Read, sizeof(m_Constants));	
 
 	// A bit nasty, need to maybe get rid of it.. On graphics creation, we leave the cmdlist open and recording, as we may submit copy commands
 	// to init buffers, textures etc..
@@ -126,6 +127,10 @@ void ModelViewer::Update()
 		m_GraphicsInterface->SetResource(m_TestTexture, Declarations::kg_TestTextureSlot);
 		m_GraphicsInterface->Draw(m_NumVertices, 0);
 	}
+
+	// Debug draw needs re-thinking... Don't want to have to flush manually and pass the camera, maybe pass the camera on item submissions?
+	Graphics::DebugDraw::GetInstance()->DrawWireSphere(glm::vec3(0, 4, 5), 2.0f);
+	Graphics::DebugDraw::GetInstance()->Flush(m_Constants.ViewProjection);
 }
 
 void ModelViewer::Release()

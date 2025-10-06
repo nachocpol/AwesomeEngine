@@ -6,7 +6,7 @@ using namespace Graphics;
 const VertexInputDescription& PosVertexDescription::GetDescription()
 {
 	static VertexInputDescription::VertexInputElement k_Elements[] = {
-		{"POSITION", 0, Format::RGB_32_Float, 0}
+		{"POSITION", 0, Format::RGBA_32_Float, 0}
 	};
 	static const VertexInputDescription k_Desc = { _countof(k_Elements), k_Elements };
 	return k_Desc;

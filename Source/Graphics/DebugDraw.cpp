@@ -1,6 +1,4 @@
 #include "DebugDraw.h"
-#include "World/CameraComponent.h"	
-#include "World/Model.h"
 #include "Core/Logging.h"
 #include "Graphics/VertexDescription.h"
 
@@ -50,8 +48,8 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 		pdesc.DepthEnabled = true;
 		pdesc.DepthWriteEnabled = false;
 		pdesc.DepthFunction = DepthFunc::LessEqual;
-		pdesc.ColorFormats[0] = Graphics::Format::RGBA_16_Float;
-		pdesc.DepthFormat = Graphics::Format::Depth24_Stencil8;
+		pdesc.ColorFormats[0] = Graphics::Format::RGBA_8_Unorm;
+		pdesc.DepthFormat = Graphics::Format::Unknown;
 
 		mDebugPipelineLines = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
 	}
@@ -71,8 +69,8 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 		pdesc.DepthEnabled = true;
 		pdesc.DepthWriteEnabled = false;
 		pdesc.DepthFunction = DepthFunc::LessEqual;
-		pdesc.ColorFormats[0] = Graphics::Format::RGBA_16_Float;
-		pdesc.DepthFormat = Graphics::Format::Depth24_Stencil8;
+		pdesc.ColorFormats[0] = Graphics::Format::RGBA_8_Unorm;
+		pdesc.DepthFormat = Graphics::Format::Unknown;
 		
 		mDebugPipelineSolid = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
 	}
@@ -145,7 +143,8 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 
 	// Debug cubemap
 	{
-		mSphereModel = Graphics::ModelFactory::Get()->LoadFromFile("data:Models/sphere.obj", mGraphicsInterface);
+		// Disabled for now
+		//mSphereModel = Graphics::ModelFactory::Get()->LoadFromFile("data:Models/sphere.obj", mGraphicsInterface);
 	}
 
 	mDebugDataCB = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(mDebugData));
@@ -163,9 +162,9 @@ void Graphics::DebugDraw::StartFrame()
 	mCubemapItems.clear();
 }
 
-void Graphics::DebugDraw::Flush(World::CameraComponent* camera)
+void Graphics::DebugDraw::Flush(const glm::mat4x4& invViewProj)
 {
-	mCameraData.InvViewProj = camera->GetProjection() * camera->GetInvViewTransform();
+	mCameraData.InvViewProj = invViewProj;
 
 	// Lines
 	if (!mLines.empty())
@@ -221,6 +220,7 @@ void Graphics::DebugDraw::Flush(World::CameraComponent* camera)
 	mGraphicsInterface->SetTopology(Topology::TriangleList);
 
 	// Cubemaps
+	/*
 	if (!mCubemapItems.empty())
 	{
 		mGraphicsInterface->SetGraphicsPipeline(mDebugPipelineSolid);
@@ -244,6 +244,7 @@ void Graphics::DebugDraw::Flush(World::CameraComponent* camera)
 			mGraphicsInterface->DrawIndexed(mSphereModel->Meshes[0].NumIndices);
 		}
 	}
+	*/
 }
 
 void Graphics::DebugDraw::EndFrame()
@@ -339,6 +340,7 @@ void Graphics::DebugDraw::DrawFrustum(glm::mat4 transform, float aspect, float v
 	DrawLine(BLFar, BLNear, color);
 }
 
+/*
 void DebugDraw::DrawCubemap(TextureHandle texture, glm::vec3 position, bool equirectangular)
 {
 	if (CHECK_TEXTURE(texture))
@@ -346,6 +348,7 @@ void DebugDraw::DrawCubemap(TextureHandle texture, glm::vec3 position, bool equi
 		mCubemapItems.push_back(CubemapItem(texture, position, equirectangular));
 	}
 }
+*/
 
 DebugDraw::LineItem::LineItem(glm::vec3 start, glm::vec3 end, glm::vec4 color)
 	:Start(start)

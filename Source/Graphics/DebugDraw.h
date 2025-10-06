@@ -32,7 +32,7 @@ namespace Graphics
 		void Release();
 
 		void StartFrame();
-		void Flush(World::CameraComponent* camera);
+		void Flush(const glm::mat4x4& invViewProj);
 		void EndFrame();
 		
 		void DrawLine(glm::vec3 start, glm::vec3 end, glm::vec4 color = glm::vec4(1.0f));
@@ -40,7 +40,7 @@ namespace Graphics
 		void DrawWireSphere(glm::vec3 center, float radius, glm::vec4 color = glm::vec4(1.0f));
 		void DrawFrustum(glm::mat4 transform, float aspect, float vfov, float nearDist, float farDist, glm::vec4 color = glm::vec4(1.0f));
 
-		void DrawCubemap(TextureHandle texture, glm::vec3 position, bool equirectangular = false);
+		//void DrawCubemap(TextureHandle texture, glm::vec3 position, bool equirectangular = false);
 
 	private:
 		GraphicsInterface* mGraphicsInterface;
@@ -85,6 +85,6 @@ namespace Graphics
 
 		Declarations::DebugData mDebugData;
 		BufferHandle mDebugDataCB;
-		Model* mSphereModel;
+		//Model* mSphereModel;
 	};
 }
