@@ -6,10 +6,6 @@ namespace Graphics
 	{
 		class BaseWindow;
 	}
-	namespace UI
-	{
-		class UIInterface;
-	}
 	class GraphicsInterface;
 }
 
@@ -35,7 +31,6 @@ public:
 protected:
 	Graphics::Platform::BaseWindow* m_Window;
 	Graphics::GraphicsInterface* m_GraphicsInterface;
-	Graphics::UI::UIInterface* m_UIInterface;
 	const char* m_Name;
 	bool m_FullScreen;
 

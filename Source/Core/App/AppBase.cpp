@@ -2,16 +2,12 @@
 
 #include "Graphics/Platform/Windows/WWindow.h"
 #include "Graphics/DX12/DX12GraphicsInterface.h"
-#include "Graphics/UI/UIInterface.h"
-#include "Graphics/DebugDraw.h"
 #include "Core/FileSystem.h"
-#include "Core/Logging.h"
 
 AppBase::AppBase() 
 	: TotalTime(0.0f)
 	, DeltaTime(0.0f)
 	, m_GraphicsInterface(nullptr)
-	, m_UIInterface(nullptr)
 	, m_Window(nullptr)
 	, m_Name("Default")
 	, m_FullScreen(false)
@@ -37,19 +33,12 @@ void AppBase::Init()
 
 	m_GraphicsInterface = new Graphics::DX12::DX12GraphicsInterface();
 	m_GraphicsInterface->Initialize(m_Window);
-
-	m_UIInterface = new Graphics::UI::UIInterface();
-	m_UIInterface->Initialize(m_Window, m_GraphicsInterface);
-
-	Graphics::DebugDraw::GetInstance()->Initialize(m_GraphicsInterface);
 }
 
 void AppBase::StartFrame()
 {
 	m_Window->Update(); // This will query new events...
 	m_GraphicsInterface->StartFrame();
-	m_UIInterface->StartFrame();
-	Graphics::DebugDraw::GetInstance()->StartFrame();
 }
 
 void AppBase::Update()
@@ -58,9 +47,6 @@ void AppBase::Update()
 
 void AppBase::EndFrame()
 {
-	Logger::GetInstance()->Render();
-	Graphics::DebugDraw::GetInstance()->EndFrame();
-	m_UIInterface->EndFrame();
 	m_GraphicsInterface->EndFrame();
 }
 
