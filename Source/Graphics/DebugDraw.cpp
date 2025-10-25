@@ -2,6 +2,10 @@
 #include "Core/Logging.h"
 #include "Graphics/VertexDescription.h"
 
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/constants.hpp"
+
 using namespace Graphics;
 
 struct DebugVertex
