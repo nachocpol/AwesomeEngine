@@ -2,12 +2,25 @@
 
 namespace Graphics { namespace Platform {
 
+	enum class WindowMode
+	{
+		Windowed,
+		Borderless,
+		Fullscreen	
+	};
+
+	struct WindowInitParams
+	{
+		const char* m_Title;
+		WindowMode m_Mode;
+	};
+
 	class BaseWindow
 	{
 	public:
 		BaseWindow();
 		~BaseWindow();
-		virtual bool Initialize(const char* title,bool fullScreen, unsigned int width, unsigned int height) = 0;
+		virtual bool Initialize(const WindowInitParams& params) = 0;
 		bool IsFullScreen();
 		virtual void SetFullScreen(bool newFs) = 0;
 		virtual void Update() = 0;
@@ -17,11 +30,9 @@ namespace Graphics { namespace Platform {
 		unsigned int GetHeight();
 
 	protected:
-		bool mFullScreen;
-		bool mClosed;
-		unsigned int mWidth;
-		unsigned int mHeight;
-		const char* mTitle;
+		bool m_Closed;
+		WindowInitParams m_InitParams;
+		int m_Width;
+		int m_Height;
 	};
-
 }}

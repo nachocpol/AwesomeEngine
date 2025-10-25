@@ -7,6 +7,8 @@
 float gVtxUsage = 0.0f;
 float gIdxUsage = 0.0f;
 
+#define DEFAULT_DPI_SCALE (1.75f) // TODO: we need to properly retrieve this value
+
 namespace Graphics{namespace UI{
 
 	UIInterface::UIInterface():
@@ -28,9 +30,15 @@ namespace Graphics{namespace UI{
 	{
 		mOutputWindow = window;
 		mGraphicsInterface = graphicsInterface;
-	
+		
 		ImGui::CreateContext();
-		CreateUIResources();
+
+		// ImGui config
+		ImGuiStyle& imguiStyle = ImGui::GetStyle();
+		imguiStyle.ScaleAllSizes(DEFAULT_DPI_SCALE);
+
+		CreateUIResources();		
+
 		return true;
 	}
 
@@ -177,8 +185,14 @@ namespace Graphics{namespace UI{
 
 	void UIInterface::CreateUIResources()
 	{
-		// Font texture
 		ImGuiIO& io = ImGui::GetIO();
+
+		// TODO: Here we just setup a default font, doing it here so we can enforce a scale. This is not ideal, I'm assuming a default size and * DPI..
+		//       this is likely to break in newer ImGui versions
+		ImFontConfig fontConfig = ImFontConfig();
+		fontConfig.SizePixels = 15 * DEFAULT_DPI_SCALE;
+		io.Fonts->AddFontDefault(&fontConfig);
+
 		unsigned char* fontData = 0;
 		int w = 0;
 		int h = 0;

@@ -29,7 +29,11 @@ void AppBase::Init()
 	Core::FileSystem::GetInstance()->Initialize();
 
 	m_Window = new Graphics::Platform::Windows::WWindow();
-	m_Window->Initialize(m_Name, m_FullScreen, 1920, 1080);
+
+	Graphics::Platform::WindowInitParams initParams;
+	initParams.m_Title = m_Name;
+	initParams.m_Mode = Graphics::Platform::WindowMode::Borderless;
+	m_Window->Initialize(initParams);
 
 	m_GraphicsInterface = new Graphics::DX12::DX12GraphicsInterface();
 	m_GraphicsInterface->Initialize(m_Window);

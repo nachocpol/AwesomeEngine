@@ -3,11 +3,9 @@
 namespace Graphics {namespace Platform {
 
 	BaseWindow::BaseWindow():
-		mFullScreen(false),
-		mWidth(0),
-		mHeight(0),
-		mTitle("empty"),
-		mClosed(true)
+		m_Width(0),
+		m_Height(0),
+		m_Closed(false)
 	{
 	}
 
@@ -17,21 +15,21 @@ namespace Graphics {namespace Platform {
 
 	bool BaseWindow::IsFullScreen()
 	{
-		return mFullScreen;
+		return false;
 	}
 
 	bool BaseWindow::IsClosed()
 	{
-		return mClosed;
+		return m_Closed;
 	}
 
 	unsigned int BaseWindow::GetWidth()
 	{
-		return mWidth;
+		return m_Width;
 	}
 
 	unsigned int BaseWindow::GetHeight()
 	{
-		return mHeight;
+		return m_Height;
 	}
 }}

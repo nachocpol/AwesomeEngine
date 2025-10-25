@@ -10,7 +10,7 @@ namespace Graphics { namespace Platform {namespace Windows {
 	public:
 		WWindow();
 		~WWindow();
-		bool Initialize(const char* title,bool fullScreen, unsigned int width, unsigned int height)final override;
+		bool Initialize(const WindowInitParams& params)final override;
 		void SetFullScreen(bool newFs)final override;
 		void Update()final override;
 		void* GetHandle()final override;

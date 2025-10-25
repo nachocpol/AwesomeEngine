@@ -82,16 +82,13 @@ WWindow::~WWindow()
 {
 }
 
-bool WWindow::Initialize(const char* title, bool fullscreen,unsigned int width, unsigned int height)
+bool WWindow::Initialize(const WindowInitParams& params)
 {
-	mTitle		= title;
-	mFullScreen = fullscreen;
-	mWidth		= width;
-	mHeight		= height;
+	m_InitParams = params;
 
 	HMODULE hinst = GetModuleHandle(NULL);
 
-	std::string ctitle(mTitle);
+	std::string ctitle(m_InitParams.m_Title);
 	std::wstring wtitle;
 	wtitle.assign(ctitle.begin(), ctitle.end());
 		
@@ -105,6 +102,14 @@ bool WWindow::Initialize(const char* title, bool fullscreen,unsigned int width, 
 	// 	width = mi.rcMonitor.right - mi.rcMonitor.left;
 	// 	height = mi.rcMonitor.bottom - mi.rcMonitor.top;
 	// }
+
+	// Main monitor size in pixels
+	int sizeX = GetSystemMetrics(SM_CXSCREEN);
+	int sizeY = GetSystemMetrics(SM_CYSCREEN);
+
+	// Right now, we are just making it to the full size of the monitor, note we may be ignoring DPI scale
+	m_Width = sizeX;
+	m_Height = sizeY;
 
 	WNDCLASSEX wndClass = {};
 	wndClass.cbSize			= sizeof(WNDCLASSEX);
@@ -131,9 +136,9 @@ bool WWindow::Initialize(const char* title, bool fullscreen,unsigned int width, 
 		NULL,
 		wtitle.c_str(),
 		wtitle.c_str(),
-		WS_OVERLAPPEDWINDOW | WS_MAXIMIZE,
+		WS_BORDER,
 		CW_USEDEFAULT, CW_USEDEFAULT,
-		mWidth, mHeight,
+		sizeX, sizeY,
 		NULL,
 		NULL,
 		hinst,
@@ -145,6 +150,10 @@ bool WWindow::Initialize(const char* title, bool fullscreen,unsigned int width, 
 		return false;
 	}
 
+	// https://stackoverflow.com/questions/7442939/opening-a-window-that-has-no-title-bar-with-win32
+	// TODO: really need to improve this, right now, we are basically always forcing a borderless fullscreen window (ignoring dpi)
+	SetWindowLong(mHandle, GWL_STYLE, 0);
+
 	// if (fullscreen)
 	// {
 	// 	SetWindowLong(hwnd, GWL_STYLE, 0);
@@ -152,7 +161,7 @@ bool WWindow::Initialize(const char* title, bool fullscreen,unsigned int width, 
 
 	ShowWindow(mHandle, SW_SHOW);
 	UpdateWindow(mHandle);
-	mClosed = false;
+	m_Closed = false;
 
 	// Provide the input with a handle to this window
 	InputManager::GetInstance()->WHandle = mHandle;
@@ -176,7 +185,7 @@ void WWindow::Update()
 	{
 		if (msg.message == WM_QUIT)
 		{
-			mClosed = true;
+			m_Closed = true;
 			break;
 		}
 		TranslateMessage(&msg);
