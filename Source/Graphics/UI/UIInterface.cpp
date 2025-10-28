@@ -9,6 +9,136 @@ float gIdxUsage = 0.0f;
 
 #define DEFAULT_DPI_SCALE (1.75f) // TODO: we need to properly retrieve this value
 
+ImGuiKey KeyToImgui(Core::KeyType key)
+{
+	switch (key)
+	{
+	case Core::KeyType::Num1:
+		return ImGuiKey_1;
+	case Core::KeyType::Num2:
+		return ImGuiKey_2;
+	case Core::KeyType::Num3:
+		return ImGuiKey_3;
+	case Core::KeyType::Num4:
+		return ImGuiKey_4;
+	case Core::KeyType::Num5:
+		return ImGuiKey_5;
+	case Core::KeyType::Num6:
+		return ImGuiKey_6;
+	case Core::KeyType::Num7:
+		return ImGuiKey_7;
+	case Core::KeyType::Num8:
+		return ImGuiKey_8;
+	case Core::KeyType::Num9:
+		return ImGuiKey_9;
+	case Core::KeyType::Num0:
+		return ImGuiKey_0;
+
+	case Core::KeyType::A:
+		return ImGuiKey_A;
+	case Core::KeyType::B:
+		return ImGuiKey_B;
+	case Core::KeyType::C:
+		return ImGuiKey_C;
+	case Core::KeyType::D:
+		return ImGuiKey_D;
+	case Core::KeyType::E:
+		return ImGuiKey_E;
+	case Core::KeyType::F:
+		return ImGuiKey_F;
+	case Core::KeyType::G:
+		return ImGuiKey_G;
+	case Core::KeyType::H:
+		return ImGuiKey_H;
+	case Core::KeyType::I:
+		return ImGuiKey_I;
+	case Core::KeyType::J:
+		return ImGuiKey_J;
+	case Core::KeyType::K:
+		return ImGuiKey_K;
+	case Core::KeyType::L:
+		return ImGuiKey_L;
+	case Core::KeyType::M:
+		return ImGuiKey_M;
+	case Core::KeyType::N:
+		return ImGuiKey_N;
+	case Core::KeyType::O:
+		return ImGuiKey_O;
+	case Core::KeyType::P:
+		return ImGuiKey_P;
+	case Core::KeyType::Q:
+		return ImGuiKey_Q;
+	case Core::KeyType::R:
+		return ImGuiKey_R;
+	case Core::KeyType::S:
+		return ImGuiKey_S;
+	case Core::KeyType::T:
+		return ImGuiKey_T;
+	case Core::KeyType::U:
+		return ImGuiKey_U;
+	case Core::KeyType::V:
+		return ImGuiKey_V;
+	case Core::KeyType::W:
+		return ImGuiKey_W;
+	case Core::KeyType::X:
+		return ImGuiKey_X;
+	case Core::KeyType::Y:
+		return ImGuiKey_Y;
+	case Core::KeyType::Z:
+		return ImGuiKey_Z;
+
+	case Core::KeyType::Escape:
+		return ImGuiKey_Escape;
+	case Core::KeyType::Space:
+		return ImGuiKey_Space;
+	case Core::KeyType::Tab:
+		return ImGuiKey_Tab;
+	case Core::KeyType::Return:
+		return ImGuiKey_Enter;
+
+	case Core::KeyType::COUNT:
+	default:
+		assert(false);
+		break;
+	}
+
+	return ImGuiKey_Space;
+}
+
+
+ImGuiMouseButton ButtonToImgui(Core::MouseButton btn)
+{
+	switch (btn)
+	{
+		case Core::MouseButton::Left:	return ImGuiMouseButton_Left;
+		case Core::MouseButton::Right:	return ImGuiMouseButton_Right;
+		case Core::MouseButton::Middle: return ImGuiMouseButton_Middle	;
+		case Core::MouseButton::COUNT:
+		default:
+										return ImGuiMouseButton_COUNT;
+	}
+}
+
+static void ImguiKeyEventCbk(Core::KeyType key, Core::KeyState state)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	const ImGuiKey imguiKey = KeyToImgui(key);
+	io.AddKeyEvent(imguiKey, state == Core::KeyState::Pressed);
+}
+
+static void ImGuiMouseButtonCbk(Core::MouseButton button, bool pressed)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.AddMouseSourceEvent(ImGuiMouseSource_Mouse);
+	io.AddMouseButtonEvent(ButtonToImgui(button), pressed);
+}
+
+static void ImGuiInputCharCbk(unsigned short v)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.AddInputCharacterUTF16(v);
+}
+
 namespace Graphics{namespace UI{
 
 	UIInterface::UIInterface():
@@ -33,11 +163,21 @@ namespace Graphics{namespace UI{
 		
 		ImGui::CreateContext();
 
+		// Provide a callback for key events
+		Core::InputManager* inputManager = Core::InputManager::GetInstance();
+		inputManager->SetKeyEventCallback(&ImguiKeyEventCbk);
+		inputManager->SetMouseButtonCallback(&ImGuiMouseButtonCbk);
+		inputManager->SetInputCharCallback(&ImGuiInputCharCbk);
+
 		// ImGui config
 		ImGuiStyle& imguiStyle = ImGui::GetStyle();
 		imguiStyle.ScaleAllSizes(DEFAULT_DPI_SCALE);
 
-		CreateUIResources();		
+		// This is likely to be enforced at some point
+		ImGuiIO& io = ImGui::GetIO();
+		io.BackendFlags = ImGuiBackendFlags_None;
+
+		CreateUIResources();				
 
 		return true;
 	}
@@ -52,40 +192,11 @@ namespace Graphics{namespace UI{
 		io.DisplaySize = ImVec2((float)mOutputWindow->GetWidth(), (float)mOutputWindow->GetHeight());
 
 		// Setup time step
-		io.DeltaTime = 0.16f;
-
-		// Mouse buttons
-		io.MouseDown[0] = inputManager->IsMouseButtonPressed(Core::MouseButton::Left);
-		io.MouseDown[1] = inputManager->IsMouseButtonPressed(Core::MouseButton::Right);
-		io.MouseDown[2] = inputManager->IsMouseButtonPressed(Core::MouseButton::Middle);
-
-		// Read keyboard modifiers inputs
-		// io.KeyCtrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
-		// io.KeyShift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
-		// io.KeyAlt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
-		// io.KeySuper = false;
-		// io.KeysDown[], io.MousePos, io.MouseDown[], io.MouseWheel: filled by the WndProc handler below.
-
-		// Update OS mouse position
-		// Set OS mouse position if requested (rarely used, only when ImGuiConfigFlags_NavEnableSetMousePos is enabled by user)
-		if (io.WantSetMousePos)
-		{
-			// POINT pos = { (int)io.MousePos.x, (int)io.MousePos.y };
-			// ::ClientToScreen(mOutputWindow->GetHandle(), &pos);
-			// ::SetCursorPos(pos.x, pos.y);
-		}
+		io.DeltaTime = 0.01f;
 
 		// Set mouse position
 		glm::vec2 mouse = inputManager->GetMousePos();
-		io.MousePos = ImVec2(mouse.x, mouse.y);
-
-		// Update OS mouse cursor with the cursor requested by imgui
-		//ImGuiMouseCursor mouse_cursor = io.MouseDrawCursor ? ImGuiMouseCursor_None : ImGui::GetMouseCursor();
-		//if (g_LastMouseCursor != mouse_cursor)
-		//{
-		//	g_LastMouseCursor = mouse_cursor;
-		//	ImGui_ImplWin32_UpdateMouseCursor();
-		//}
+		io.AddMousePosEvent(mouse.x, mouse.y);
 
 		ImGui::NewFrame();
 	}

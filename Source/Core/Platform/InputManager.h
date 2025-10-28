@@ -1,58 +1,52 @@
 #pragma once
 
-#include "glm/glm.hpp"
+#include "InputTypes.h"
+
+#include "glm/fwd.hpp"
+
 #include <stdint.h>
 
 namespace Core
 {
-	enum KeyState
-	{
-		StateUp = 0,
-		StateDown = 1
-	};
-
-	enum SpecialKey
-	{
-		F1 = 0,
-		F2,
-		F3,
-		F4,
-		F5,
-		F6,
-		F7,
-		F8,
-		F9,
-		F10,
-		F11,
-		F12,
-		TAB,
-		ESC,
-		SpecialKeyCount
-	};
-
-	enum MouseButton
-	{
-		Left = 0,
-		Right,
-		Middle,
-		MouseButtonCount
-	};
+	typedef void (*KeyEventCbk)(KeyType key, KeyState state);
+	typedef void (*MouseButtonCbk)(MouseButton button, bool pressed);
+	typedef void (*InputCharCbk)(unsigned short v);
 
 	class InputManager
 	{
 	public:
 		static InputManager* GetInstance();
-		bool IsKeyPressed(char key);
-		bool IsSpecialKeyPressed(SpecialKey key);
+		
+		bool IsKeyPressed(KeyType type);
 		bool IsMouseButtonPressed(MouseButton btn);
 		glm::vec2 GetMousePos();
-		KeyState KeyStates[256];
-		KeyState SpecialKeyStates[SpecialKeyCount];
-		KeyState MouseButtonStates[MouseButtonCount];
+
+		// Notifies the InputManager that a key state has changed.
+		void KeyEvent(KeyType key, KeyState state);
+
+		void MouseButtonEvent(MouseButton button, bool pressed);
+
+		void InputCharEvent(unsigned short v);
+		
+		// Configures a callback, when a key state changes cbk will be notified. 
+		// Right now, only one callback is supported
+		void SetKeyEventCallback(KeyEventCbk cbk);
+
+		void SetMouseButtonCallback(MouseButtonCbk cbk);	
+
+		void SetInputCharCallback(InputCharCbk cbk);
+		
 		// Platform window handle
 		void* WHandle;
 
 	private:
+		KeyState m_KeyStates[(int)KeyType::COUNT];
+		bool m_MouseButtonStates[(int)MouseButton::COUNT];
+
+		KeyEventCbk m_KeyEventCbk;
+		MouseButtonCbk m_MouseButtonCbk;
+		InputCharCbk m_InputCharCbk;
+
 		InputManager();
 		~InputManager();
 	};

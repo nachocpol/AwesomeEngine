@@ -14,9 +14,52 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 	{
 	// KEY UP
 	case WM_KEYUP:
+		switch (wParam)
 		{
-			inputManager->KeyStates[(unsigned char)wParam] = KeyState::StateUp; 
-			//printf("UP:%c\n", wParam); 
+			case '1':		inputManager->KeyEvent(Core::KeyType::Num1, KeyState::Released);	break;
+			case '2':		inputManager->KeyEvent(Core::KeyType::Num2, KeyState::Released);	break;
+			case '3':		inputManager->KeyEvent(Core::KeyType::Num3, KeyState::Released);	break;
+			case '4':		inputManager->KeyEvent(Core::KeyType::Num4, KeyState::Released);	break;
+			case '5':		inputManager->KeyEvent(Core::KeyType::Num5, KeyState::Released);	break;
+			case '6':		inputManager->KeyEvent(Core::KeyType::Num6, KeyState::Released);	break;
+			case '7':		inputManager->KeyEvent(Core::KeyType::Num7, KeyState::Released);	break;
+			case '8':		inputManager->KeyEvent(Core::KeyType::Num8, KeyState::Released);	break;
+			case '9':		inputManager->KeyEvent(Core::KeyType::Num9, KeyState::Released);	break;
+			case '0':		inputManager->KeyEvent(Core::KeyType::Num0, KeyState::Released);	break;
+
+			case 'A':		inputManager->KeyEvent(Core::KeyType::A, KeyState::Released);		break;
+			case 'B':		inputManager->KeyEvent(Core::KeyType::B, KeyState::Released);		break;
+			case 'C':		inputManager->KeyEvent(Core::KeyType::C, KeyState::Released);		break;
+			case 'D':		inputManager->KeyEvent(Core::KeyType::D, KeyState::Released);		break;
+			case 'E':		inputManager->KeyEvent(Core::KeyType::E, KeyState::Released);		break;
+			case 'F':		inputManager->KeyEvent(Core::KeyType::F, KeyState::Released);		break;
+			case 'G':		inputManager->KeyEvent(Core::KeyType::G, KeyState::Released);		break;
+			case 'H':		inputManager->KeyEvent(Core::KeyType::H, KeyState::Released);		break;
+			case 'I':		inputManager->KeyEvent(Core::KeyType::I, KeyState::Released);		break;
+			case 'J':		inputManager->KeyEvent(Core::KeyType::J, KeyState::Released);		break;
+			case 'K':		inputManager->KeyEvent(Core::KeyType::K, KeyState::Released);		break;
+			case 'L':		inputManager->KeyEvent(Core::KeyType::L, KeyState::Released);		break;
+			case 'M':		inputManager->KeyEvent(Core::KeyType::M, KeyState::Released);		break;
+			case 'N':		inputManager->KeyEvent(Core::KeyType::N, KeyState::Released);		break;
+			case 'O':		inputManager->KeyEvent(Core::KeyType::O, KeyState::Released);		break;
+			case 'P':		inputManager->KeyEvent(Core::KeyType::P, KeyState::Released);		break;
+			case 'Q':		inputManager->KeyEvent(Core::KeyType::Q, KeyState::Released);		break;
+			case 'R':		inputManager->KeyEvent(Core::KeyType::R, KeyState::Released);		break;
+			case 'S':		inputManager->KeyEvent(Core::KeyType::S, KeyState::Released);		break;
+			case 'T':		inputManager->KeyEvent(Core::KeyType::T, KeyState::Released);		break;
+			case 'U':		inputManager->KeyEvent(Core::KeyType::U, KeyState::Released);		break;
+			case 'V':		inputManager->KeyEvent(Core::KeyType::V, KeyState::Released);		break;
+			case 'W':		inputManager->KeyEvent(Core::KeyType::W, KeyState::Released);		break;
+			case 'X':		inputManager->KeyEvent(Core::KeyType::X, KeyState::Released);		break;
+			case 'Y':		inputManager->KeyEvent(Core::KeyType::Y, KeyState::Released);		break;
+			case 'Z':		inputManager->KeyEvent(Core::KeyType::Z, KeyState::Released);		break;
+
+			case VK_ESCAPE:	inputManager->KeyEvent(Core::KeyType::Escape, KeyState::Released);	break;
+			case VK_TAB:	inputManager->KeyEvent(Core::KeyType::Tab, KeyState::Released);		break;
+			case VK_SPACE:	inputManager->KeyEvent(Core::KeyType::Space, KeyState::Released);	break;
+			case VK_RETURN: inputManager->KeyEvent(Core::KeyType::Return, KeyState::Released);	break;
+
+			default: break;
 		}
 		break;
 
@@ -24,21 +67,50 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 	case WM_KEYDOWN:
 		switch (wParam)
 		{
-			case VK_F1:		inputManager->SpecialKeyStates[SpecialKey::F1]	= KeyState::StateDown; break;
-			case VK_F2:		inputManager->SpecialKeyStates[SpecialKey::F2]	= KeyState::StateDown; break;
-			case VK_F3:		inputManager->SpecialKeyStates[SpecialKey::F3]	= KeyState::StateDown; break;
-			case VK_F4:		inputManager->SpecialKeyStates[SpecialKey::F4]	= KeyState::StateDown; break;
-			case VK_F5:		inputManager->SpecialKeyStates[SpecialKey::F5]	= KeyState::StateDown; break;
-			case VK_F6:		inputManager->SpecialKeyStates[SpecialKey::F6]	= KeyState::StateDown; break;
-			case VK_F7:		inputManager->SpecialKeyStates[SpecialKey::F7]	= KeyState::StateDown; break;
-			case VK_F8:		inputManager->SpecialKeyStates[SpecialKey::F8]	= KeyState::StateDown; break;
-			case VK_F9:		inputManager->SpecialKeyStates[SpecialKey::F9]	= KeyState::StateDown; break;
-			case VK_F10:	inputManager->SpecialKeyStates[SpecialKey::F10] = KeyState::StateDown; break;
-			case VK_F11:	inputManager->SpecialKeyStates[SpecialKey::F11] = KeyState::StateDown; break;
-			case VK_F12:	inputManager->SpecialKeyStates[SpecialKey::F12] = KeyState::StateDown; break;
-			case VK_ESCAPE:	inputManager->SpecialKeyStates[SpecialKey::ESC] = KeyState::StateDown; break;
-			case VK_TAB:	inputManager->SpecialKeyStates[SpecialKey::TAB]	= KeyState::StateDown; break;
-			default:		inputManager->KeyStates[(unsigned char)wParam]			= KeyState::StateDown; /*printf("DOWN:%c\n", wParam);*/  break;
+			case '1': inputManager->KeyEvent(Core::KeyType::Num1, KeyState::Pressed);			break;
+			case '2': inputManager->KeyEvent(Core::KeyType::Num2, KeyState::Pressed);			break;
+			case '3': inputManager->KeyEvent(Core::KeyType::Num3, KeyState::Pressed);			break;
+			case '4': inputManager->KeyEvent(Core::KeyType::Num4, KeyState::Pressed);			break;
+			case '5': inputManager->KeyEvent(Core::KeyType::Num5, KeyState::Pressed);			break;
+			case '6': inputManager->KeyEvent(Core::KeyType::Num6, KeyState::Pressed);			break;
+			case '7': inputManager->KeyEvent(Core::KeyType::Num7, KeyState::Pressed);			break;
+			case '8': inputManager->KeyEvent(Core::KeyType::Num8, KeyState::Pressed);			break;
+			case '9': inputManager->KeyEvent(Core::KeyType::Num9, KeyState::Pressed);			break;
+			case '0': inputManager->KeyEvent(Core::KeyType::Num0, KeyState::Pressed);			break;
+
+			case 'A':		inputManager->KeyEvent(Core::KeyType::A, KeyState::Pressed);		break;
+			case 'B':		inputManager->KeyEvent(Core::KeyType::B, KeyState::Pressed);		break;
+			case 'C':		inputManager->KeyEvent(Core::KeyType::C, KeyState::Pressed);		break;
+			case 'D':		inputManager->KeyEvent(Core::KeyType::D, KeyState::Pressed);		break;
+			case 'E':		inputManager->KeyEvent(Core::KeyType::E, KeyState::Pressed);		break;
+			case 'F':		inputManager->KeyEvent(Core::KeyType::F, KeyState::Pressed);		break;
+			case 'G':		inputManager->KeyEvent(Core::KeyType::G, KeyState::Pressed);		break;
+			case 'H':		inputManager->KeyEvent(Core::KeyType::H, KeyState::Pressed);		break;
+			case 'I':		inputManager->KeyEvent(Core::KeyType::I, KeyState::Pressed);		break;
+			case 'J':		inputManager->KeyEvent(Core::KeyType::J, KeyState::Pressed);		break;
+			case 'K':		inputManager->KeyEvent(Core::KeyType::K, KeyState::Pressed);		break;
+			case 'L':		inputManager->KeyEvent(Core::KeyType::L, KeyState::Pressed);		break;
+			case 'M':		inputManager->KeyEvent(Core::KeyType::M, KeyState::Pressed);		break;
+			case 'N':		inputManager->KeyEvent(Core::KeyType::N, KeyState::Pressed);		break;
+			case 'O':		inputManager->KeyEvent(Core::KeyType::O, KeyState::Pressed);		break;
+			case 'P':		inputManager->KeyEvent(Core::KeyType::P, KeyState::Pressed);		break;
+			case 'Q':		inputManager->KeyEvent(Core::KeyType::Q, KeyState::Pressed);		break;
+			case 'R':		inputManager->KeyEvent(Core::KeyType::R, KeyState::Pressed);		break;
+			case 'S':		inputManager->KeyEvent(Core::KeyType::S, KeyState::Pressed);		break;
+			case 'T':		inputManager->KeyEvent(Core::KeyType::T, KeyState::Pressed);		break;
+			case 'U':		inputManager->KeyEvent(Core::KeyType::U, KeyState::Pressed);		break;
+			case 'V':		inputManager->KeyEvent(Core::KeyType::V, KeyState::Pressed);		break;
+			case 'W':		inputManager->KeyEvent(Core::KeyType::W, KeyState::Pressed);		break;
+			case 'X':		inputManager->KeyEvent(Core::KeyType::X, KeyState::Pressed);		break;
+			case 'Y':		inputManager->KeyEvent(Core::KeyType::Y, KeyState::Pressed);		break;
+			case 'Z':		inputManager->KeyEvent(Core::KeyType::Z, KeyState::Pressed);		break;
+
+			case VK_ESCAPE:	inputManager->KeyEvent(Core::KeyType::Escape, KeyState::Pressed);	break;
+			case VK_TAB:	inputManager->KeyEvent(Core::KeyType::Tab, KeyState::Pressed);		break;
+			case VK_SPACE:	inputManager->KeyEvent(Core::KeyType::Space, KeyState::Pressed);	break;
+			case VK_RETURN: inputManager->KeyEvent(Core::KeyType::Return, KeyState::Pressed);	break;
+
+			default: break;
 		}
 		break;
 
@@ -48,26 +120,40 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 
 		// Left mouse button:
 	case WM_LBUTTONDOWN:
-		inputManager->MouseButtonStates[MouseButton::Left] = KeyState::StateDown;
+		inputManager->MouseButtonEvent(Core::MouseButton::Left, true);
 		break;
 	case WM_LBUTTONUP:
-		inputManager->MouseButtonStates[MouseButton::Left] = KeyState::StateUp;
+		inputManager->MouseButtonEvent(Core::MouseButton::Left, false);
 		break;
 
 		// Right mouse button:
 	case WM_RBUTTONDOWN:
-		inputManager->MouseButtonStates[MouseButton::Right] = KeyState::StateDown;
+		inputManager->MouseButtonEvent(Core::MouseButton::Right, true);
 		break;
 	case WM_RBUTTONUP:
-		inputManager->MouseButtonStates[MouseButton::Right] = KeyState::StateUp;
+		inputManager->MouseButtonEvent(Core::MouseButton::Right, false);
 		break;
 
 		// Middle mouse button:
 	case WM_MBUTTONDOWN:
-		inputManager->MouseButtonStates[MouseButton::Middle] = KeyState::StateDown;
+		inputManager->MouseButtonEvent(Core::MouseButton::Middle, true);
 		break;
 	case WM_MBUTTONUP:
-		inputManager->MouseButtonStates[MouseButton::Middle] = KeyState::StateUp;
+		inputManager->MouseButtonEvent(Core::MouseButton::Middle, false);
+		break;
+
+	case WM_CHAR:
+		if (::IsWindowUnicode(hWnd))
+		{
+			if (wParam > 0 && wParam < 0x10000)
+			{
+				inputManager->InputCharEvent((unsigned short)wParam);
+			}
+		}
+		else
+		{
+			assert(false);
+		}
 		break;
 	}
 	return DefWindowProc(hWnd,msg,wParam,lParam);
@@ -177,7 +263,7 @@ void WWindow::SetFullScreen(bool newFs)
 void WWindow::Update()
 {
 	auto inputManager = InputManager::GetInstance();
-	//memset(inputManager->KeyStates, 0, sizeof(inputManager->KeyStates));
+	//memset(inputManager->m_KeyStates, 0, sizeof(inputManager->m_KeyStates));
 	//memset(inputManager->SpecialKeyStates, 0, sizeof(inputManager->SpecialKeyStates));
 
 	MSG msg = {};

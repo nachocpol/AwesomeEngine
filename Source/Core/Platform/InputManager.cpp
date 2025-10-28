@@ -1,14 +1,20 @@
 #include "InputManager.h"
-#include <memory>
+
+#include "glm/glm.hpp"
+
+#include "Graphics/UI/IMGUI/imgui.h"
+
 #include <Windows.h>
 
 using namespace Core;
 
 InputManager::InputManager()
+	: m_KeyEventCbk(nullptr)
+	, m_MouseButtonCbk(nullptr)
+	, m_InputCharCbk(nullptr)
 {
-	memset(KeyStates, 0, sizeof(KeyStates));
-	memset(SpecialKeyStates, 0, sizeof(SpecialKeyStates));
-	memset(MouseButtonStates, 0, sizeof(MouseButtonStates));
+	memset(m_KeyStates, 0, sizeof(m_KeyStates));
+	memset(m_MouseButtonStates, 0, sizeof(m_MouseButtonStates));
 }
 
 InputManager::~InputManager()
@@ -26,32 +32,14 @@ InputManager* InputManager::GetInstance()
 	return sInstance;
 }
 
-bool InputManager::IsKeyPressed(char key)
+bool InputManager::IsKeyPressed(KeyType type)
 {
-	// TO-DO: fix win input
-	if (KeyStates[key - 32] == StateDown)
-	{
-		return true;
-	}
-	return false;
-}
-
-bool InputManager::IsSpecialKeyPressed(SpecialKey key)
-{
-	if (SpecialKeyStates[key] == StateDown)
-	{
-		return true;
-	}
-	return false;
+	return m_KeyStates[(int)type] == KeyState::Pressed;
 }
 
 bool InputManager::IsMouseButtonPressed(MouseButton btn)
 {
-	if (MouseButtonStates[btn] == StateDown)
-	{
-		return true;
-	}
-	return false;
+	return m_MouseButtonStates[(int)btn];
 }
 
 glm::vec2 InputManager::GetMousePos()
@@ -65,4 +53,62 @@ glm::vec2 InputManager::GetMousePos()
 		}
 	}
 	return glm::vec2(-1.0f, -1.0f);
+}
+
+void InputManager::KeyEvent(KeyType key, KeyState state)
+{
+	m_KeyStates[(int)key] = state;
+
+	if (m_KeyEventCbk)
+	{
+		m_KeyEventCbk(key, state);
+	}
+}
+
+void InputManager::MouseButtonEvent(MouseButton button, bool pressed)
+{
+	m_MouseButtonStates[(int)button] = pressed;
+
+	if (m_MouseButtonCbk)
+	{
+		m_MouseButtonCbk(button, pressed);
+	}
+}
+
+void InputManager::InputCharEvent(unsigned short v)
+{
+	if (m_InputCharCbk)
+	{
+		m_InputCharCbk(v);
+	}
+}
+
+void InputManager::SetKeyEventCallback(KeyEventCbk cbk)
+{
+	if (m_KeyEventCbk)
+	{
+		assert(false);
+	}
+
+	m_KeyEventCbk = cbk;
+}
+
+void InputManager::SetMouseButtonCallback(MouseButtonCbk cbk)
+{
+	if (m_MouseButtonCbk)
+	{
+		assert(false);
+	}
+
+	m_MouseButtonCbk = cbk;
+}
+
+void InputManager::SetInputCharCallback(InputCharCbk cbk)
+{
+	if (m_InputCharCbk)
+	{
+		assert(false);
+	}
+
+	m_InputCharCbk = cbk;
 }
