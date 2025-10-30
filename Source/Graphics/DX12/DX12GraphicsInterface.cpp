@@ -2217,4 +2217,13 @@ namespace Graphics { namespace DX12 {
 		handle.Handle = heapHandle.ptr;
 		return handle;
 	}
+
+	void DX12GraphicsInterface::BindDefaultTargets()
+	{
+		// Uhm not sure if I like this... Its meant so we can restore output target. Maybe we should just make the backbuffer
+		// a regular texture and users can just query it and bind it normally through the GI API
+		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();	
+		auto context = mDefaultSurface.CmdContext;
+		context->OMSetRenderTargets(1, &mDefaultSurface.RenderTargets[idx], false, nullptr);
+	}
 }}

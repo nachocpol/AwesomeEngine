@@ -44,6 +44,12 @@ void FileSystem::AddFileDevice(FileDevice device)
 
 bool FileSystem::FixupPath(std::string& path)
 {
+	// Nothing to do, already a valid path
+	if (FileExists(path))
+	{
+		return true;
+	}
+
 	// Get path identifier:
 	size_t charPos = path.find(':');
 	if (charPos == std::string::npos)

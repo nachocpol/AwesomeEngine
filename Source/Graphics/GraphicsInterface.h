@@ -145,5 +145,7 @@ namespace Graphics
 		virtual void EndQuery(const GPUQueryHandle& query, const GPUQueryType& type) = 0;
 		virtual ViewHandle Create2DView(TextureHandle resource, int firstMip, int numMips, bool rw = false) = 0;
 		virtual ViewHandle Create3DView(TextureHandle resource, int firstMip, int numMips, int firstSlice, int numSlices, bool rw = false) = 0;
+
+		virtual void BindDefaultTargets() = 0;
 	};
 }

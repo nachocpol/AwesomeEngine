@@ -244,6 +244,8 @@ namespace Graphics{ namespace DX12
 		ViewHandle Create2DView(TextureHandle resource, int firstMip, int numMips, bool rw = false)final override;
 		ViewHandle Create3DView(TextureHandle resource, int firstMip, int numMips, int firstSlice, int numSlices, bool rw = false)final override;
 
+		void BindDefaultTargets() final override;
+
 	private:
 		void InitSurface(DisplaySurface* surface);
 		void InitRootSignature();
