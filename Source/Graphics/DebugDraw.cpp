@@ -158,14 +158,6 @@ void DebugDraw::Release()
 {
 }
 
-void Graphics::DebugDraw::StartFrame()
-{
-	// Reset items:
-	mLines.clear();
-	mWireSpheres.clear();
-	mCubemapItems.clear();
-}
-
 void Graphics::DebugDraw::Flush(const glm::mat4x4& invViewProj)
 {
 	mCameraData.InvViewProj = invViewProj;
@@ -249,10 +241,11 @@ void Graphics::DebugDraw::Flush(const glm::mat4x4& invViewProj)
 		}
 	}
 	*/
-}
 
-void Graphics::DebugDraw::EndFrame()
-{
+	// Reset items:
+	mLines.clear();
+	mWireSpheres.clear();
+	mCubemapItems.clear();
 }
 
 void DebugDraw::DrawLine(glm::vec3 start, glm::vec3 end, glm::vec4 color /*= glm::vec4(1.0f)*/)

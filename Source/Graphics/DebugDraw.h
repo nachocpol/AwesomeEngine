@@ -7,11 +7,6 @@
 
 #include <vector>
 
-namespace World
-{
-	class CameraComponent;
-}
-
 #define MAX_LINES		 4096
 #define MAX_WIRE_SPHERES 4096
 
@@ -31,9 +26,7 @@ namespace Graphics
 		void Initialize(GraphicsInterface* graphicsInterface);
 		void Release();
 
-		void StartFrame();
 		void Flush(const glm::mat4x4& invViewProj);
-		void EndFrame();
 		
 		void DrawLine(glm::vec3 start, glm::vec3 end, glm::vec4 color = glm::vec4(1.0f));
 		void DrawAABB(glm::vec3 min, glm::vec3 max, glm::vec4 color = glm::vec4(1.0f));
