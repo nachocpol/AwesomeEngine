@@ -42,7 +42,7 @@ void FileSystem::AddFileDevice(FileDevice device)
 	mDevices.push_back(device);
 }
 
-bool FileSystem::FixupPath(std::string& path)
+bool FileSystem::FixupPath(std::string& path, bool checkFileExist /*= true*/)
 {
 	// Nothing to do, already a valid path
 	if (FileExists(path))
@@ -67,12 +67,19 @@ bool FileSystem::FixupPath(std::string& path)
 			std::string tempPath = path;
 			tempPath = tempPath.erase(0, charPos + 1);
 			tempPath.insert(0, device.RootPath);
-			if (FileExists(tempPath))
+			if (checkFileExist && FileExists(tempPath))
 			{
 				path = tempPath;
 				return true;
 			}
 			// Don't break, we can have more devices for this file type.
+
+			// So, if we don't care if it exists and just want to resolve it... Return with the first resolution
+			if (!checkFileExist)
+			{
+				path = tempPath;
+				return true;
+			}
 		}
 	}
 

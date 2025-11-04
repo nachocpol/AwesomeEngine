@@ -32,7 +32,7 @@ namespace Core
 		static FileSystem* GetInstance();
 		void Initialize();
 		void AddFileDevice(FileDevice device);
-		bool FixupPath(std::string& path);
+		bool FixupPath(std::string& path, bool checkFileExist = true);
 		bool FileExists(const std::string& fixeupFile);
 
 	private:
