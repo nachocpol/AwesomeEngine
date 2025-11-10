@@ -9,9 +9,7 @@
 
 #include "glm/glm.hpp"
 
-#if defined(DEBUG)
-	#include "WinPixEventRuntime/pix3.h"
-#endif
+#include "WinPixEventRuntime/pix3.h"
 
 #include <iostream>
 #include <vector>
@@ -405,16 +403,18 @@ namespace Graphics { namespace DX12 {
 	{
 		if (mBindingState.Dirty)
 		{
-			UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
+			UINT idx = mCurBackBuffer;
 			mBindingState.Dirty = false;
 
 			// Start by copying the new descriptors:
 			auto destHandle = m_FrameHeap[idx]->GetCPU();
-			for (int cbslot = 0; cbslot < NUM_CBVS; ++cbslot)
+
+			for (int cbSlot = 0; cbSlot < NUM_CBVS; ++cbSlot)
 			{
-				if (!mBindingState.CBSlots[cbslot].Null)
+				const BindingState::CBSlot& curSlot = mBindingState.CBSlots[cbSlot];
+				if (!curSlot.m_Null)
 				{
-					m_Device->CopyDescriptorsSimple(1, destHandle, mBindingState.CBSlots[cbslot].CPUView, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+					m_Device->CreateConstantBufferView(&curSlot.m_Desc, destHandle);
 				}
 				destHandle.Offset(1, m_FrameHeap[idx]->GetIncrementSize());
 			}
@@ -769,7 +769,7 @@ namespace Graphics { namespace DX12 {
 		);
 		context->ResourceBarrier(1, &barrier);
 		context->OMSetRenderTargets(1, &mDefaultSurface.RenderTargets[idx], false, nullptr);
-		float clear[4]{ 0.2f,0.2f,0.25f,1.0f };
+		float clear[4]{ 0.0f,0.0f,0.0f,0.0f };
 		context->ClearRenderTargetView(mDefaultSurface.RenderTargets[idx], clear, 0, nullptr);
 		D3D12_VIEWPORT vp	= {};
 		vp.TopLeftX			= vp.TopLeftY = 0.0f;
@@ -896,6 +896,7 @@ namespace Graphics { namespace DX12 {
 		bool isStructuredBuffer = type == BufferType::GPUBuffer;
 		bool isGPURw = gpuAccess == GPUAccess::ReadWrite;
 		bool isCPUWrite = cpuAccess == CPUAccess::Write;
+		const bool isConstantBuffer = type == BufferType::ConstantBuffer;
 
 		BufferHandle handle;
 		BufferEntry& bufferEntry = mBuffersPool.GetFreeEntry(handle.Handle);
@@ -912,53 +913,52 @@ namespace Graphics { namespace DX12 {
 			bufferEntry.State = isIndex ? INDEX_READ : VERTEX_CB_READ;
 		}
 
-
 		// Size should be multiple of 256
-		if (type == BufferType::ConstantBuffer)
+		if (isConstantBuffer)
 		{
 			size = ((size + 255) & ~255);
 		}
 
 		uint64_t resourceSize = isStructuredBuffer ? size * stride : size;
 
-		// GPU resource
-		D3D12_HEAP_PROPERTIES heapDesc = {};
-		auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		auto desc = CD3DX12_RESOURCE_DESC::Buffer(resourceSize);
-		desc.Flags = isGPURw ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
-		m_Device->CreateCommittedResource
-		(
-			&heapProp, 
-			D3D12_HEAP_FLAG_NONE, 
-			&desc, 
-			bufferEntry.State,
-			nullptr, 
-			IID_PPV_ARGS(&bufferEntry.Buffer)
-		);
-		
-#if DEBUG
-		if (name)
+		// Commited resource.
+		// NOTE: Constant buffers just rely on upload buffers
+		if (!isConstantBuffer)
 		{
-			// Not nice..
-			std::wstring lname(name, name + strlen(name));
-			bufferEntry.Buffer->SetName(lname.c_str());
-		}
+			D3D12_HEAP_PROPERTIES heapDesc = {};
+			auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+			auto desc = CD3DX12_RESOURCE_DESC::Buffer(resourceSize);
+			desc.Flags = isGPURw ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
+			m_Device->CreateCommittedResource
+			(
+				&heapProp,
+				D3D12_HEAP_FLAG_NONE,
+				&desc,
+				bufferEntry.State,
+				nullptr,
+				IID_PPV_ARGS(&bufferEntry.Buffer)
+			);
+
+#if DEBUG
+			if (name)
+			{
+				// Not nice..
+				std::wstring lname(name, name + strlen(name));
+				bufferEntry.Buffer->SetName(lname.c_str());
+			}
 #endif
+		}
+		else
+		{
+			bufferEntry.Buffer = nullptr;
+		}
 
 		// Upload resource
-		heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-		desc = CD3DX12_RESOURCE_DESC::Buffer(resourceSize);
+		auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		auto desc = CD3DX12_RESOURCE_DESC::Buffer(resourceSize);
 		if (type == BufferType::ConstantBuffer)
 		{
 			desc = CD3DX12_RESOURCE_DESC::Buffer(CB_INTERMIDIATE_SIZE);
-
-			// Also create a view for the resource:
-			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
-			cbvDesc.BufferLocation = bufferEntry.Buffer->GetGPUVirtualAddress();
-			cbvDesc.SizeInBytes = (UINT)resourceSize;
-			bufferEntry.CBV = mViewsHeap.GetCPU();
-			m_Device->CreateConstantBufferView(&cbvDesc, bufferEntry.CBV);
-			mViewsHeap.OffsetHandles(1);
 		}
 		else if (type == BufferType::GPUBuffer)
 		{
@@ -1020,6 +1020,8 @@ namespace Graphics { namespace DX12 {
 			nullptr,
 			IID_PPV_ARGS(&bufferEntry.UploadHeap)
 		);
+
+		bufferEntry.m_UploadGPUVirtualAddr = bufferEntry.UploadHeap->GetGPUVirtualAddress();
 		
 		if (data && type != BufferType::ConstantBuffer)
 		{
@@ -1775,24 +1777,23 @@ namespace Graphics { namespace DX12 {
 
 			// Setup NULL views tier 1
 			// Why is this a compute only thing??
-			int idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
-			auto startSlot = m_FrameHeap[idx]->GetCPU();
+			auto startSlot = m_FrameHeap[mCurBackBuffer]->GetCPU();
 			for (int i = 0; i < NUM_CBVS; i++)
 			{
 				CD3DX12_CPU_DESCRIPTOR_HANDLE curSlot = {};
-				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, i *  m_FrameHeap[idx]->GetIncrementSize());
+				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, i *  m_FrameHeap[mCurBackBuffer]->GetIncrementSize());
 				m_Device->CopyDescriptorsSimple(1, curSlot, mNullCbv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			}
 			for (int i = 0; i < NUM_SRVS; i++)
 			{
 				CD3DX12_CPU_DESCRIPTOR_HANDLE curSlot = {};
-				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, (i + NUM_CBVS) *  m_FrameHeap[idx]->GetIncrementSize());
+				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, (i + NUM_CBVS) *  m_FrameHeap[mCurBackBuffer]->GetIncrementSize());
 				m_Device->CopyDescriptorsSimple(1, curSlot, mNullSrv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			}
 			for (int i = 0; i < NUM_UAVS; i++)
 			{
 				CD3DX12_CPU_DESCRIPTOR_HANDLE curSlot = {};
-				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, (i + NUM_CBVS + NUM_SRVS) *  m_FrameHeap[idx]->GetIncrementSize());
+				CD3DX12_CPU_DESCRIPTOR_HANDLE::InitOffsetted(curSlot, startSlot, (i + NUM_CBVS + NUM_SRVS) *  m_FrameHeap[mCurBackBuffer]->GetIncrementSize());
 				m_Device->CopyDescriptorsSimple(1, curSlot, mNullUav	, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			}
 		}
@@ -1864,49 +1865,44 @@ namespace Graphics { namespace DX12 {
 		BufferEntry& bufferEntry = mBuffersPool.GetEntry(buffer.Handle);
 		if (buffer.Handle < MAX_BUFFERS && buffer.Handle != InvalidBuffer.Handle && bufferEntry.UploadHeap != nullptr)
 		{
-			if (data)
+			if (mFrame != bufferEntry.LastFrame)
 			{
-				if (mFrame != bufferEntry.LastFrame)
-				{
-					bufferEntry.LastFrame = mFrame;
-					bufferEntry.CopyCount = 0;
-				}
-				const CD3DX12_RANGE  read(0, 0);
-				uint8_t* pData = nullptr;
-				uint64_t intermediateOffset = 0;
-				bufferEntry.UploadHeap->Map(0, &read, reinterpret_cast<void**>(&pData));
-				{
-					intermediateOffset	+= ((CB_INTERMIDIATE_SIZE) / NUM_BACK_BUFFERS) * mCurBackBuffer;
-					intermediateOffset	+= ((size + 255) & ~255) * bufferEntry.CopyCount;
-					pData				= pData + intermediateOffset;
-					memcpy(pData, data, size);
-				}
-				bufferEntry.UploadHeap->Unmap(0, nullptr);
-
-				bool changed = false;
-				if (bufferEntry.State != (COPY_DST))
-				{
-					TransitionResource(bufferEntry.Buffer, bufferEntry.State, COPY_DST, true);
-					changed = true;
-				}
-				mDefaultSurface.CmdContext->CopyBufferRegion(bufferEntry.Buffer, 0, bufferEntry.UploadHeap, intermediateOffset, size);
-				if (changed)
-				{
-					TransitionResource(bufferEntry.Buffer, COPY_DST, bufferEntry.State);
-				}
-				bufferEntry.CopyCount++;
+				bufferEntry.LastFrame = mFrame;
+				bufferEntry.CopyCount = 0;
 			}
 
-			// Copy the view:
+			// Persistent mapping of the upload heap
+			if (!bufferEntry.m_PersistentMapPtr)
 			{
-				BindingState::Slot& bindSlot = mBindingState.CBSlots[slot];
-				if (bindSlot.Null || (bindSlot.CPUView != bufferEntry.CBV))
-				{
-					bindSlot.CPUView = bufferEntry.CBV;
-					bindSlot.Null = false;
-					mBindingState.Dirty = true;
-				}
+				const CD3DX12_RANGE wontRead(0, 0);
+				bufferEntry.UploadHeap->Map(0, &wontRead, reinterpret_cast<void**>(&bufferEntry.m_PersistentMapPtr));
 			}
+
+			// Update the upload buffer (section for this frame) and also sector for current copy
+			const uint64_t alignedSize = ((size + 255) & ~255);
+			
+			uint64_t dataOffset = 0;			
+			const uint64_t maxSizeFrame = CB_INTERMIDIATE_SIZE / NUM_BACK_BUFFERS;
+			dataOffset = maxSizeFrame * mCurBackBuffer;			// Offset to the start of the current frame
+			dataOffset += alignedSize * bufferEntry.CopyCount;	// Offset for the current copy count
+
+			// Hard fail, we ran out of space :C
+			if ((dataOffset + alignedSize) >= (maxSizeFrame * (mCurBackBuffer + 1)))
+			{
+				assert(false);
+			}
+			
+			uint8_t* pData = bufferEntry.m_PersistentMapPtr + dataOffset; // careful, check if this implies a load? danger? upload virtual addr
+			
+			memcpy(pData, data, size);
+			++bufferEntry.CopyCount;
+
+			BindingState::CBSlot& bindingSlot = mBindingState.CBSlots[slot];
+			bindingSlot.m_Null = false;
+			bindingSlot.m_Desc.BufferLocation = bufferEntry.m_UploadGPUVirtualAddr + dataOffset;
+			bindingSlot.m_Desc.SizeInBytes = (UINT)alignedSize; // Does this need to be aligned?
+
+			mBindingState.Dirty = true;		
 		}
 	}
 
@@ -1918,7 +1914,6 @@ namespace Graphics { namespace DX12 {
 			return;
 		}
 
-		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 		TextureEntry& entry = mTexturesPool.GetEntry(texture.Handle);
 		ID3D12Resource* res = entry.Resource;
 
@@ -1945,7 +1940,6 @@ namespace Graphics { namespace DX12 {
 			return;
 		}
 
-		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 		BufferEntry& entry = mBuffersPool.GetEntry(buffer.Handle);
 		ID3D12Resource* res = entry.Buffer;
 
@@ -1971,7 +1965,6 @@ namespace Graphics { namespace DX12 {
 			ERR("Trying to set invalid RWTexture!");
 			return;
 		}
-		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 		TextureEntry& entry = mTexturesPool.GetEntry(texture.Handle);
 		ID3D12Resource* res = entry.Resource;
 		
@@ -1998,7 +1991,6 @@ namespace Graphics { namespace DX12 {
 			return;
 		}
 		
-		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 		BufferEntry& entry = mBuffersPool.GetEntry(buffer.Handle);
 		ID3D12Resource* res = entry.Buffer;
 
@@ -2062,8 +2054,7 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::DisableAllTargets()
 	{
-		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
-		mDefaultSurface.CmdContext->OMSetRenderTargets(1, &mDefaultSurface.RenderTargets[idx], false, nullptr);
+		mDefaultSurface.CmdContext->OMSetRenderTargets(1, &mDefaultSurface.RenderTargets[mCurBackBuffer], false, nullptr);
 	}
 
 	Format DX12GraphicsInterface::GetOutputFormat()
@@ -2254,26 +2245,21 @@ namespace Graphics { namespace DX12 {
 	static int g_PixEventScope = 0;
 	void DX12GraphicsInterface::BeginEvent(const char* label)
 	{
-	#if defined(DEBUG)
 		PIXBeginEvent(mDefaultSurface.CmdContext, PIX_COLOR_INDEX(g_PixEventScope), label);
 		++g_PixEventScope;
-	#endif
 	}
 
 	void DX12GraphicsInterface::EndEvent()
 	{
-	#if defined(DEBUG)
 		--g_PixEventScope;
 		PIXEndEvent(mDefaultSurface.CmdContext);
-	#endif
 	}
 
 	void DX12GraphicsInterface::BindDefaultTargets()
 	{
 		// Uhm not sure if I like this... Its meant so we can restore output target. Maybe we should just make the backbuffer
 		// a regular texture and users can just query it and bind it normally through the GI API
-		UINT idx = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();	
 		auto context = mDefaultSurface.CmdContext;
-		context->OMSetRenderTargets(1, &mDefaultSurface.RenderTargets[idx], false, nullptr);
+		context->OMSetRenderTargets(1, &mDefaultSurface.RenderTargets[mCurBackBuffer], false, nullptr);
 	}
 }}

@@ -10,7 +10,7 @@
 	#pragma comment(lib,"dxgi")
 	#pragma comment(lib,"d3dcompiler")
 
-	#define NUM_BACK_BUFFERS		3
+	#define NUM_BACK_BUFFERS		2
 	#define MAX_BUFFERS				2048
 	#define MAX_COMPUTE_PIPELINES	128
 

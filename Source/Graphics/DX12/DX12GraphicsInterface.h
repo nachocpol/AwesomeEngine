@@ -83,17 +83,20 @@ namespace Graphics{ namespace DX12
 			Buffer(nullptr),
 			UploadHeap(nullptr),
 			LastFrame(0),
-			CopyCount(0)
+			CopyCount(0),
+			m_PersistentMapPtr(nullptr)
 		{
 		}
 		ID3D12Resource* Buffer;
 		ID3D12Resource* UploadHeap;
+		D3D12_GPU_VIRTUAL_ADDRESS m_UploadGPUVirtualAddr;
 		D3D12_RESOURCE_STATES State;
 		BufferType Type;
 		CPUAccess::T CPUAccessMode;
 		GPUAccess::T GPUAccessMode;
 		uint64_t LastFrame;
 		uint64_t CopyCount; // Used to track how many times we bind a Constant Buffer 
+		uint8_t* m_PersistentMapPtr;
 		D3D12_CPU_DESCRIPTOR_HANDLE CBV;
 		D3D12_CPU_DESCRIPTOR_HANDLE GPUBufferView;
 		D3D12_CPU_DESCRIPTOR_HANDLE GPURWBufferView;
@@ -165,13 +168,20 @@ namespace Graphics{ namespace DX12
 			CD3DX12_CPU_DESCRIPTOR_HANDLE CPUView;
 			bool Null;
 		};
+		struct CBSlot
+		{
+			CBSlot() : m_Null(true) {}
+			D3D12_CONSTANT_BUFFER_VIEW_DESC m_Desc;
+			bool m_Null;
+		};
+
 		void Reset()
 		{
 			Dirty = true;
 			for (uint32_t cbv = 0; cbv < NUM_CBVS; ++cbv)
 			{
-				CBSlots[cbv].Null = true;
-				CBSlots[cbv].CPUView = CD3DX12_CPU_DESCRIPTOR_HANDLE();
+				CBSlots[cbv].m_Null = true;
+				CBSlots[cbv].m_Desc = {};
 			}
 			for (uint32_t srv = 0; srv < NUM_SRVS; ++srv)
 			{
@@ -184,7 +194,7 @@ namespace Graphics{ namespace DX12
 				UASlots[uav].CPUView = CD3DX12_CPU_DESCRIPTOR_HANDLE();
 			}
 		}
-		Slot CBSlots[NUM_CBVS];
+		CBSlot CBSlots[NUM_CBVS];
 		Slot SRSlots[NUM_SRVS];
 		Slot UASlots[NUM_UAVS];
 		bool Dirty;
@@ -311,7 +321,7 @@ namespace Graphics{ namespace DX12
 		ID3D12RootSignature* mGraphicsRootSignature;
 
 		uint64_t mFrame;
-		uint64_t mCurBackBuffer;
+		UINT mCurBackBuffer;
 
 		uint64_t mNumDrawCalls;
 

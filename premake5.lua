@@ -7,7 +7,11 @@ workspace "AwesomeSolution"
 	flags {"FatalCompileWarnings"}
 
 filter { "platforms:x64" }
-	defines { "PLATFORM_WINDOWS" }
+	defines 
+	{ 
+		"PLATFORM_WINDOWS",
+		"USE_PIX" 
+	}
 	disablewarnings 
 	{
 		"4006",
@@ -25,11 +29,6 @@ filter { "platforms:x64" }
 		"Depen/tinyobj",
 		"Depen/WinPixEventRuntime/Include"
 	}
-	files
-	{
-	}
-
-filter {"configurations:Debug"}
 	libdirs
 	{
 		"Depen/WinPixEventRuntime/bin/x64"
@@ -38,18 +37,18 @@ filter {"configurations:Debug"}
 	{
 		"WinPixEventRuntime"
 	}
+	files
+	{
+	}
+
+
+filter {"configurations:Debug"}
 	defines
 	{
-		"DEBUG", "USE_PIX"
+		"DEBUG"
 	}
 
 filter {"configurations:Release"}
-	libdirs
-	{
-	}
-	links
-	{
-	}
 	defines
 	{
 		"NDEBUG"
