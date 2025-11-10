@@ -1902,10 +1902,10 @@ namespace Graphics { namespace DX12 {
 				BindingState::Slot& bindSlot = mBindingState.CBSlots[slot];
 				if (bindSlot.Null || (bindSlot.CPUView != bufferEntry.CBV))
 				{
+					bindSlot.CPUView = bufferEntry.CBV;
+					bindSlot.Null = false;
+					mBindingState.Dirty = true;
 				}
-				bindSlot.CPUView = bufferEntry.CBV;
-				bindSlot.Null = false;
-				mBindingState.Dirty = true;
 			}
 		}
 	}
