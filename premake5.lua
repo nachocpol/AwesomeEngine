@@ -22,7 +22,8 @@ filter { "platforms:x64" }
 		"Depen/TinyObj",
 		"Depen/GLM",
 		"Depen/STB",
-		"Depen/tinyobj"
+		"Depen/tinyobj",
+		"Depen/WinPixEventRuntime/Include"
 	}
 	files
 	{
@@ -31,13 +32,15 @@ filter { "platforms:x64" }
 filter {"configurations:Debug"}
 	libdirs
 	{
+		"Depen/WinPixEventRuntime/bin/x64"
 	}
 	links
 	{
+		"WinPixEventRuntime"
 	}
 	defines
 	{
-		"DEBUG"
+		"DEBUG", "USE_PIX"
 	}
 
 filter {"configurations:Release"}

@@ -146,6 +146,24 @@ namespace Graphics
 		virtual ViewHandle Create2DView(TextureHandle resource, int firstMip, int numMips, bool rw = false) = 0;
 		virtual ViewHandle Create3DView(TextureHandle resource, int firstMip, int numMips, int firstSlice, int numSlices, bool rw = false) = 0;
 
+		virtual void BeginEvent(const char* label) = 0;
+		virtual void EndEvent() = 0;
+
 		virtual void BindDefaultTargets() = 0;
+	};
+
+	struct ScopedEvent
+	{
+		ScopedEvent(GraphicsInterface* gi, const char* label)
+		{
+			m_GraphicsInterface = gi;
+			m_GraphicsInterface->BeginEvent(label);
+		}
+		~ScopedEvent()
+		{
+			m_GraphicsInterface->EndEvent();
+		}
+	private:
+		GraphicsInterface* m_GraphicsInterface = nullptr;
 	};
 }

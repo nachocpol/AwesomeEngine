@@ -38,7 +38,6 @@ namespace Graphics
 	private:
 		GraphicsInterface* mGraphicsInterface;
 		GraphicsPipeline mDebugPipelineLines;
-		GraphicsPipeline mDebugPipelineSolid;
 
 		Declarations::CameraData mCameraData;
 		BufferHandle mCameraDataCb;

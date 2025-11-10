@@ -2,7 +2,8 @@
 	DebugDraw.hlsl
 */
 
-#include "Surface.hlsl"
+#include "Declarations.h"
+
 
 TextureCube<float4> CubeMapSource : register(t0);
 Texture2D<float4> TextureSource : register(t1);
@@ -39,29 +40,4 @@ DebugDrawVSOut VSDebugDraw(DebugDrawVSIn input)
 float4 PSDebugDraw(DebugDrawVSOut input) : SV_Target0
 {
 	return input.Color * gItemData.DebugColor;
-}
-
-//////////////////////////////////////
-// Shaders to render debug meshes solid
-//////////////////////////////////////
-
-float4 PSDebugDrawSolid(SurfaceVSOut input) : SV_Target0
-{
-	if (gDebugData.Equirectangular == 1)
-	{
-		float3 dir = normalize(input.LocalPos);
-		float2 tc = ToEquirectangular(dir);
-		float3 equiColor = TextureSource.SampleLevel(LinearWrapSampler, tc, 0).rgb;
-		return float4(equiColor, 1.0);
-	}
-	else if (gDebugData.DebugCubemap == 1)
-	{
-		float3 dir = normalize(input.LocalPos);
-		float3 cubemapColor = CubeMapSource.SampleLevel(LinearWrapSampler, dir, 0).rgb;
-		return float4(cubemapColor, 1.0);
-	}
-	else
-	{
-		return gItemData.DebugColor;
-	}
 }

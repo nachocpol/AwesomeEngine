@@ -6,6 +6,7 @@ namespace Graphics
 {
 	enum class ShaderType
 	{
+		Invalid = 0,
 		Vertex = 1,
 		Pixel = 2,
 		Compute = 3
@@ -59,7 +60,8 @@ namespace Graphics
 		R_32_Uint = 9,
 		R_8_Unorm = 10,
 		R_32_Float = 11,
-		R_11_G_11_B_10_Float = 12
+		R_11_G_11_B_10_Float = 12,
+		Depth32_Float = 13
 	};
 
 	struct Primitive
@@ -178,4 +180,13 @@ namespace Graphics
 	static const TextureHandle InvalidTexture = { UINT64_MAX };
 	static const GraphicsPipeline InvalidGraphicsPipeline = { UINT64_MAX };
 	static const ComputePipeline InvalidComputePipeline = { UINT64_MAX };
+
+	static bool IsDepthFormat(Format f)
+	{
+		if (f == Format::Depth24_Stencil8 || f == Format::Depth32_Float)
+		{
+			return true;
+		}
+		return false;
+	}
 }

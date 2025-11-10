@@ -9,6 +9,10 @@
 
 #include "glm/glm.hpp"
 
+#if defined(DEBUG)
+	#include "WinPixEventRuntime/pix3.h"
+#endif
+
 #include <iostream>
 #include <vector>
 
@@ -490,8 +494,13 @@ namespace Graphics { namespace DX12 {
 
 		// Describe the pso
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-		LoadShader(desc.PixelShader, psoDesc.PS);
 		LoadShader(desc.VertexShader, psoDesc.VS);
+		
+		// Allow for empty pixel shader
+		if (!desc.PixelShader.ShaderEntryPoint.empty() && !desc.PixelShader.ShaderPath.empty())
+		{
+			LoadShader(desc.PixelShader, psoDesc.PS);
+		}
 
 		// Blend info
 		{
@@ -521,7 +530,7 @@ namespace Graphics { namespace DX12 {
 			psoDesc.DepthStencilState.DepthEnable = desc.DepthEnabled;
 			psoDesc.DepthStencilState.DepthFunc = ToDX12DepthFunc(desc.DepthFunction);
 			psoDesc.DepthStencilState.DepthWriteMask = desc.DepthWriteEnabled ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
-			psoDesc.DSVFormat = ToDXGIFormat(desc.DepthFormat);
+			psoDesc.DSVFormat = ToDXGIDepthFormat(desc.DepthFormat);
 		}
 		// Raster info
 		{
@@ -563,6 +572,19 @@ namespace Graphics { namespace DX12 {
 		m_Device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
 	}
 
+	DXGI_FORMAT DX12GraphicsInterface::ToDXGIDepthFormat(const Graphics::Format& format)
+	{
+		if (format == Format::Depth24_Stencil8)
+		{
+			return DXGI_FORMAT_D24_UNORM_S8_UINT;
+		}
+		else if (format == Format::Depth32_Float)
+		{
+			return DXGI_FORMAT_D32_FLOAT;
+		}
+		return DXGI_FORMAT_UNKNOWN;
+	}
+
 	DXGI_FORMAT DX12GraphicsInterface::ToDXGIFormat(const Graphics::Format& format)
 	{
 		switch (format)
@@ -570,7 +592,7 @@ namespace Graphics { namespace DX12 {
 			case Format::RG_32_Float:			return DXGI_FORMAT_R32G32_FLOAT;
 			case Format::RGB_32_Float:			return DXGI_FORMAT_R32G32B32_FLOAT; 
 			case Format::RGBA_32_Float:			return DXGI_FORMAT_R32G32B32A32_FLOAT;
-			case Format::Depth24_Stencil8:		return DXGI_FORMAT_D24_UNORM_S8_UINT;
+			case Format::Depth24_Stencil8:		return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 			case Format::RGBA_8_Unorm:			return DXGI_FORMAT_R8G8B8A8_UNORM;
 			case Format::RGBA_16_Float:			return DXGI_FORMAT_R16G16B16A16_FLOAT;
 			case Format::RGBA_8_Snorm:			return DXGI_FORMAT_R8G8B8A8_SNORM;
@@ -579,6 +601,7 @@ namespace Graphics { namespace DX12 {
 			case Format::R_8_Unorm:				return DXGI_FORMAT_R8_UNORM;
 			case Format::R_32_Float:			return DXGI_FORMAT_R32_FLOAT;
 			case Format::R_11_G_11_B_10_Float:	return DXGI_FORMAT_R11G11B10_FLOAT;
+			case Format::Depth32_Float:			return DXGI_FORMAT_R32_FLOAT;
 			case Format::Unknown:
 			default:							return DXGI_FORMAT_UNKNOWN;
 		}
@@ -591,7 +614,7 @@ namespace Graphics { namespace DX12 {
 		case Format::RG_32_Float:			return DXGI_FORMAT_R32G32_TYPELESS;
 		case Format::RGB_32_Float:			return DXGI_FORMAT_R32G32B32_TYPELESS;
 		case Format::RGBA_32_Float:			return DXGI_FORMAT_R32G32B32A32_TYPELESS;
-		case Format::Depth24_Stencil8:		return DXGI_FORMAT_R24G8_TYPELESS;
+		case Format::Depth24_Stencil8:		return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 		case Format::RGBA_8_Unorm:			return DXGI_FORMAT_R8G8B8A8_TYPELESS;
 		case Format::RGBA_16_Float:			return DXGI_FORMAT_R16G16B16A16_TYPELESS;
 		case Format::RGBA_8_Snorm:			return DXGI_FORMAT_R8G8B8A8_TYPELESS;
@@ -600,6 +623,7 @@ namespace Graphics { namespace DX12 {
 		case Format::R_8_Unorm:				return DXGI_FORMAT_R8_TYPELESS;
 		case Format::R_32_Float:			return DXGI_FORMAT_R32_TYPELESS;
 		case Format::R_11_G_11_B_10_Float:	return DXGI_FORMAT_R11G11B10_FLOAT; // ????? R32 maybe
+		case Format::Depth32_Float:			return DXGI_FORMAT_R32_TYPELESS;
 		case Format::Unknown:
 		default:							return DXGI_FORMAT_UNKNOWN;
 		}
@@ -708,13 +732,13 @@ namespace Graphics { namespace DX12 {
 		}
 		return 0;
 	}
-
+	
 	void DX12GraphicsInterface::StartFrame()
 	{
 		if (mDefaultSurface.Recording)
 		{
 			std::cout << "We are recording commands!!!\n";
-		}
+		}		
 
 		mCurBackBuffer = mDefaultSurface.SwapChain->GetCurrentBackBufferIndex();
 
@@ -724,7 +748,7 @@ namespace Graphics { namespace DX12 {
 		{
 			mDefaultSurface.GPUFences[idx]->SetEventOnCompletion(mDefaultSurface.GPUFencesValues[idx], mDefaultSurface.GPUFenceEvent);
 			WaitForSingleObject(mDefaultSurface.GPUFenceEvent, INFINITE);
-		}
+		}		
 
 		// Now its a good time to update the release manager:
 		mReleaseManager.Update();
@@ -733,6 +757,10 @@ namespace Graphics { namespace DX12 {
 		mDefaultSurface.Allocators[idx]->Reset();
 		auto context = mDefaultSurface.CmdContext;
 		context->Reset(mDefaultSurface.Allocators[idx], nullptr);		
+		
+		// Mark begin of the frame
+		PIXBeginEvent(mDefaultSurface.CmdContext, PIX_COLOR_INDEX(0), "Frame:%i", mFrame);
+
 		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition
 		(
 			mDefaultSurface.BackBuffers[idx], 
@@ -820,8 +848,12 @@ namespace Graphics { namespace DX12 {
 			D3D12_RESOURCE_STATE_PRESENT
 		);
 		context->ResourceBarrier(1, &barrier);
+		
+		// Frame event
+		PIXEndEvent(mDefaultSurface.CmdContext); 
+		
 		context->Close();
-		mDefaultSurface.Recording = false;
+		mDefaultSurface.Recording = false;		
 
 		ID3D12CommandList* cmdLists[] = {context};
 		mDefaultSurface.Queue->ExecuteCommandLists(1, cmdLists);
@@ -961,7 +993,8 @@ namespace Graphics { namespace DX12 {
 			}
 		}
 
-		if (type != BufferType::ConstantBuffer && isCPUWrite)
+		// TODO: Just making all upload_heap support multi-frame.. This needs to be reviewed, but for now :/
+		if (type != BufferType::ConstantBuffer)
 		{
 			// CPUAccess::Write, we can now Map the buffer, but we need to do it
 			// in a safer way so we do not override data
@@ -970,6 +1003,9 @@ namespace Graphics { namespace DX12 {
 
 		// Should we nuke Map/Unamp and simply allow to call setbuffer data? right now all buffers end up bound as the commited resource anyways, we just
 		// use the upload ones as intermediates.. So what's the point? Lets just have commited resources and when we need created temporary upload ones to update data...
+
+		// NOTE2: So I'm stupid. Sure, setbufferdata works, but still, relies on the upload heap we provide, which we need to ensure its safe to write!!
+		//        even with it, we still need to do the num * BACK_BUFFERS to ensure its safe :/ 
 
 		// Aggg but this is crap, because if we want to init the buffer (on creation) but we don't need CPUAccess then what???
 
@@ -1049,7 +1085,7 @@ namespace Graphics { namespace DX12 {
 
 		// Upload buffer
 		// Sometimes the following CreateCommittedResource call will fail with "wrong memory preference..." 
-		// setting again fixes it. Prob because it is a static member¿??¿
+		// setting again fixes it. Prob because it is a static memberï¿½??ï¿½
 		heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		m_Device->CreateCommittedResource
 		(
@@ -1101,7 +1137,7 @@ namespace Graphics { namespace DX12 {
 		if ((flags & TextureFlags::DepthStencil) == TextureFlags::DepthStencil)
 		{
 			D3D12_DEPTH_STENCIL_VIEW_DESC depthDesc = {};
-			depthDesc.Format = ToDXGIFormat(format);
+			depthDesc.Format = ToDXGIDepthFormat(format);
 			depthDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 			depthDesc.Flags = D3D12_DSV_FLAG_NONE;
 			depthDesc.Texture2D.MipSlice = 0;
@@ -1115,10 +1151,6 @@ namespace Graphics { namespace DX12 {
 			D3D12_SHADER_RESOURCE_VIEW_DESC desc2D = {};
 			desc2D.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			desc2D.Format = ToDXGIFormat(format);
-			if (format == Format::Depth24_Stencil8)
-			{
-				desc2D.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-			}
 			desc2D.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 			desc2D.Texture2D.MipLevels = mips;
 			desc2D.Texture2D.MostDetailedMip = 0;
@@ -1134,10 +1166,6 @@ namespace Graphics { namespace DX12 {
 			D3D12_SHADER_RESOURCE_VIEW_DESC desc2D = {};
 			desc2D.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			desc2D.Format = ToDXGIFormat(format);
-			if (format == Format::Depth24_Stencil8)
-			{
-				desc2D.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-			}
 			desc2D.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 			desc2D.Texture2D.MipLevels = 1;
 			desc2D.Texture2D.PlaneSlice = 0;
@@ -1236,7 +1264,7 @@ namespace Graphics { namespace DX12 {
 
 		// Upload buffer
 		// Sometimes the following CreateCommittedResource call will fail with "wrong memory preference..." 
-		// setting again fixes it. Prob because it is a static member¿??¿
+		// setting again fixes it. Prob because it is a static memberï¿½??ï¿½
 		heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		m_Device->CreateCommittedResource
 		(
@@ -1453,7 +1481,7 @@ namespace Graphics { namespace DX12 {
 
 		// Upload buffer
 		// Sometimes the following CreateCommittedResource call will fail with "wrong memory preference..." 
-		// setting again fixes it. Prob because it is a static member¿??¿
+		// setting again fixes it. Prob because it is a static memberï¿½??ï¿½
 		heapP = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		m_Device->CreateCommittedResource
 		(
@@ -1687,7 +1715,12 @@ namespace Graphics { namespace DX12 {
 				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry.Buffer, state, COPY_DST));
 				changed = true;
 			}
-			UpdateSubresources(mDefaultSurface.CmdContext, bufferEntry.Buffer, bufferEntry.UploadHeap, offset, 0, 1, &sdata);
+
+			const UINT64 bufferRawSize = bufferEntry.Buffer->GetDesc().Width;
+			UINT64 intermediateOffset = bufferRawSize * mCurBackBuffer;
+			intermediateOffset += offset;
+
+			UpdateSubresources(mDefaultSurface.CmdContext, bufferEntry.Buffer, bufferEntry.UploadHeap, intermediateOffset, 0, 1, &sdata);
 			if (changed)
 			{
 				mDefaultSurface.CmdContext->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(bufferEntry.Buffer, COPY_DST, state));
@@ -1869,10 +1902,10 @@ namespace Graphics { namespace DX12 {
 				BindingState::Slot& bindSlot = mBindingState.CBSlots[slot];
 				if (bindSlot.Null || (bindSlot.CPUView != bufferEntry.CBV))
 				{
-					bindSlot.CPUView = bufferEntry.CBV;
-					bindSlot.Null = false;
-					mBindingState.Dirty = true;
 				}
+				bindSlot.CPUView = bufferEntry.CBV;
+				bindSlot.Null = false;
+				mBindingState.Dirty = true;
 			}
 		}
 	}
@@ -2216,6 +2249,23 @@ namespace Graphics { namespace DX12 {
 		// maybe use the offset to the heap instead of this shiet
 		handle.Handle = heapHandle.ptr;
 		return handle;
+	}
+
+	static int g_PixEventScope = 0;
+	void DX12GraphicsInterface::BeginEvent(const char* label)
+	{
+	#if defined(DEBUG)
+		PIXBeginEvent(mDefaultSurface.CmdContext, PIX_COLOR_INDEX(g_PixEventScope), label);
+		++g_PixEventScope;
+	#endif
+	}
+
+	void DX12GraphicsInterface::EndEvent()
+	{
+	#if defined(DEBUG)
+		--g_PixEventScope;
+		PIXEndEvent(mDefaultSurface.CmdContext);
+	#endif
 	}
 
 	void DX12GraphicsInterface::BindDefaultTargets()

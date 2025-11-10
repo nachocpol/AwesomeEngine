@@ -58,27 +58,6 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 		mDebugPipelineLines = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
 	}
 
-	{
-		GraphicsPipelineDescription pdesc = {};
-		pdesc.PixelShader.ShaderEntryPoint = "PSDebugDrawSolid";
-		pdesc.PixelShader.ShaderPath = "shadersrc:DebugDraw.hlsl";
-		pdesc.PixelShader.Type = Graphics::ShaderType::Pixel;
-
-		pdesc.VertexShader.ShaderEntryPoint = "VSSurface";
-		pdesc.VertexShader.ShaderPath = "shadersrc:Surface.hlsl";
-		pdesc.VertexShader.Type = Graphics::ShaderType::Vertex;
-
-		pdesc.PrimitiveType = Primitive::Triangle;
-		pdesc.VertexDescription = PosNormalTangentTexCoordDescription::GetDescription();
-		pdesc.DepthEnabled = true;
-		pdesc.DepthWriteEnabled = false;
-		pdesc.DepthFunction = DepthFunc::LessEqual;
-		pdesc.ColorFormats[0] = Graphics::Format::RGBA_8_Unorm;
-		pdesc.DepthFormat = Graphics::Format::Unknown;
-		
-		mDebugPipelineSolid = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
-	}
-
 	// Init constant buffers:
 	mCameraDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(Declarations::CameraData));
 	mItemDataCb = mGraphicsInterface->CreateBuffer(BufferType::ConstantBuffer, CPUAccess::None, GPUAccess::Read, sizeof(Declarations::ItemData));
