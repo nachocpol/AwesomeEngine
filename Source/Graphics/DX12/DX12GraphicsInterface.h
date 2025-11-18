@@ -282,7 +282,7 @@ namespace Graphics{ namespace DX12
 
 		DisplaySurface mDefaultSurface;
 		ID3D12Device* m_Device;
-		D3D12_FEATURE_DATA_D3D12_OPTIONS mDeviceFeatures;
+		CD3DX12FeatureSupport m_DeviceFeatures;
 		Format mOutputFormat;
 
 		// Buffer pool

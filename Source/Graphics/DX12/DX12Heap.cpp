@@ -23,7 +23,10 @@ namespace Graphics {namespace DX12 {
 		desc.Flags			= shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		mDeviceRef->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mHeap));
 		mCPUHandle = mHeap->GetCPUDescriptorHandleForHeapStart();
-		mGPUHandle = mHeap->GetGPUDescriptorHandleForHeapStart();
+		if (shaderVisible)
+		{
+			mGPUHandle = mHeap->GetGPUDescriptorHandleForHeapStart();
+		}
 		mEntrySize = mDeviceRef->GetDescriptorHandleIncrementSize(type);
 		return false;
 	}

@@ -102,20 +102,27 @@ namespace Graphics { namespace DX12 {
 			std::cerr << "Could not create the device! \n";
 			return false;
 		}
+
 		// Query features
-		m_Device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &mDeviceFeatures, sizeof(mDeviceFeatures));
-		if (mDeviceFeatures.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_1)
+		m_DeviceFeatures.Init(m_Device);
+		
+		switch (m_DeviceFeatures.ResourceBindingTier())
 		{
-			INFO("Device binding tier 1");
+			case D3D12_RESOURCE_BINDING_TIER_1: INFO("Device binding tier 1"); break;
+			case D3D12_RESOURCE_BINDING_TIER_2: INFO("Device binding tier 2"); break;
+			case D3D12_RESOURCE_BINDING_TIER_3: INFO("Device binding tier 3"); break;
+			default: break;
 		}
-		else if (mDeviceFeatures.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_2)
+
+		switch (m_DeviceFeatures.RaytracingTier())
 		{
-			INFO("Device binding tier 2");
+			case D3D12_RAYTRACING_TIER_NOT_SUPPORTED: INFO("DXRT Not supported!"); break;
+			case D3D12_RAYTRACING_TIER_1_0: INFO("DXRT 1.0"); break;
+			case D3D12_RAYTRACING_TIER_1_1: INFO("DXRT 1.1"); break;
+			case D3D12_RAYTRACING_TIER_1_2: INFO("DXRT 1.2"); break;
+			default:break;
 		}
-		else
-		{
-			INFO("Device binding tier 3");
-		}
+		
 
 		// Mute some annoyances:
 #ifdef DEBUG
@@ -904,13 +911,13 @@ namespace Graphics { namespace DX12 {
 		bufferEntry.CPUAccessMode = cpuAccess;
 		bufferEntry.GPUAccessMode = gpuAccess;
 		bufferEntry.LastFrame = mFrame;
-		if (isStructuredBuffer)
+		if (isStructuredBuffer && isGPURw)
 		{
-			bufferEntry.State = isGPURw ? UNORDERED_ACCESS : SRV_READ;
+			bufferEntry.State = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 		}
 		else
 		{
-			bufferEntry.State = isIndex ? INDEX_READ : VERTEX_CB_READ;
+			bufferEntry.State = D3D12_RESOURCE_STATE_COMMON;
 		}
 
 		// Size should be multiple of 256

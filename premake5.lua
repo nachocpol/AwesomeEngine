@@ -21,7 +21,7 @@ filter { "platforms:x64" }
 	{
 		"Source",
 		"Source/Graphics/Shaders",
-		"Depen/DX12",
+		"Depen/agility_sdk/include",
 		"Depen/JSON",
 		"Depen/TinyObj",
 		"Depen/GLM",
