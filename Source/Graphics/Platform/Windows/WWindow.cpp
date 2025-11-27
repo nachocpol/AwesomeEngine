@@ -58,6 +58,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 			case VK_TAB:	inputManager->KeyEvent(Core::KeyType::Tab, KeyState::Released);		break;
 			case VK_SPACE:	inputManager->KeyEvent(Core::KeyType::Space, KeyState::Released);	break;
 			case VK_RETURN: inputManager->KeyEvent(Core::KeyType::Return, KeyState::Released);	break;
+			case VK_CONTROL: inputManager->KeyEvent(Core::KeyType::Control, KeyState::Released);	break;
 
 			default: break;
 		}
@@ -109,6 +110,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 			case VK_TAB:	inputManager->KeyEvent(Core::KeyType::Tab, KeyState::Pressed);		break;
 			case VK_SPACE:	inputManager->KeyEvent(Core::KeyType::Space, KeyState::Pressed);	break;
 			case VK_RETURN: inputManager->KeyEvent(Core::KeyType::Return, KeyState::Pressed);	break;
+			case VK_CONTROL: inputManager->KeyEvent(Core::KeyType::Control, KeyState::Pressed);	break;
 
 			default: break;
 		}

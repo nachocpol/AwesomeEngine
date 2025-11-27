@@ -95,6 +95,8 @@ ImGuiKey KeyToImgui(Core::KeyType key)
 		return ImGuiKey_Tab;
 	case Core::KeyType::Return:
 		return ImGuiKey_Enter;
+	case Core::KeyType::Control:
+		return ImGuiKey_LeftCtrl;
 
 	case Core::KeyType::COUNT:
 	default:

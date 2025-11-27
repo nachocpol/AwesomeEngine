@@ -28,6 +28,7 @@ namespace  Core
 		Space,
 		Tab,
 		Return,
+		Control,
 
 		COUNT
 	};
