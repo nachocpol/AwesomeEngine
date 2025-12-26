@@ -121,7 +121,7 @@ SimpleVSOut VSSimple(SimpleVSIn i)
 
 float4 PSSimple(SimpleVSOut i): SV_Target0
 {	
-	float lightDir = normalize(float3(1.9,0.0,0.0));
+	float3 lightDir = normalize(float3(1.9,0.0,0.0));
 	float ndl = max(dot(normalize(i.PNormal), lightDir),0.0);
 	float3 albedo = float3(0.7,0.6,0.6);
 	return float4(albedo * ndl, 1.0);

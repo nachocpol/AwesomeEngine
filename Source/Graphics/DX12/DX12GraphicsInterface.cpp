@@ -11,6 +11,9 @@
 
 #include "WinPixEventRuntime/pix3.h"
 
+#include "dxcapi.h"
+
+#include <winnt.h>
 #include <iostream>
 #include <vector>
 
@@ -46,8 +49,8 @@ namespace Graphics { namespace DX12 {
 		UINT factoryFlags = 0;
 		ID3D12Debug* debugController = nullptr;
 		static bool enableDebug = false;
-#ifdef DEBUG
 		enableDebug = true;
+#ifdef DEBUG
 #endif
 		if (enableDebug && SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 		{
@@ -125,7 +128,6 @@ namespace Graphics { namespace DX12 {
 		
 
 		// Mute some annoyances:
-#ifdef DEBUG
 		ID3D12InfoQueue* infoQueue = nullptr;
 		m_Device->QueryInterface(IID_PPV_ARGS(&infoQueue));
 		if (infoQueue)
@@ -142,6 +144,7 @@ namespace Graphics { namespace DX12 {
 			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
 			infoQueue->Release();
 		}
+#ifdef DEBUG
 #endif
 
 		// Initialize the display surface:
@@ -372,9 +375,19 @@ namespace Graphics { namespace DX12 {
 		// fread_s(src, size, sizeof(char), size / sizeof(char), shaderFile);
 		// fclose(shaderFile);
 
-		// Shader
-		ID3D10Blob* error;
-		ID3D10Blob* sblob;
+		IDxcCompiler3* compiler;
+		DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&compiler));
+		if (!compiler)
+		{
+			return false;
+		}
+
+		IDxcUtils* dxcUtils;
+		DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils));
+		if (!dxcUtils)
+		{
+			return false;
+		}
 
 		std::string fixedupPath = desc.ShaderPath;
 		if (!Core::FileSystem::GetInstance()->FixupPath(fixedupPath))
@@ -384,26 +397,100 @@ namespace Graphics { namespace DX12 {
 			return false;
 		}
 
-		std::wstring wpath(fixedupPath.begin(), fixedupPath.end());
-		std::string target;
-		switch (desc.Type)
+		// Load shader text
+		IDxcBlobEncoding* sourceBlob;
+		std::wstring wideFilePath(fixedupPath.begin(), fixedupPath.end());
+		dxcUtils->LoadFile(wideFilePath.c_str(), nullptr, &sourceBlob);
+
+		// Pass it to a blob
+		DxcBuffer shaderTextBuffer = {};
+		shaderTextBuffer.Ptr = sourceBlob->GetBufferPointer();
+		shaderTextBuffer.Size = sourceBlob->GetBufferSize();
+		shaderTextBuffer.Encoding = DXC_CP_UTF8;
+
+		//sourceBlob->Release();
+
+		// Build arguments
+		std::wstring wentry(desc.ShaderEntryPoint.begin(), desc.ShaderEntryPoint.end()); // not a real conversion to wide
+		std::vector<LPWSTR> args;
+		args.push_back(L"-E");
+		args.push_back(&wentry[0]);
+
+		args.push_back(L"-T");
+		if (desc.Type == ShaderType::Vertex)
 		{
-		case ShaderType::Vertex:	target = "vs_5_1"; break;
-		case ShaderType::Pixel:		target = "ps_5_1"; break;
-		case ShaderType::Compute:	target = "cs_5_1"; break;
-		default:					target = "none_5_1"; break;
+			args.push_back(L"vs_6_0");
 		}
-		//UINT flags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_VALIDATION;// | D3DCOMPILE_OPTIMIZATION_LEVEL3;
-		UINT flags = D3DCOMPILE_DEBUG;// | D3DCOMPILE_OPTIMIZATION_LEVEL3;
-		if (FAILED(D3DCompileFromFile(wpath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, desc.ShaderEntryPoint.c_str(), target.c_str(), flags, 0, &sblob, &error)))
+		else if (desc.Type == ShaderType::Pixel)
 		{
-			OutputDebugStringA((char*)error->GetBufferPointer());
- 			assert(false);
-			return false;
+			args.push_back(L"ps_6_0");
 		}
-		outShader.BytecodeLength = sblob->GetBufferSize();
-		outShader.pShaderBytecode = sblob->GetBufferPointer();
-		return true;
+		else if (desc.Type == ShaderType::Compute)
+		{
+			args.push_back(L"cs_6_0");
+		}
+
+		args.push_back(DXC_ARG_WARNINGS_ARE_ERRORS);
+#if 1
+		args.push_back(DXC_ARG_DEBUG);
+		args.push_back(DXC_ARG_SKIP_OPTIMIZATIONS);
+#else
+		args.push_back(DXC_ARG_OPTIMIZATION_LEVEL3);
+#endif
+
+		// This is.... yeah.. anyways
+		std::vector<std::string> shaderRootSrc;
+		std::vector<std::wstring> wideShaderRootSrc;
+		Core::FileSystem::GetInstance()->GetPathsForIdentifier("shadersrc", shaderRootSrc);
+		for (size_t i = 0; i < shaderRootSrc.size(); ++i)
+		{
+			std::wstring curRoot(shaderRootSrc[i].begin(), shaderRootSrc[i].end());
+			wideShaderRootSrc.push_back(curRoot);
+
+			// Have to push all the shadersrc roots for the include handler to be able to find the shader includes
+			args.push_back(L"-I");
+			args.push_back((LPWSTR)wideShaderRootSrc[i].c_str());
+		}
+
+		// Include handler
+		IDxcIncludeHandler* includeHanlder;
+		dxcUtils->CreateDefaultIncludeHandler(&includeHanlder);
+
+		// Compile
+		IDxcResult* compileRes;
+		HRESULT compileHRes = compiler->Compile(&shaderTextBuffer, (LPCWSTR*)args.data(), (UINT32)args.size(), includeHanlder, IID_PPV_ARGS(&compileRes));
+		if (compileHRes != S_OK)
+		{
+			assert(false);
+			
+		}
+
+		IDxcBlobUtf8* errorBlob;
+		compileRes->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&errorBlob), nullptr);
+		bool withErrors = false;
+		if (errorBlob && errorBlob->GetStringLength() > 0)
+		{
+			withErrors = true;
+			ERR("Failed to compile shader: %s", fixedupPath.c_str());
+			ERR("%s", errorBlob->GetStringPointer());
+		}
+		else
+		{
+			IDxcBlob* blob;
+			compileRes->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&blob), nullptr);
+			outShader.pShaderBytecode = blob->GetBufferPointer();
+			outShader.BytecodeLength = blob->GetBufferSize();
+		}
+
+		// Cleanup... Should we just use comptrs?
+		compiler->Release();
+		includeHanlder->Release();
+		if (sourceBlob)
+		{
+			sourceBlob->Release();
+		}
+
+		return (compileHRes == S_OK) && !withErrors;
 	}
 
 	void DX12GraphicsInterface::FlushHeap(bool graphics /*=true*/)
@@ -903,6 +990,7 @@ namespace Graphics { namespace DX12 {
 		bool isStructuredBuffer = type == BufferType::GPUBuffer;
 		bool isGPURw = gpuAccess == GPUAccess::ReadWrite;
 		bool isCPUWrite = cpuAccess == CPUAccess::Write;
+		const bool isByteAddr = type == BufferType::ByteAddress;
 		const bool isConstantBuffer = type == BufferType::ConstantBuffer;
 
 		BufferHandle handle;
@@ -911,14 +999,7 @@ namespace Graphics { namespace DX12 {
 		bufferEntry.CPUAccessMode = cpuAccess;
 		bufferEntry.GPUAccessMode = gpuAccess;
 		bufferEntry.LastFrame = mFrame;
-		if (isStructuredBuffer && isGPURw)
-		{
-			bufferEntry.State = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-		}
-		else
-		{
-			bufferEntry.State = D3D12_RESOURCE_STATE_COMMON;
-		}
+		bufferEntry.State = D3D12_RESOURCE_STATE_COMMON;
 
 		// Size should be multiple of 256
 		if (isConstantBuffer)
@@ -926,7 +1007,12 @@ namespace Graphics { namespace DX12 {
 			size = ((size + 255) & ~255);
 		}
 
-		uint64_t resourceSize = isStructuredBuffer ? size * stride : size;
+		uint64_t resourceSize = (isStructuredBuffer || isByteAddr) ? size * stride : size;
+
+		if (isByteAddr)
+		{
+			assert(stride == 4);
+		}
 
 		// Commited resource.
 		// NOTE: Constant buffers just rely on upload buffers
@@ -967,18 +1053,19 @@ namespace Graphics { namespace DX12 {
 		{
 			desc = CD3DX12_RESOURCE_DESC::Buffer(CB_INTERMIDIATE_SIZE);
 		}
-		else if (type == BufferType::GPUBuffer)
+		else if (isStructuredBuffer || isByteAddr)
 		{
+			const DXGI_FORMAT bufferFormat = isByteAddr ? DXGI_FORMAT_R32_TYPELESS : DXGI_FORMAT_UNKNOWN;
 			// Create views:
 			if (gpuAccess == GPUAccess::Read || gpuAccess == GPUAccess::ReadWrite)
 			{
 				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 				srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-				srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+				srvDesc.Format = bufferFormat;
 				srvDesc.Buffer.FirstElement = 0;
-				srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+				srvDesc.Buffer.Flags = isByteAddr ? D3D12_BUFFER_SRV_FLAG_RAW : D3D12_BUFFER_SRV_FLAG_NONE;
 				srvDesc.Buffer.NumElements = (UINT)size;
-				srvDesc.Buffer.StructureByteStride = stride;
+				srvDesc.Buffer.StructureByteStride = (bufferFormat == DXGI_FORMAT_UNKNOWN) ? stride : 0;
 				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 				bufferEntry.GPUBufferView = mViewsHeap.GetCPU();
 				m_Device->CreateShaderResourceView(bufferEntry.Buffer, &srvDesc, bufferEntry.GPUBufferView);
@@ -988,12 +1075,12 @@ namespace Graphics { namespace DX12 {
 			{
 				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 				uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-				uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+				uavDesc.Format = bufferFormat;
 				uavDesc.Buffer.FirstElement = 0;
 				uavDesc.Buffer.NumElements = (UINT)size;
-				uavDesc.Buffer.StructureByteStride = stride;
+				uavDesc.Buffer.StructureByteStride = (bufferFormat == DXGI_FORMAT_UNKNOWN) ? stride : 0;
 				uavDesc.Buffer.CounterOffsetInBytes = 0;
-				uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+				uavDesc.Buffer.Flags = isByteAddr ? D3D12_BUFFER_UAV_FLAG_RAW : D3D12_BUFFER_UAV_FLAG_NONE;
 				bufferEntry.GPURWBufferView = mViewsHeap.GetCPU();
 				m_Device->CreateUnorderedAccessView(bufferEntry.Buffer, nullptr, &uavDesc, bufferEntry.GPURWBufferView);
 				mViewsHeap.OffsetHandles(1);

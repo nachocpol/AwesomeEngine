@@ -27,15 +27,19 @@ filter { "platforms:x64" }
 		"Depen/GLM",
 		"Depen/STB",
 		"Depen/tinyobj",
-		"Depen/WinPixEventRuntime/Include"
+		"Depen/WinPixEventRuntime/Include",
+		"Depen/dxc/inc"
 	}
 	libdirs
 	{
-		"Depen/WinPixEventRuntime/bin/x64"
+		"Depen/WinPixEventRuntime/bin/x64",
+		"Depen/dxc/lib/x64"
 	}
 	links
 	{
-		"WinPixEventRuntime"
+		"WinPixEventRuntime",
+		"dxcompiler",
+		"dxil"
 	}
 	files
 	{

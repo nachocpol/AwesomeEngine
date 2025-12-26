@@ -4,13 +4,11 @@
 	
 	#pragma comment(lib,"d3d12")
 	#pragma comment(lib,"dxgi")
-	#pragma comment(lib,"d3dcompiler")
 	#pragma comment(lib, "dxguid")
 
 	#include "d3dx12/d3dx12.h"
 	
 	#include <dxgi1_4.h>
-	#include <d3dcompiler.h>	
 
 	#define NUM_BACK_BUFFERS		2
 	#define MAX_BUFFERS				2048

@@ -34,6 +34,7 @@ namespace Core
 		void AddFileDevice(FileDevice device);
 		bool FixupPath(std::string& path, bool checkFileExist = true);
 		bool FileExists(const std::string& fixeupFile);
+		void GetPathsForIdentifier(const char* identifier, std::vector<std::string>& paths);
 
 	private:
 

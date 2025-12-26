@@ -105,3 +105,15 @@ bool FileSystem::FileExists(const std::string& fixeupFile)
 
 #endif
 }
+
+void FileSystem::GetPathsForIdentifier(const char* identifier, std::vector<std::string>& paths)
+{
+	for (size_t i = 0; i < mDevices.size(); ++i)
+	{
+		const FileDevice& device = mDevices[i];
+		if (device.Identifier == identifier)
+		{
+			paths.push_back(device.RootPath);
+		}
+	}
+}

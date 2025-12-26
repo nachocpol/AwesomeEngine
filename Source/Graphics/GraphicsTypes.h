@@ -17,7 +17,8 @@ namespace Graphics
 		VertexBuffer,
 		IndexBuffer,
 		ConstantBuffer,
-		GPUBuffer
+		GPUBuffer,
+		ByteAddress,
 	};
 
 	enum class GPUQueryType
