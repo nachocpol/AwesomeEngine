@@ -1,10 +1,8 @@
 workspace "AwesomeSolution"
 	configurations { "Debug", "Release"}
 	platforms "x64"
-	systemversion "10"
+	systemversion "10.0.26100.0"
 	staticruntime "on"
-	--warnings "Extra"
-	flags {"FatalCompileWarnings"}
 
 filter { "platforms:x64" }
 	defines 
