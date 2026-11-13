@@ -95,6 +95,12 @@ namespace Graphics
 		};
 	};
 
+	enum class FillMode
+	{
+		Solid,
+		Wireframe
+	};
+
 	struct TextureFlags
 	{
 		enum T

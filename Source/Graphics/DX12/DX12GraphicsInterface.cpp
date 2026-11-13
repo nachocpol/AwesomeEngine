@@ -630,7 +630,7 @@ namespace Graphics { namespace DX12 {
 		{
 			psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC::CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 			psoDesc.RasterizerState.CullMode = ToDX12FaceCullMode(desc.CullMode);
-			psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+			psoDesc.RasterizerState.FillMode = ToDX12FillMode(desc.FillMode);
 		}
 		psoDesc.InputLayout = inputL;
 		psoDesc.pRootSignature = mGraphicsRootSignature;
@@ -771,6 +771,17 @@ namespace Graphics { namespace DX12 {
 			default:
 			case FaceCullMode::None: return D3D12_CULL_MODE_NONE;
 		}
+	}
+
+	D3D12_FILL_MODE DX12GraphicsInterface::ToDX12FillMode(const FillMode& mode)
+	{
+		switch (mode)
+		{
+		default:
+		case FillMode::Solid:		return D3D12_FILL_MODE_SOLID;
+		case FillMode::Wireframe:	return D3D12_FILL_MODE_WIREFRAME;
+		}
+
 	}
 
 	D3D12_BLEND DX12GraphicsInterface::ToDX12Blend(const BlendFunction::T& func)
@@ -1104,6 +1115,9 @@ namespace Graphics { namespace DX12 {
 		// Aggg but this is crap, because if we want to init the buffer (on creation) but we don't need CPUAccess then what???
 
 		// This really needs some thouhg? Maybe we need a system to create intermediate upload buffers that aren't tied to the resource.. Not sure :/ 
+
+		// For resources that are created and never updated from CPU, we could simply pass the data during creation and skip creating intermediate
+		// resource...
 
 		m_Device->CreateCommittedResource
 		(

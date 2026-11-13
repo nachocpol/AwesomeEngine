@@ -54,6 +54,7 @@ namespace Graphics
 		{
 			PrimitiveType = Primitive::Triangle;
 			CullMode = FaceCullMode::Back;
+			FillMode = FillMode::Solid;
 			DepthEnabled = false;
 			DepthWriteEnabled = false;
 			VertexDescription.NumElements = 0;
@@ -65,6 +66,7 @@ namespace Graphics
 		VertexInputDescription VertexDescription;
 		Primitive::T PrimitiveType;
 		FaceCullMode::T CullMode;
+		FillMode FillMode;
 		bool DepthEnabled;
 		bool DepthWriteEnabled;
 		DepthFunc::T DepthFunction;
