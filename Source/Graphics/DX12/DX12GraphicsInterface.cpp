@@ -631,6 +631,7 @@ namespace Graphics { namespace DX12 {
 			psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC::CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 			psoDesc.RasterizerState.CullMode = ToDX12FaceCullMode(desc.CullMode);
 			psoDesc.RasterizerState.FillMode = ToDX12FillMode(desc.FillMode);
+			psoDesc.RasterizerState.FrontCounterClockwise = FALSE;
 		}
 		psoDesc.InputLayout = inputL;
 		psoDesc.pRootSignature = mGraphicsRootSignature;
