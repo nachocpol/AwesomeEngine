@@ -12,9 +12,14 @@
 	#define float4		glm::vec4
 	#define float3		glm::vec3
 	#define float2		glm::vec2
+
+	#define MATRIX_LAYOUT
 #else
 	#define CBUFFER(name) struct name {
 	#define CBUFFER_END(name, slot) }; cbuffer name##CB : register(b##slot) { name g##name; }; 
 	#define STRUCTUREDBUFFER(name, type, slot) StructuredBuffer<type> name : register(t##slot); RWStructuredBuffer<type> RW##name : register(u##slot);
 	#define TEXTURE_2D(name, slot) Texture2D name : register(t##slot);
+
+	#define MATRIX_LAYOUT column_major
+
 #endif
