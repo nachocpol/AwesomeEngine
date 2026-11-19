@@ -567,8 +567,25 @@ namespace Graphics { namespace DX12 {
 		}
 	}
 
-	void DX12GraphicsInterface::CreatePSO(const GraphicsPipelineDescription& desc, GraphicsPipelineEntry& entry)
+	bool DX12GraphicsInterface::CreatePSO(const GraphicsPipelineDescription& desc, GraphicsPipelineEntry& entry)
 	{
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+
+		// Shaders
+		if (!LoadShader(desc.VertexShader, psoDesc.VS))
+		{
+			return false;
+		}
+
+		// Allow for empty pixel shader
+		if (!desc.PixelShader.ShaderEntryPoint.empty() && !desc.PixelShader.ShaderPath.empty())
+		{
+			if (!LoadShader(desc.PixelShader, psoDesc.PS))
+			{
+				return false;
+			}
+		}
+
 		// Build the input layout:
 		D3D12_INPUT_LAYOUT_DESC inputL = {};
 		std::vector<D3D12_INPUT_ELEMENT_DESC> eles;
@@ -585,16 +602,6 @@ namespace Graphics { namespace DX12 {
 		}
 		inputL.NumElements = desc.VertexDescription.NumElements;
 		inputL.pInputElementDescs = eles.data();
-
-		// Describe the pso
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-		LoadShader(desc.VertexShader, psoDesc.VS);
-		
-		// Allow for empty pixel shader
-		if (!desc.PixelShader.ShaderEntryPoint.empty() && !desc.PixelShader.ShaderPath.empty())
-		{
-			LoadShader(desc.PixelShader, psoDesc.PS);
-		}
 
 		// Blend info
 		{
@@ -657,14 +664,20 @@ namespace Graphics { namespace DX12 {
 		}
 
 		m_Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
+
+		return true;
 	}
 
-	void DX12GraphicsInterface::CreatePSO(const ComputePipelineDescription& desc, ComputePipelineEntry& entry)
+	bool DX12GraphicsInterface::CreatePSO(const ComputePipelineDescription& desc, ComputePipelineEntry& entry)
 	{
 		D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
 		psoDesc.pRootSignature = mGraphicsRootSignature;
-		LoadShader(desc.ComputeShader, psoDesc.CS);
+		if (!LoadShader(desc.ComputeShader, psoDesc.CS))
+		{
+			return false;
+		}
 		m_Device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&entry.Pso));
+		return true;
 	}
 
 	DXGI_FORMAT DX12GraphicsInterface::ToDXGIDepthFormat(const Graphics::Format& format)
@@ -898,6 +911,7 @@ namespace Graphics { namespace DX12 {
 
 	void DX12GraphicsInterface::RenderUI()
 	{
+		// Needs to be updated so we can use the new functionality that supports failing PSOs
 		if (ImGui::BeginMainMenuBar())
 		{
 			std::string filter;
@@ -1752,11 +1766,13 @@ namespace Graphics { namespace DX12 {
 	{
 		// Start by releasing the old entry:
 		GraphicsPipelineEntry& entry = mGraphicsPipelinesPool.GetEntry(pipeline.Handle);
-		mReleaseManager.ReleaseItem(entry.Pso);
-		entry.Pso = nullptr;
+		ID3D12PipelineState* originalPSO = entry.Pso;
 
-		// Now lets create it again:
-		CreatePSO(entry.Desc, entry);
+		if (CreatePSO(entry.Desc, entry))
+		{
+			// Managed to reload it, so lets release the old one
+			mReleaseManager.ReleaseItem(originalPSO);
+		}
 	}
 
 	void DX12GraphicsInterface::ReloadComputePipeline(ComputePipeline & pipeline)

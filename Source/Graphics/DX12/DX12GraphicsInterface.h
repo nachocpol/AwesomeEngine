@@ -266,8 +266,8 @@ namespace Graphics{ namespace DX12
 		void FlushHeap(bool graphics = true);
 		void TransitionResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, bool forceFlush = false, uint32_t subResource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 		void FlushBarriers();
-		void CreatePSO(const GraphicsPipelineDescription& desc, GraphicsPipelineEntry& entry);
-		void CreatePSO(const ComputePipelineDescription& desc, ComputePipelineEntry& entry);		
+		bool CreatePSO(const GraphicsPipelineDescription& desc, GraphicsPipelineEntry& entry);
+		bool CreatePSO(const ComputePipelineDescription& desc, ComputePipelineEntry& entry);
 		static DXGI_FORMAT ToDXGIDepthFormat(const Format& format);
 		static DXGI_FORMAT ToDXGIFormat(const Format& format);
 		static DXGI_FORMAT ToDXGIFormatTypeless(const Format& format);
