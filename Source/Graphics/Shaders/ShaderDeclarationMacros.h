@@ -12,6 +12,7 @@
 	#define float4		glm::vec4
 	#define float3		glm::vec3
 	#define float2		glm::vec2
+	#define int2 		glm::ivec2
 
 	#define MATRIX_LAYOUT
 #else
