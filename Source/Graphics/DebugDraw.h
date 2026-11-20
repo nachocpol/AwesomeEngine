@@ -23,7 +23,7 @@ namespace Graphics
 
 	public:
 		static DebugDraw* GetInstance();
-		void Initialize(GraphicsInterface* graphicsInterface);
+		void Initialize(GraphicsInterface* graphicsInterface, Graphics::Format colorFormat);
 		void Release();
 
 		void Flush(const glm::mat4x4& invViewProj);

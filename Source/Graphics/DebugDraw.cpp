@@ -32,7 +32,7 @@ DebugDraw* Graphics::DebugDraw::GetInstance()
 	return kInstance;
 }
 
-void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
+void DebugDraw::Initialize(GraphicsInterface* graphicsInterface, Graphics::Format colorFormat)
 {
 	mGraphicsInterface = graphicsInterface;
 
@@ -52,8 +52,8 @@ void DebugDraw::Initialize(GraphicsInterface* graphicsInterface)
 		pdesc.DepthEnabled = true;
 		pdesc.DepthWriteEnabled = false;
 		pdesc.DepthFunction = DepthFunc::LessEqual;
-		pdesc.ColorFormats[0] = Graphics::Format::RGBA_8_Unorm;
-		pdesc.DepthFormat = Graphics::Format::Unknown;
+		pdesc.ColorFormats[0] = colorFormat;
+		pdesc.DepthFormat = Graphics::Format::Depth24_Stencil8;
 
 		mDebugPipelineLines = mGraphicsInterface->CreateGraphicsPipeline(pdesc);
 	}
